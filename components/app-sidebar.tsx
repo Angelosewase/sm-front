@@ -25,7 +25,7 @@ import { Logo } from "@/components/logo";
 import type { Route } from "./nav-main";
 import DashboardNavigation from "@/components/nav-main";
 
-import { TeamSwitcher } from "@/components/team-switcher";
+import { TeamSwitcher } from "@/components/school-switcher";
 import { useAuth } from "@/contexts/auth-context";
 
 
