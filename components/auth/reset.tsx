@@ -3,11 +3,25 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  useRequestPasswordReset,
+  useVerifyOtp,
+  useResetPassword,
+} from "@/hooks/use-auth-mutations";
+import { toast } from "react-toastify";
 
-// --- HELPER COMPONENTS ---
-
-const GlassInputWrapper = ({ children, error }: { children: React.ReactNode; error?: boolean }) => (
-  <div className={`rounded-2xl border ${error ? 'border-red-500' : 'border-border'} bg-foreground/5 backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10`}>
+const GlassInputWrapper = ({
+  children,
+  error,
+}: {
+  children: React.ReactNode;
+  error?: boolean;
+}) => (
+  <div
+    className={`rounded-2xl border ${
+      error ? "border-red-500" : "border-border"
+    } bg-foreground/5 backdrop-blur-sm transition-colors focus-within:border-violet-400/70 focus-within:bg-violet-500/10`}
+  >
     {children}
   </div>
 );
@@ -20,7 +34,7 @@ interface ResetPasswordPageProps {
 
 type Step = "email" | "otp" | "password" | "success";
 
-export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
+export const ResetPasswordPageComponent: React.FC<ResetPasswordPageProps> = ({
   heroImageSrc,
   onBack,
   onResetComplete,
@@ -28,12 +42,16 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+
+  const requestResetMutation = useRequestPasswordReset();
+  const verifyOtpMutation = useVerifyOtp();
+  const resetPasswordMutation = useResetPassword();
 
   // Validation functions
   const validateEmail = (email: string): boolean => {
@@ -43,7 +61,10 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
       return false;
     }
     if (!emailRegex.test(email)) {
-      setErrors((prev) => ({ ...prev, email: "Please enter a valid email address" }));
+      setErrors((prev) => ({
+        ...prev,
+        email: "Please enter a valid email address",
+      }));
       return false;
     }
     setErrors((prev) => ({ ...prev, email: "" }));
@@ -72,20 +93,11 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
       setErrors((prev) => ({ ...prev, newPassword: "Password is required" }));
       return false;
     }
-    if (password.length < 8) {
-      setErrors((prev) => ({ ...prev, newPassword: "Password must be at least 8 characters" }));
-      return false;
-    }
-    if (!/(?=.*[a-z])/.test(password)) {
-      setErrors((prev) => ({ ...prev, newPassword: "Password must contain a lowercase letter" }));
-      return false;
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      setErrors((prev) => ({ ...prev, newPassword: "Password must contain an uppercase letter" }));
-      return false;
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      setErrors((prev) => ({ ...prev, newPassword: "Password must contain a number" }));
+    if (password.length < 6) {
+      setErrors((prev) => ({
+        ...prev,
+        newPassword: "Password must be at least 6 characters",
+      }));
       return false;
     }
     setErrors((prev) => ({ ...prev, newPassword: "" }));
@@ -94,11 +106,17 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
 
   const validateConfirmPassword = (confirm: string): boolean => {
     if (!confirm) {
-      setErrors((prev) => ({ ...prev, confirmPassword: "Please confirm your password" }));
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: "Please confirm your password",
+      }));
       return false;
     }
     if (confirm !== newPassword) {
-      setErrors((prev) => ({ ...prev, confirmPassword: "Passwords do not match" }));
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: "Passwords do not match",
+      }));
       return false;
     }
     setErrors((prev) => ({ ...prev, confirmPassword: "" }));
@@ -106,62 +124,91 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
   };
 
   // Handle form submissions
-  const handleEmailSubmit = () => {
+  const handleEmailSubmit = async () => {
     if (!validateEmail(email)) return;
 
-    setIsLoading(true);
-    // Mock API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await requestResetMutation.mutateAsync({ email });
+      toast.success("OTP sent successfully");
       setStep("otp");
-    }, 1500);
+      setErrors({});
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to send OTP");
+      setErrors({
+        email: error.response?.data?.message || "Failed to send OTP",
+      });
+    }
   };
 
-  const handleOtpSubmit = () => {
+  const handleOtpSubmit = async () => {
     if (!validateOtp(otp)) return;
 
-    setIsLoading(true);
-    // Mock API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const response = await verifyOtpMutation.mutateAsync({ email, otp });
+      toast.success("OTP verified successfully");
+      setResetToken(response.resetToken);
       setStep("password");
-    }, 1500);
+      setErrors({});
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid or expired OTP");
+      setErrors({
+        otp: error.response?.data?.message || "Invalid or expired OTP",
+      });
+    }
   };
 
-  const handlePasswordSubmit = () => {
+  const handlePasswordSubmit = async () => {
     const isPasswordValid = validatePassword(newPassword);
     const isConfirmValid = validateConfirmPassword(confirmPassword);
 
     if (!isPasswordValid || !isConfirmValid) return;
 
-    setIsLoading(true);
-    // Mock API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await resetPasswordMutation.mutateAsync({ resetToken, newPassword });
+      toast.success("Password reset successfully");
       setStep("success");
-    }, 1500);
+      setErrors({});
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to reset password");
+      setErrors({
+        newPassword:
+          error.response?.data?.message || "Failed to reset password",
+      });
+    }
   };
 
-  const handleResendOtp = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setErrors((prev) => ({ ...prev, otp: "" }));
-    }, 1000);
+  const handleResendOtp = async () => {
+    try {
+      await requestResetMutation.mutateAsync({ email });
+      toast.success("OTP sent successfully");
+      setErrors({ otp: "" });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to resend OTP");
+      setErrors({
+        otp: error.response?.data?.message || "Failed to resend OTP",
+      });
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent, submitFn: () => void) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       submitFn();
     }
   };
 
+  const isLoading =
+    requestResetMutation.isPending ||
+    verifyOtpMutation.isPending ||
+    resetPasswordMutation.isPending;
+
   // Render different steps
   const renderEmailStep = () => (
     <div className="space-y-5">
       <div className="animate-element animate-delay-300">
-        <label className="text-sm font-medium text-muted-foreground">Email Address</label>
+        <label className="text-sm font-medium text-muted-foreground">
+          Email Address
+        </label>
         <GlassInputWrapper error={!!errors.email}>
           <input
             name="email"
@@ -176,7 +223,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
             className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none"
           />
         </GlassInputWrapper>
-        {errors.email && <p className="text-xs text-red-500 mt-2">{errors.email}</p>}
+        {errors.email && (
+          <p className="text-xs text-red-500 mt-2">{errors.email}</p>
+        )}
       </div>
 
       <button
@@ -198,7 +247,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
       </Alert>
 
       <div className="animate-element animate-delay-400">
-        <label className="text-sm font-medium text-muted-foreground">Verification Code</label>
+        <label className="text-sm font-medium text-muted-foreground">
+          Verification Code
+        </label>
         <GlassInputWrapper error={!!errors.otp}>
           <input
             name="otp"
@@ -211,11 +262,13 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
             }}
             onKeyPress={(e) => handleKeyPress(e, handleOtpSubmit)}
             placeholder="Enter 6-digit code"
-            className="w-full bg-transparent text-sm p-4 rounded-2xl focus:outline-none text-center text-2xl tracking-widest"
+            className="w-full bg-transparent p-4 rounded-2xl focus:outline-none text-center text-2xl tracking-widest"
             maxLength={6}
           />
         </GlassInputWrapper>
-        {errors.otp && <p className="text-xs text-red-500 mt-2">{errors.otp}</p>}
+        {errors.otp && (
+          <p className="text-xs text-red-500 mt-2">{errors.otp}</p>
+        )}
       </div>
 
       <div className="animate-element animate-delay-500 flex items-center justify-center text-sm">
@@ -243,7 +296,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
   const renderPasswordStep = () => (
     <div className="space-y-5">
       <div className="animate-element animate-delay-300">
-        <label className="text-sm font-medium text-muted-foreground">New Password</label>
+        <label className="text-sm font-medium text-muted-foreground">
+          New Password
+        </label>
         <GlassInputWrapper error={!!errors.newPassword}>
           <div className="relative">
             <input
@@ -271,11 +326,15 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
             </button>
           </div>
         </GlassInputWrapper>
-        {errors.newPassword && <p className="text-xs text-red-500 mt-2">{errors.newPassword}</p>}
+        {errors.newPassword && (
+          <p className="text-xs text-red-500 mt-2">{errors.newPassword}</p>
+        )}
       </div>
 
       <div className="animate-element animate-delay-400">
-        <label className="text-sm font-medium text-muted-foreground">Confirm Password</label>
+        <label className="text-sm font-medium text-muted-foreground">
+          Confirm Password
+        </label>
         <GlassInputWrapper error={!!errors.confirmPassword}>
           <div className="relative">
             <input
@@ -284,7 +343,8 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
               value={confirmPassword}
               onChange={(e) => {
                 setConfirmPassword(e.target.value);
-                if (errors.confirmPassword) validateConfirmPassword(e.target.value);
+                if (errors.confirmPassword)
+                  validateConfirmPassword(e.target.value);
               }}
               onKeyPress={(e) => handleKeyPress(e, handlePasswordSubmit)}
               placeholder="Confirm new password"
@@ -303,17 +363,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
             </button>
           </div>
         </GlassInputWrapper>
-        {errors.confirmPassword && <p className="text-xs text-red-500 mt-2">{errors.confirmPassword}</p>}
-      </div>
-
-      <div className="animate-element animate-delay-500 text-xs text-muted-foreground space-y-1">
-        <p>Password must contain:</p>
-        <ul className="list-disc list-inside space-y-1">
-          <li className={newPassword.length >= 8 ? "text-green-500" : ""}>At least 8 characters</li>
-          <li className={/(?=.*[a-z])/.test(newPassword) ? "text-green-500" : ""}>One lowercase letter</li>
-          <li className={/(?=.*[A-Z])/.test(newPassword) ? "text-green-500" : ""}>One uppercase letter</li>
-          <li className={/(?=.*\d)/.test(newPassword) ? "text-green-500" : ""}>One number</li>
-        </ul>
+        {errors.confirmPassword && (
+          <p className="text-xs text-red-500 mt-2">{errors.confirmPassword}</p>
+        )}
       </div>
 
       <button
@@ -331,9 +383,12 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
       <div className="animate-element animate-delay-300 flex justify-center">
         <CheckCircle2 className="w-20 h-20 text-green-500" />
       </div>
-      <h2 className="animate-element animate-delay-400 text-2xl font-semibold">Password Reset Successful!</h2>
+      <h2 className="animate-element animate-delay-400 text-2xl font-semibold">
+        Password Reset Successful!
+      </h2>
       <p className="animate-element animate-delay-500 text-muted-foreground">
-        Your password has been successfully reset. You can now sign in with your new password.
+        Your password has been successfully reset. You can now sign in with your
+        new password.
       </p>
       <button
         onClick={() => {

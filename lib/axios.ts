@@ -1,0 +1,47 @@
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+export const axiosInstance = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true, // Send cookies with requests
+});
+
+// Request interceptor to add token from cookie
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Token will be automatically sent via httpOnly cookie
+    // But we can add it to header if needed for backend compatibility
+    if (typeof window !== 'undefined') {
+      const cookies = document.cookie.split(';');
+      const tokenCookie = cookies.find(c => c.trim().startsWith('accessToken='));
+      if (tokenCookie) {
+        const token = tokenCookie.split('=')[1];
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle 401 errors
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Clear cookies and redirect to login
+      if (typeof window !== 'undefined') {
+        document.cookie = 'accessToken=; Max-Age=0; path=/;';
+        document.cookie = 'user=; Max-Age=0; path=/;';
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
