@@ -1,14 +1,16 @@
-'use client';
+"use client";
 
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { useAuth } from '@/contexts/auth-context';
-import { LogOut, User, Shield, Key, Lock } from 'lucide-react';
+import { DashboardSidebar } from "@/components/app-sidebar";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { useAuth } from "@/contexts/auth-context";
+import { LogOut, User, Shield, Key, Lock } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
 
   return (
     <ProtectedRoute>
+      <DashboardSidebar />
       <div className="min-h-screen bg-background">
         <nav className="border-b border-border bg-card">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,16 +36,21 @@ export default function DashboardPage() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid gap-6">
             <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Welcome, {user?.name || user?.email}!</h2>
+              <h2 className="text-xl font-semibold mb-4">
+                Welcome, {user?.name || user?.email}!
+              </h2>
               <p className="text-muted-foreground">
-                This is a protected route secured by Next.js middleware and httpOnly cookies.
+                This is a protected route secured by Next.js middleware and
+                httpOnly cookies.
               </p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
               <div className="bg-card border border-border rounded-lg p-6">
                 <h3 className="font-semibold mb-2">User ID</h3>
-                <p className="text-sm text-muted-foreground break-all">{user?.id}</p>
+                <p className="text-sm text-muted-foreground break-all">
+                  {user?.id}
+                </p>
               </div>
               <div className="bg-card border border-border rounded-lg p-6">
                 <h3 className="font-semibold mb-2">Email</h3>
@@ -67,47 +74,65 @@ export default function DashboardPage() {
                 <li className="flex items-start gap-2">
                   <Key className="w-4 h-4 mt-0.5 text-green-500" />
                   <div>
-                    <strong className="text-foreground">HttpOnly Cookies:</strong> JWT tokens stored in httpOnly cookies, inaccessible to JavaScript (XSS protection)
+                    <strong className="text-foreground">
+                      HttpOnly Cookies:
+                    </strong>{" "}
+                    JWT tokens stored in httpOnly cookies, inaccessible to
+                    JavaScript (XSS protection)
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <Key className="w-4 h-4 mt-0.5 text-green-500" />
                   <div>
-                    <strong className="text-foreground">Next.js Middleware:</strong> Server-side route protection before page loads
+                    <strong className="text-foreground">
+                      Next.js Middleware:
+                    </strong>{" "}
+                    Server-side route protection before page loads
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <Key className="w-4 h-4 mt-0.5 text-green-500" />
                   <div>
-                    <strong className="text-foreground">Secure Cookies:</strong> SameSite=Lax, Secure flag in production
+                    <strong className="text-foreground">Secure Cookies:</strong>{" "}
+                    SameSite=Lax, Secure flag in production
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <Key className="w-4 h-4 mt-0.5 text-green-500" />
                   <div>
-                    <strong className="text-foreground">Server Actions:</strong> Cookie management via Next.js server actions
+                    <strong className="text-foreground">Server Actions:</strong>{" "}
+                    Cookie management via Next.js server actions
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <Key className="w-4 h-4 mt-0.5 text-green-500" />
                   <div>
-                    <strong className="text-foreground">Automatic Redirects:</strong> Middleware handles auth state changes
+                    <strong className="text-foreground">
+                      Automatic Redirects:
+                    </strong>{" "}
+                    Middleware handles auth state changes
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
                   <Key className="w-4 h-4 mt-0.5 text-green-500" />
                   <div>
-                    <strong className="text-foreground">Password Reset Flow:</strong> OTP-based reset with 15-minute expiration
+                    <strong className="text-foreground">
+                      Password Reset Flow:
+                    </strong>{" "}
+                    OTP-based reset with 15-minute expiration
                   </div>
                 </li>
               </ul>
             </div>
 
             <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-lg p-6">
-              <h3 className="font-semibold mb-2 text-violet-400">🎉 Production Ready</h3>
+              <h3 className="font-semibold mb-2 text-violet-400">
+                🎉 Production Ready
+              </h3>
               <p className="text-sm text-muted-foreground">
-                This authentication system follows security best practices with httpOnly cookies, 
-                Next.js middleware for server-side protection, and proper cookie management.
+                This authentication system follows security best practices with
+                httpOnly cookies, Next.js middleware for server-side protection,
+                and proper cookie management.
               </p>
             </div>
           </div>
