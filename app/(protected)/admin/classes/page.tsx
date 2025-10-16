@@ -9,7 +9,7 @@ export default function AdminClassesPage() {
     <div className="py-4">
       <div className="flex items-center justify-between p-4">
         <h2 className="text-3xl font-semibold text-primary">
-          Organize your dream swimming classes
+          Organize your  classes
         </h2>
         <Button variant="outline" className="mr-4">Add class</Button>
       </div>
