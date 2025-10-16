@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 // --- HELPER COMPONENTS (ICONS) ---
@@ -39,6 +39,7 @@ interface SignInPageProps {
   onGoogleSignIn?: () => void;
   onResetPassword?: () => void;
   onCreateAccount?: () => void;
+  isLoading?: boolean;
 }
 
 // --- SUB-COMPONENTS ---
@@ -59,6 +60,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   onGoogleSignIn,
   onResetPassword,
   onCreateAccount,
+  isLoading = false,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -136,9 +138,11 @@ export const SignInPage: React.FC<SignInPageProps> = ({
 
               <button
                 type="submit"
-                className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                disabled={isLoading}
+                className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Sign In
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {isLoading ? "Signing In..." : "Sign In"}
               </button>
             </form>
 
@@ -151,7 +155,8 @@ export const SignInPage: React.FC<SignInPageProps> = ({
 
             <button
               onClick={onGoogleSignIn}
-              className="animate-element animate-delay-800 w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors"
+              disabled={isLoading}
+              className="animate-element animate-delay-800 w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <GoogleIcon />
               Continue with Google

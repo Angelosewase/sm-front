@@ -23,7 +23,6 @@ const SignInPage = () => {
     try {
       await loginMutation.mutateAsync({ email, password });
       toast.success("Login successful");
-      router.push("/dashboard");
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "Invalid email or password";
@@ -49,6 +48,7 @@ const SignInPage = () => {
         heroImageSrc="https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80"
         onSignIn={handleSignIn}
         onGoogleSignIn={handleGoogleSignIn}
+        isLoading={loginMutation.isPending}
       />
     </div>
   );

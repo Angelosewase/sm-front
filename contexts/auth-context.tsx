@@ -9,6 +9,7 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  role: string;
 }
 
 interface AuthContextType {
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await setUserCookie(response.user);
     
     setUser(response.user);
-    router.push('/dashboard');
+    router.push(`/${response.user.role}`);
     router.refresh(); // Refresh to update middleware
   };
 

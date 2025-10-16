@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
 
@@ -35,6 +36,7 @@ export type Route = {
 export default function DashboardNavigation({ routes }: { routes: Route[] }) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const pathname = usePathname();
   const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
 
   return (
@@ -42,6 +44,8 @@ export default function DashboardNavigation({ routes }: { routes: Route[] }) {
       {routes.map((route) => {
         const isOpen = !isCollapsed && openCollapsible === route.id;
         const hasSubRoutes = !!route.subs?.length;
+
+        const isActive = pathname === route.link;
 
         return (
           <SidebarMenuItem key={route.id}>
@@ -56,16 +60,19 @@ export default function DashboardNavigation({ routes }: { routes: Route[] }) {
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     className={cn(
-                      "flex w-full items-center rounded-lg px-2 transition-colors",
-                      isOpen
+                      "flex w-full items-center rounded-lg px-3  transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : isOpen
                         ? "bg-sidebar-muted text-foreground"
                         : "text-muted-foreground hover:bg-sidebar-muted hover:text-foreground",
                       isCollapsed && "justify-center"
                     )}
+                    size={"sm"}
                   >
                     {route.icon}
                     {!isCollapsed && (
-                      <span className="ml-2 flex-1 text-sm font-medium">
+                      <span className="ml-3 flex-1 text-base font-medium">
                         {route.title}
                       </span>
                     )}
@@ -93,7 +100,12 @@ export default function DashboardNavigation({ routes }: { routes: Route[] }) {
                             <Link
                               href={subRoute.link}
                               prefetch={true}
-                              className="flex items-center rounded-md px-4 py-1.5 text-sm font-medium text-muted-foreground hover:bg-sidebar-muted hover:text-foreground"
+                              className={cn(
+                                "flex items-center rounded-md px-4 py-2 text-base font-medium transition-colors",
+                                pathname === subRoute.link
+                                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                  : "text-muted-foreground hover:bg-sidebar-muted hover:text-foreground"
+                              )}
                             >
                               {subRoute.title}
                             </Link>
@@ -110,13 +122,16 @@ export default function DashboardNavigation({ routes }: { routes: Route[] }) {
                   href={route.link}
                   prefetch={true}
                   className={cn(
-                    "flex items-center rounded-lg px-2 transition-colors text-muted-foreground hover:bg-sidebar-muted hover:text-foreground",
+                    "flex items-center rounded-lg px-3 py-2.5 transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "text-muted-foreground hover:bg-sidebar-muted hover:text-foreground",
                     isCollapsed && "justify-center"
                   )}
                 >
                   {route.icon}
                   {!isCollapsed && (
-                    <span className="ml-2 text-sm font-medium">
+                    <span className="ml-3 text-base font-medium">
                       {route.title}
                     </span>
                   )}

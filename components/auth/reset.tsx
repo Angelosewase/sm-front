@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Eye, EyeOff, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   useRequestPasswordReset,
@@ -231,8 +231,9 @@ export const ResetPasswordPageComponent: React.FC<ResetPasswordPageProps> = ({
       <button
         onClick={handleEmailSubmit}
         disabled={isLoading}
-        className="animate-element animate-delay-400 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        className="animate-element animate-delay-400 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
       >
+        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         {isLoading ? "Sending OTP..." : "Send Reset Code"}
       </button>
     </div>
@@ -286,8 +287,9 @@ export const ResetPasswordPageComponent: React.FC<ResetPasswordPageProps> = ({
       <button
         onClick={handleOtpSubmit}
         disabled={isLoading}
-        className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
       >
+        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         {isLoading ? "Verifying..." : "Verify Code"}
       </button>
     </div>
@@ -371,8 +373,9 @@ export const ResetPasswordPageComponent: React.FC<ResetPasswordPageProps> = ({
       <button
         onClick={handlePasswordSubmit}
         disabled={isLoading}
-        className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        className="animate-element animate-delay-600 w-full rounded-2xl bg-primary py-4 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
       >
+        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         {isLoading ? "Resetting..." : "Reset Password"}
       </button>
     </div>

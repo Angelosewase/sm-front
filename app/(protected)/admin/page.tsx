@@ -1,38 +1,12 @@
 "use client";
-
-import { DashboardSidebar } from "@/components/app-sidebar";
-import { ProtectedRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/contexts/auth-context";
-import { LogOut, User, Shield, Key, Lock } from "lucide-react";
+import { Shield, Key, Lock } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
-    <ProtectedRoute>
-      <DashboardSidebar />
-      <div className="min-h-screen bg-background">
-        <nav className="border-b border-border bg-card">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <h1 className="text-2xl font-bold">Dashboard</h1>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <User className="w-4 h-4" />
-                  <span>{user?.email}</span>
-                </div>
-                <button
-                  onClick={logout}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
+      <div className="">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid gap-6">
             <div className="bg-card border border-border rounded-lg p-6">
@@ -138,6 +112,5 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
-    </ProtectedRoute>
   );
 }

@@ -3,33 +3,49 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
+  const userCookie = request.cookies.get('user')?.value;
   const { pathname } = request.nextUrl;
+  
+  const roles = ['admin', 'student', 'teacher', 'staff', 'parent'];
+  const isProtectedRoute = roles.some((role) => pathname.startsWith(`/${role}`)) || pathname.startsWith('/setup-school-profile');
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard'];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  // Auth routes that should redirect to dashboard if already logged in
   const authRoutes = ['/login', '/reset-password'];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  // Redirect to login if accessing protected route without token
   if (isProtectedRoute && !token) {
     const url = new URL('/login', request.url);
     return NextResponse.redirect(url);
   }
 
-  // Redirect to dashboard if accessing auth routes with valid token
-  if (isAuthRoute && token) {
-    const url = new URL('/dashboard', request.url);
-    return NextResponse.redirect(url);
+  if (isProtectedRoute && token && userCookie) {
+    try {
+      const user = JSON.parse(userCookie);
+      const userRole = user.role;
+      const accessingRole = roles.find((role) => pathname.startsWith(`/${role}`));
+      
+      if (accessingRole && accessingRole !== userRole) {
+          const url = new URL(`/${userRole}`, request.url);
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      const url = new URL('/login', request.url);
+      return NextResponse.redirect(url);
+    }
+  }
+
+  if (isAuthRoute && token && userCookie) {
+    try {
+      const user = JSON.parse(userCookie);
+      const url = new URL(`/${user.role}`, request.url);
+      return NextResponse.redirect(url);
+    } catch {
+      // If parsing fails, let them stay on auth page
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/reset-password'],
+  matcher: ['/admin/:path*', '/student/:path*', '/teacher/:path*', '/staff/:path*', '/parent/:path*', '/setup-school-profile/:path*', '/login', '/reset-password'],
 };

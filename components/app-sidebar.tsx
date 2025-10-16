@@ -11,163 +11,63 @@ import {
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
-  Activity,
-  DollarSign,
   Home,
-  Infinity,
-  LinkIcon,
-  Package2,
-  Percent,
-  PieChart,
-  Settings,
-  ShoppingBag,
-  Sparkles,
-  Store,
-  TrendingUp,
+  BookOpen,
+  GraduationCap,
   Users,
+  UserCog,
+  Settings,
+  UserCircle,
+  School,
+  BarChart3,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import type { Route } from "./nav-main";
 import DashboardNavigation from "@/components/nav-main";
-import { NotificationsPopover } from "@/components/nav-notifications";
+
 import { TeamSwitcher } from "@/components/team-switcher";
+import { useAuth } from "@/contexts/auth-context";
 
-const sampleNotifications = [
-  {
-    id: "1",
-    avatar: "/avatars/01.png",
-    fallback: "OM",
-    text: "New order received.",
-    time: "10m ago",
-  },
-  {
-    id: "2",
-    avatar: "/avatars/02.png",
-    fallback: "JL",
-    text: "Server upgrade completed.",
-    time: "1h ago",
-  },
-  {
-    id: "3",
-    avatar: "/avatars/03.png",
-    fallback: "HH",
-    text: "New user signed up.",
-    time: "2h ago",
-  },
-];
 
-const dashboardRoutes: Route[] = [
+
+const getDashboardRoutes = (role: string): Route[] => [
   {
     id: "home",
     title: "Home",
-    icon: <Home className="size-4" />,
-    link: "#",
+    icon: <Home className="size-10" />,
+    link: `/${role}`,
   },
   {
-    id: "products",
-    title: "Products",
-    icon: <Package2 className="size-4" />,
-    link: "#",
-    subs: [
-      {
-        title: "Catalogue",
-        link: "#",
-        icon: <Package2 className="size-4" />,
-      },
-      {
-        title: "Checkout Links",
-        link: "#",
-        icon: <LinkIcon className="size-4" />,
-      },
-      {
-        title: "Discounts",
-        link: "#",
-        icon: <Percent className="size-4" />,
-      },
-    ],
+    id: "classes",
+    title: "Classes",
+    icon: <BookOpen className="size-10" />,
+    link: `/${role}/classes`,
   },
   {
-    id: "usage-billing",
-    title: "Usage Billing",
-    icon: <PieChart className="size-4" />,
-    link: "#",
-    subs: [
-      {
-        title: "Meters",
-        link: "#",
-        icon: <PieChart className="size-4" />,
-      },
-      {
-        title: "Events",
-        link: "#",
-        icon: <Activity className="size-4" />,
-      },
-    ],
+    id: "teachers",
+    title: "Teachers",
+    icon: <GraduationCap className="size-10" />,
+    link: `/${role}/teachers`,
   },
   {
-    id: "benefits",
-    title: "Benefits",
-    icon: <Sparkles className="size-4" />,
-    link: "#",
+    id: "staff",
+    title: "Staff",
+    icon: <UserCog className="size-10" />,
+    link: `/${role}/staff`,
   },
   {
-    id: "customers",
-    title: "Customers",
-    icon: <Users className="size-4" />,
-    link: "#",
-  },
-  {
-    id: "sales",
-    title: "Sales",
-    icon: <ShoppingBag className="size-4" />,
-    link: "#",
-    subs: [
-      {
-        title: "Orders",
-        link: "#",
-        icon: <ShoppingBag className="size-4" />,
-      },
-      {
-        title: "Subscriptions",
-        link: "#",
-        icon: <Infinity className="size-4" />,
-      },
-    ],
-  },
-  {
-    id: "storefront",
-    title: "Storefront",
-    icon: <Store className="size-4" />,
-    link: "#",
+    id: "students",
+    title: "Students",
+    icon: <Users className="size-10" />,
+    link: `/${role}/students`,
   },
   {
     id: "analytics",
     title: "Analytics",
-    icon: <TrendingUp className="size-4" />,
-    link: "#",
+    icon: <BarChart3 className="size-10" />,
+    link: `/${role}/analytics`,
   },
-  {
-    id: "finance",
-    title: "Finance",
-    icon: <DollarSign className="size-4" />,
-    link: "#",
-    subs: [
-      { title: "Incoming", link: "#" },
-      { title: "Outgoing", link: "#" },
-      { title: "Payout Account", link: "#" },
-    ],
-  },
-  {
-    id: "settings",
-    title: "Settings",
-    icon: <Settings className="size-4" />,
-    link: "#",
-    subs: [
-      { title: "General", link: "#" },
-      { title: "Webhooks", link: "#" },
-      { title: "Custom Fields", link: "#" },
-    ],
-  },
+
 ];
 
 const teams = [
@@ -178,7 +78,10 @@ const teams = [
 
 export function DashboardSidebar() {
   const { state } = useSidebar();
+  const { user } = useAuth();
   const isCollapsed = state === "collapsed";
+  
+  const dashboardRoutes = getDashboardRoutes(user?.role || '404');
 
   return (
     <Sidebar variant="floating" collapsible="icon">
@@ -209,12 +112,11 @@ export function DashboardSidebar() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
-          <NotificationsPopover notifications={sampleNotifications} />
           <SidebarTrigger />
         </motion.div>
       </SidebarHeader>
       <SidebarContent className="gap-4 px-2 py-4">
-        <DashboardNavigation routes={dashboardRoutes} />
+        {user && <DashboardNavigation routes={dashboardRoutes} />}
       </SidebarContent>
       <SidebarFooter className="px-2">
         <TeamSwitcher teams={teams} />
