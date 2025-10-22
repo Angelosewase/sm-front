@@ -83,6 +83,7 @@ export function SchoolProfile({
   onUpdate,
   isLoading = false,
 }: SchoolProfileDialogProps) {
+  const [activeTab, setActiveTab] = useState<"basic" | "location" | "contact">("basic");
   const [editingSection, setEditingSection] = useState<EditSection>(null);
   const [editFormData, setEditFormData] = useState<Partial<SchoolProfile>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -137,6 +138,12 @@ export function SchoolProfile({
     setEditFormData({});
   };
 
+  const tabs = [
+    { id: "basic" as const, label: "Basic Information", icon: Building2 },
+    { id: "location" as const, label: "Location", icon: MapPin },
+    { id: "contact" as const, label: "Contact Information", icon: Phone },
+  ];
+
   return (
     <>
       <div className=" space-y-4 mx-auto">
@@ -144,9 +151,6 @@ export function SchoolProfile({
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary">
-                <Building2 className="h-8 w-8" />
-              </div>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">
                   {school.name}
@@ -167,6 +171,35 @@ export function SchoolProfile({
           )}
         </div>
 
+        {/* Tab Navigation */}
+        <div className="border-b border-border">
+          <div className="flex gap-8">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-1 py-3 text-sm font-medium transition-colors relative ${
+                    activeTab === tab.id
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                  {activeTab === tab.id && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "basic" && (
+          <>
         {/* Quick Stats */}
         {(school.establishedYear || school.currentStudents || school.studentCapacity) && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -270,9 +303,12 @@ export function SchoolProfile({
             )}
           </CardContent>
         </Card>
+          </>
+        )}
 
-        {/* Location Card */}
-        <Card>
+        {activeTab === "location" && (
+          /* Location Card */
+          <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -304,9 +340,11 @@ export function SchoolProfile({
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* Contact Information Card */}
-        <Card>
+        {activeTab === "contact" && (
+          /* Contact Information Card */
+          <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -370,6 +408,7 @@ export function SchoolProfile({
             )}
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Edit Basic Information Dialog */}

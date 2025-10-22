@@ -78,18 +78,10 @@ export default function SetupSchoolProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <div className=" mx-auto space-y-8">
+      <div className=" mx-auto p-4">
+        <div className=" mx-auto space-y-4">
           {/* Page Header */}
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-3">
-                School Profile Setup
-              </h1>
-              <p className="text-muted-foreground">
-                Create and manage your school profile information
-              </p>
-            </div>
             {!schoolProfile && (
               <Button onClick={() => setCreateDialogOpen(true)} size="lg">
                 <Plus className="h-5 w-5" />
