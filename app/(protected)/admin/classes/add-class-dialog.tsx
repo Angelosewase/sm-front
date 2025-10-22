@@ -29,16 +29,13 @@ export function AddClassDialog() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const className = formData.get("className");
-    
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1500)),
-      {
-        pending: `Creating class: ${className}`,
-        success: "Class created successfully!",
-        error: "Failed to create class",
-      }
-    );
-    
+
+    toast.promise(new Promise((resolve) => setTimeout(resolve, 1500)), {
+      pending: `Creating class: ${className}`,
+      success: "Class created successfully!",
+      error: "Failed to create class",
+    });
+
     setTimeout(() => {
       setOpen(false);
     }, 1500);
@@ -70,12 +67,12 @@ export function AddClassDialog() {
                 required
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="gradeLevel">Grade Level</Label>
                 <Select name="gradeLevel" required>
-                  <SelectTrigger id="gradeLevel">
+                  <SelectTrigger id="gradeLevel" className="w-full">
                     <SelectValue placeholder="Select grade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -86,11 +83,11 @@ export function AddClassDialog() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="teacher">Teacher</Label>
                 <Select name="teacher" required>
-                  <SelectTrigger id="teacher">
+                  <SelectTrigger id="teacher" className="w-full">
                     <SelectValue placeholder="Select teacher" />
                   </SelectTrigger>
                   <SelectContent>
@@ -105,9 +102,7 @@ export function AddClassDialog() {
                       Carlos Rodriguez
                     </SelectItem>
                     <SelectItem value="Maria Garcia">Maria Garcia</SelectItem>
-                    <SelectItem value="Alex Thompson">
-                      Alex Thompson
-                    </SelectItem>
+                    <SelectItem value="Alex Thompson">Alex Thompson</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -126,11 +121,11 @@ export function AddClassDialog() {
                   required
                 />
               </div>
-              
+
               <div className="grid gap-2">
                 <Label htmlFor="status">Status</Label>
-                <Select name="status" defaultValue="Active">
-                  <SelectTrigger id="status">
+                <Select name="status" defaultValue="Active" required>
+                  <SelectTrigger id="status" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -153,11 +148,7 @@ export function AddClassDialog() {
 
             <div className="grid gap-2">
               <Label htmlFor="room">Room Number</Label>
-              <Input
-                id="room"
-                name="room"
-                placeholder="e.g., Room 101"
-              />
+              <Input id="room" name="room" placeholder="e.g., Room 101" />
             </div>
 
             <div className="grid gap-2">
@@ -169,7 +160,7 @@ export function AddClassDialog() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button
               type="button"
