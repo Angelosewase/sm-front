@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { ClassDataTable } from "./class-data-table";
-import { ClassStats } from "./class-stats";
-import { AddClassDialog } from "./add-class-dialog";
+import { ClassDataTable } from "../../../../components/admin/classes/class-data-table";
+import { ClassStats } from "../../../../components/admin/classes/class-stats";
+import { AddClassDialog } from "../../../../components/admin/classes/add-class-dialog";
 
 // Sample class data
 const classData = [

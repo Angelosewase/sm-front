@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { StaffDataTable } from "./staff-data-table";
-import { StaffStats } from "./staff-stats";
-import { AddStaffDialog } from "./add-staff-dialog";
+import { StaffDataTable } from "../../../../components/admin/staff/staff-data-table";
+import { StaffStats } from "../../../../components/admin/staff/staff-stats";
+import { AddStaffDialog } from "../../../../components/admin/staff/add-staff-dialog";
 
 // Sample staff data
 const staffData = [
