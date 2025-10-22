@@ -16,7 +16,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       ref={ref}
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+        "bg-card text-card-foreground flex flex-col gap-4 rounded-xl border py-6 shadow-sm",
         className
       )}
       {...props}
@@ -136,7 +136,7 @@ const data = [
 export default function Stats05() {
   return (
     <div className="flex items-center justify-center p-10 w-full">
-      <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 w-full">
+      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
         {data.map((item) => (
           <Card key={item.name} className="p-0 gap-0">
             <CardContent className="p-6">

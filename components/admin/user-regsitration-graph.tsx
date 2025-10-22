@@ -44,8 +44,8 @@ export function UserRegistrationBarChart() {
   const [period, setPeriod] = useState("6m")
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
           <CardTitle>User Registration Trends</CardTitle>
           <CardDescription>
@@ -66,8 +66,8 @@ export function UserRegistrationBarChart() {
         </Select>
       </CardHeader>
 
-      <CardContent>
-        <ChartContainer config={chartConfig}>
+      <CardContent className="flex-1  max-h-[250px]  p-0">
+        <ChartContainer config={chartConfig} className="h-[250px] w-full mb-0 ">
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
@@ -88,7 +88,7 @@ export function UserRegistrationBarChart() {
         </ChartContainer>
       </CardContent>
 
-      <CardFooter className="flex-col items-start gap-2 text-sm">
+      <CardFooter className="flex-col items-start gap-2 text-sm  mt-0 pt-0 ">
         <div className="flex gap-2 leading-none font-medium">
           Trending up by 8.7% this period <TrendingUp className="h-4 w-4" />
         </div>

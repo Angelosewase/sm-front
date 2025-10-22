@@ -6,50 +6,53 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ChartContainer } from "@/components/ui/chart";
 
-// Sample academic performance data over time
-const performanceData = [
-  { date: "Week 1", "Total Enrollment": 245, "Active Classes": 9, "average score": 80, "Pass Rate": 87 },
-  { date: "Week 2", "Total Enrollment": 248, "Active Classes": 9, "average score": 50, "Pass Rate": 88 },
-  { date: "Week 3", "Total Enrollment": 252, "Active Classes": 10, "average score": 60, "Pass Rate": 89 },
-  { date: "Week 4", "Total Enrollment": 255, "Active Classes": 10, "average score": 40, "Pass Rate": 90 },
-  { date: "Week 5", "Total Enrollment": 258, "Active Classes": 10, "average score": 70, "Pass Rate": 91 },
-  { date: "Week 6", "Total Enrollment": 262, "Active Classes": 10, "average score": 60, "Pass Rate": 92 },
-  { date: "Week 7", "Total Enrollment": 265, "Active Classes": 10, "average score": 50, "Pass Rate": 93 },
-  { date: "Week 8", "Total Enrollment": 267, "Active Classes": 10, "average score": 40, "Pass Rate": 94 },
+// Sample admin metrics data over time
+const adminMetricsData = [
+  { date: "Week 1", "Total Students": 1180, Teachers: 56, Classes: 30, "Staff Members": 15 },
+  { date: "Week 2", "Total Students": 1195, Teachers: 57, Classes: 31, "Staff Members": 16 },
+  { date: "Week 3", "Total Students": 1210, Teachers: 57, Classes: 31, "Staff Members": 16 },
+  { date: "Week 4", "Total Students": 1225, Teachers: 58, Classes: 32, "Staff Members": 17 },
+  { date: "Week 5", "Total Students": 1230, Teachers: 58, Classes: 32, "Staff Members": 17 },
+  { date: "Week 6", "Total Students": 1240, Teachers: 58, Classes: 32, "Staff Members": 17 },
+  { date: "Week 7", "Total Students": 1245, Teachers: 58, Classes: 32, "Staff Members": 17 },
 ];
 
-const classStats = [
+const adminStats = [
   {
-    name: "Total Enrollment",
-    value: "267",
-    change: "+22",
-    percentageChange: "+9.0%",
+    name: "Total Students",
+    icon: "🧍‍♂️",
+    value: "1,245",
+    change: "+65",
+    percentageChange: "+5%",
     changeType: "positive",
-    dataKey: "Total Enrollment",
+    dataKey: "Total Students",
   },
   {
-    name: "Active Classes",
-    value: "10",
-    change: "+1",
-    percentageChange: "+11.1%",
-    changeType: "positive",
-    dataKey: "Active Classes",
-  },
-  {
-    name: "average score",
-    value: "40",
-    change: "+0.7",
-    percentageChange: "+21.9%",
+    name: "Teachers",
+    icon: "🎓",
+    value: "58",
+    change: "-1",
+    percentageChange: "-2%",
     changeType: "negative",
-    dataKey: "average score",
+    dataKey: "Teachers",
   },
   {
-    name: "Pass Rate",
-    value: "94%",
-    change: "+7%",
-    percentageChange: "+8.0%",
+    name: "Classes",
+    icon: "🏫",
+    value: "32",
+    change: "+2",
+    percentageChange: "+1%",
     changeType: "positive",
-    dataKey: "Pass Rate",
+    dataKey: "Classes",
+  },
+  {
+    name: "Staff Members",
+    icon: "👨‍🔧",
+    value: "17",
+    change: "+2",
+    percentageChange: "+3%",
+    changeType: "positive",
+    dataKey: "Staff Members",
   },
 ];
 
@@ -60,11 +63,11 @@ const sanitizeName = (name: string) => {
     .toLowerCase();
 };
 
-export function ClassStats() {
+export function AdminStatCards() {
   return (
-    <div className="flex items-center justify-center p-4 w-full">
+    <div className="w-full">
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-        {classStats.map((item) => {
+        {adminStats.map((item) => {
           const sanitizedName = sanitizeName(item.name);
           const gradientId = `gradient-${sanitizedName}`;
 
@@ -77,18 +80,12 @@ export function ClassStats() {
             <Card key={item.name} className="p-0">
               <CardContent className="p-4 pb-0 flex h-32">
                 <div className="w-[60%] h-full flex flex-col justify-evenly">
-                  <dt className="text-sm font-medium text-foreground">
+                  <dt className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <span className="text-lg">{item.icon}</span>
                     {item.name}
                   </dt>
                   <div className="flex items-baseline justify-between">
-                    <dd
-                      className={cn(
-                        item.changeType === "positive"
-                          ? "text-green-600 dark:text-green-500"
-                          : "text-red-600 dark:text-red-500",
-                        "text-lg font-semibold"
-                      )}
-                    >
+                    <dd className="text-2xl font-bold text-foreground">
                       {item.value}
                     </dd>
                   </div>
@@ -103,7 +100,7 @@ export function ClassStats() {
                           : "text-red-600 dark:text-red-500"
                       )}
                     >
-                      ({item.percentageChange})
+                      ({item.percentageChange} MoM)
                     </span>
                   </dd>
                 </div>
@@ -118,7 +115,7 @@ export function ClassStats() {
                       },
                     }}
                   >
-                    <RechartsPrimitive.AreaChart data={performanceData}>
+                    <RechartsPrimitive.AreaChart data={adminMetricsData}>
                       <defs>
                         <linearGradient
                           id={gradientId}

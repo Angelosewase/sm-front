@@ -8,7 +8,7 @@ export default function DashboardPage() {
   return (
       <div className="">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid gap-6">
+          <div className="grid gap-4">
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4">
                 Welcome, {user?.name || user?.email}!

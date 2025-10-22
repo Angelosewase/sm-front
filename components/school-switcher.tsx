@@ -6,7 +6,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -15,10 +14,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { ChevronsUpDown, Plus, Eye } from "lucide-react";
+import { ChevronsUpDown, Plus, Eye, Trash } from "lucide-react";
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CreateSchoolDialog, SchoolFormData } from "@/components/school-profile/create-school-dialog";
+import {
+  CreateSchoolDialog,
+  SchoolFormData,
+} from "@/components/school-profile/create-school-dialog";
 import { toast } from "sonner";
 
 type Team = {
@@ -43,7 +45,7 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
     try {
       // TODO: Replace with actual API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+
       toast.success("School created successfully!");
       setCreateDialogOpen(false);
       // Optionally refresh teams list or navigate
@@ -86,46 +88,33 @@ export function TeamSwitcher({ teams }: { teams: Team[] }) {
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Teams
+              School
             </DropdownMenuLabel>
-            {teams.map((team, index) => (
-              <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
-                className="gap-2 p-2"
-              >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <team.logo className="size-4 shrink-0" />
-                </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
-              </DropdownMenuItem>
-            ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 p-2" onClick={handleViewSchool}>
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Eye className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">View school profile</div>
+              <div className="font-medium text-muted-foreground">
+                View school profile
+              </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2" onClick={() => setCreateDialogOpen(true)}>
+            <DropdownMenuItem
+              className="gap-2 p-2"
+              onClick={() => setCreateDialogOpen(true)}
+            >
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                <Plus className="size-4" />
+                <Trash />
               </div>
-              <div className="font-medium text-muted-foreground">Add school</div>
+              <div className="font-medium text-muted-foreground">
+                delete school
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
 
-      {/* Create School Dialog */}
-      <CreateSchoolDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onSubmit={handleCreateSchool}
-        isLoading={isCreating}
-      />
     </SidebarMenu>
   );
 }

@@ -259,7 +259,7 @@ export function DataTable<T extends BaseEntity>({
     return (
       <Tabs
         defaultValue={defaultTab || tabs[0]?.value}
-        className="w-full flex-col justify-start gap-6"
+        className="w-full flex-col justify-start gap-4"
       >
         <div className="flex items-center justify-between px-4 lg:px-6">
           <TabNavigation tabs={tabs} defaultTab={defaultTab} />
@@ -301,7 +301,7 @@ export function DataTable<T extends BaseEntity>({
 
   // Render without tabs
   return (
-    <div className="w-full flex-col justify-start gap-6">
+    <div className="w-full flex-col justify-start gap-4">
       <div className="flex items-center justify-between px-4 lg:px-6 mb-6">
         <div className="relative">
           <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

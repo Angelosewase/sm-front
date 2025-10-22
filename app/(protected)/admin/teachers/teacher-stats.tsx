@@ -63,7 +63,7 @@ const sanitizeName = (name: string) => {
 export function TeacherStats() {
   return (
     <div className="flex items-center justify-center p-4 w-full">
-      <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 w-full">
+      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
         {teacherStats.map((item) => {
           const sanitizedName = sanitizeName(item.name);
           const gradientId = `gradient-${sanitizedName}`;

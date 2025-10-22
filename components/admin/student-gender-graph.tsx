@@ -40,12 +40,12 @@ export default function StudentGenderChart() {
   }, []);
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="items-center pb-0">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="items-center pb-2">
         <CardTitle>Student Gender Distribution</CardTitle>
         <CardDescription>Current Academic Year</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
+      <CardContent className="flex-1 ">
         <ChartContainer
           config={chartConfig}
           className="mx-auto aspect-square max-h-[300px]"

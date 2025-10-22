@@ -80,8 +80,8 @@ export function StudentPerformanceChart() {
   }, [timeRange])
 
   return (
-    <Card className="@container/card">
-      <CardHeader>
+    <Card className="@container/card h-full flex flex-col">
+      <CardHeader className="pb-2">
         <CardTitle>Student Performance Trend</CardTitle>
         <CardDescription>
           Academic performance (marks in %) over selected period
@@ -112,8 +112,8 @@ export function StudentPerformanceChart() {
         </CardAction>
       </CardHeader>
 
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-        <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+      <CardContent className="px-2 pt-2 sm:px-6 sm:pt-4 flex-1">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[280px] w-full">
           <LineChart data={filteredData}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
