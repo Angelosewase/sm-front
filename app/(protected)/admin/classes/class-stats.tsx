@@ -77,7 +77,7 @@ export function ClassStats() {
             <Card key={item.name} className="p-0">
               <CardContent className="p-4 pb-0 flex h-32">
                 <div className="w-[60%] h-full flex flex-col justify-evenly">
-                  <dt className="text-sm font-medium text-foreground">
+                  <dt className="text-sm font-medium text-foreground capitalize">
                     {item.name}
                   </dt>
                   <div className="flex items-baseline justify-between">
@@ -86,7 +86,7 @@ export function ClassStats() {
                         item.changeType === "positive"
                           ? "text-green-600 dark:text-green-500"
                           : "text-red-600 dark:text-red-500",
-                        "text-lg font-semibold"
+                        "text-2xl font-semibold"
                       )}
                     >
                       {item.value}

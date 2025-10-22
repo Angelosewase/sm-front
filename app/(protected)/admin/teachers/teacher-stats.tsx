@@ -8,14 +8,62 @@ import { ChartContainer } from "@/components/ui/chart";
 
 // Sample teacher performance data over time
 const performanceData = [
-  { date: "Week 1", "Total Teachers": 9, "Active Teachers": 8, "Avg Student Load": 78, "Teacher Satisfaction": 85 },
-  { date: "Week 2", "Total Teachers": 9, "Active Teachers": 9, "Avg Student Load": 80, "Teacher Satisfaction": 86 },
-  { date: "Week 3", "Total Teachers": 10, "Active Teachers": 9, "Avg Student Load": 82, "Teacher Satisfaction": 87 },
-  { date: "Week 4", "Total Teachers": 10, "Active Teachers": 9, "Avg Student Load": 81, "Teacher Satisfaction": 88 },
-  { date: "Week 5", "Total Teachers": 10, "Active Teachers": 10, "Avg Student Load": 80, "Teacher Satisfaction": 89 },
-  { date: "Week 6", "Total Teachers": 10, "Active Teachers": 10, "Avg Student Load": 79, "Teacher Satisfaction": 90 },
-  { date: "Week 7", "Total Teachers": 10, "Active Teachers": 9, "Avg Student Load": 80, "Teacher Satisfaction": 91 },
-  { date: "Week 8", "Total Teachers": 10, "Active Teachers": 9, "Avg Student Load": 80, "Teacher Satisfaction": 92 },
+  {
+    date: "Week 1",
+    "Total Teachers": 9,
+    "Active Teachers": 8,
+    "Avg Student Load": 78,
+    "Teacher Satisfaction": 85,
+  },
+  {
+    date: "Week 2",
+    "Total Teachers": 9,
+    "Active Teachers": 9,
+    "Avg Student Load": 80,
+    "Teacher Satisfaction": 86,
+  },
+  {
+    date: "Week 3",
+    "Total Teachers": 10,
+    "Active Teachers": 9,
+    "Avg Student Load": 82,
+    "Teacher Satisfaction": 87,
+  },
+  {
+    date: "Week 4",
+    "Total Teachers": 10,
+    "Active Teachers": 9,
+    "Avg Student Load": 81,
+    "Teacher Satisfaction": 88,
+  },
+  {
+    date: "Week 5",
+    "Total Teachers": 10,
+    "Active Teachers": 10,
+    "Avg Student Load": 80,
+    "Teacher Satisfaction": 89,
+  },
+  {
+    date: "Week 6",
+    "Total Teachers": 10,
+    "Active Teachers": 10,
+    "Avg Student Load": 79,
+    "Teacher Satisfaction": 90,
+  },
+  {
+    date: "Week 7",
+    "Total Teachers": 10,
+    "Active Teachers": 9,
+    "Avg Student Load": 80,
+    "Teacher Satisfaction": 91,
+  },
+  {
+    date: "Week 8",
+    "Total Teachers": 10,
+    "Active Teachers": 9,
+    "Avg Student Load": 80,
+    "Teacher Satisfaction": 92,
+  },
 ];
 
 const teacherStats = [
@@ -77,7 +125,7 @@ export function TeacherStats() {
             <Card key={item.name} className="p-0">
               <CardContent className="p-4 pb-0 flex h-32">
                 <div className="w-[60%] h-full flex flex-col justify-evenly">
-                  <dt className="text-sm font-medium text-foreground">
+                  <dt className="text-sm font-medium text-foreground capitalize">
                     {item.name}
                   </dt>
                   <div className="flex items-baseline justify-between">
@@ -86,7 +134,7 @@ export function TeacherStats() {
                         item.changeType === "positive"
                           ? "text-green-600 dark:text-green-500"
                           : "text-red-600 dark:text-red-500",
-                        "text-lg font-semibold"
+                        "text-2xl font-semibold"
                       )}
                     >
                       {item.value}

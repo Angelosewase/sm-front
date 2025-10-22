@@ -8,14 +8,62 @@ import { ChartContainer } from "@/components/ui/chart";
 
 // Sample staff metrics data over time
 const staffMetricsData = [
-  { date: "Week 1", "Total Staff": 14, "Full-time": 11, "Part-time": 3, "Attendance Rate": 96 },
-  { date: "Week 2", "Total Staff": 14, "Full-time": 11, "Part-time": 3, "Attendance Rate": 97 },
-  { date: "Week 3", "Total Staff": 15, "Full-time": 12, "Part-time": 3, "Attendance Rate": 95 },
-  { date: "Week 4", "Total Staff": 15, "Full-time": 12, "Part-time": 3, "Attendance Rate": 98 },
-  { date: "Week 5", "Total Staff": 15, "Full-time": 12, "Part-time": 3, "Attendance Rate": 97 },
-  { date: "Week 6", "Total Staff": 15, "Full-time": 12, "Part-time": 3, "Attendance Rate": 99 },
-  { date: "Week 7", "Total Staff": 15, "Full-time": 12, "Part-time": 3, "Attendance Rate": 98 },
-  { date: "Week 8", "Total Staff": 15, "Full-time": 12, "Part-time": 3, "Attendance Rate": 98 },
+  {
+    date: "Week 1",
+    "Total Staff": 14,
+    "Full-time": 11,
+    "Part-time": 3,
+    "Attendance Rate": 96,
+  },
+  {
+    date: "Week 2",
+    "Total Staff": 14,
+    "Full-time": 11,
+    "Part-time": 3,
+    "Attendance Rate": 97,
+  },
+  {
+    date: "Week 3",
+    "Total Staff": 15,
+    "Full-time": 12,
+    "Part-time": 3,
+    "Attendance Rate": 95,
+  },
+  {
+    date: "Week 4",
+    "Total Staff": 15,
+    "Full-time": 12,
+    "Part-time": 3,
+    "Attendance Rate": 98,
+  },
+  {
+    date: "Week 5",
+    "Total Staff": 15,
+    "Full-time": 12,
+    "Part-time": 3,
+    "Attendance Rate": 97,
+  },
+  {
+    date: "Week 6",
+    "Total Staff": 15,
+    "Full-time": 12,
+    "Part-time": 3,
+    "Attendance Rate": 99,
+  },
+  {
+    date: "Week 7",
+    "Total Staff": 15,
+    "Full-time": 12,
+    "Part-time": 3,
+    "Attendance Rate": 98,
+  },
+  {
+    date: "Week 8",
+    "Total Staff": 15,
+    "Full-time": 12,
+    "Part-time": 3,
+    "Attendance Rate": 98,
+  },
 ];
 
 const staffStats = [
@@ -79,7 +127,7 @@ export function StaffStats() {
             <Card key={item.name} className="p-0">
               <CardContent className="p-4 pb-0 flex h-32">
                 <div className="w-[60%] h-full flex flex-col justify-evenly">
-                  <dt className="text-sm font-medium text-foreground">
+                  <dt className="text-sm font-medium text-foreground capitalize">
                     {item.name}
                   </dt>
                   <div className="flex items-baseline justify-between">
@@ -90,7 +138,7 @@ export function StaffStats() {
                           : item.changeType === "neutral"
                           ? "text-muted-foreground"
                           : "text-red-600 dark:text-red-500",
-                        "text-lg font-semibold"
+                        "text-2xl font-semibold"
                       )}
                     >
                       {item.value}

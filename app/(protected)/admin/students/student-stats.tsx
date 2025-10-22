@@ -8,14 +8,54 @@ import { ChartContainer } from "@/components/ui/chart";
 
 // Sample student metrics data over time
 const studentMetricsData = [
-  { date: "Week 1", "Total Students": 18, "Active Students": 17, "Average Score": 72 },
-  { date: "Week 2", "Total Students": 19, "Active Students": 18, "Average Score": 74 },
-  { date: "Week 3", "Total Students": 19, "Active Students": 18, "Average Score": 76 },
-  { date: "Week 4", "Total Students": 20, "Active Students": 19, "Average Score": 78 },
-  { date: "Week 5", "Total Students": 20, "Active Students": 19, "Average Score": 79 },
-  { date: "Week 6", "Total Students": 20, "Active Students": 19, "Average Score": 80 },
-  { date: "Week 7", "Total Students": 20, "Active Students": 19, "Average Score": 79 },
-  { date: "Week 8", "Total Students": 20, "Active Students": 19, "Average Score": 80 },
+  {
+    date: "Week 1",
+    "Total Students": 18,
+    "Active Students": 17,
+    "Average Score": 72,
+  },
+  {
+    date: "Week 2",
+    "Total Students": 19,
+    "Active Students": 18,
+    "Average Score": 74,
+  },
+  {
+    date: "Week 3",
+    "Total Students": 19,
+    "Active Students": 18,
+    "Average Score": 76,
+  },
+  {
+    date: "Week 4",
+    "Total Students": 20,
+    "Active Students": 19,
+    "Average Score": 78,
+  },
+  {
+    date: "Week 5",
+    "Total Students": 20,
+    "Active Students": 19,
+    "Average Score": 79,
+  },
+  {
+    date: "Week 6",
+    "Total Students": 20,
+    "Active Students": 19,
+    "Average Score": 80,
+  },
+  {
+    date: "Week 7",
+    "Total Students": 20,
+    "Active Students": 19,
+    "Average Score": 79,
+  },
+  {
+    date: "Week 8",
+    "Total Students": 20,
+    "Active Students": 19,
+    "Average Score": 80,
+  },
 ];
 
 const studentStats = [
@@ -69,7 +109,7 @@ export function StudentStats() {
             <Card key={item.name} className="p-0">
               <CardContent className="p-4 pb-0 flex h-32">
                 <div className="w-[60%] h-full flex flex-col justify-evenly">
-                  <dt className="text-sm font-medium text-foreground">
+                  <dt className="text-sm font-medium text-foreground capitalize">
                     {item.name}
                   </dt>
                   <div className="flex items-baseline justify-between">
@@ -78,7 +118,7 @@ export function StudentStats() {
                         item.changeType === "positive"
                           ? "text-green-600 dark:text-green-500"
                           : "text-red-600 dark:text-red-500",
-                        "text-lg font-semibold"
+                        "text-2xl font-semibold"
                       )}
                     >
                       {item.value}
