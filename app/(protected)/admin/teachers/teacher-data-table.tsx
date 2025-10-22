@@ -32,6 +32,16 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -428,7 +438,7 @@ function TeacherDetailViewer({
 // Assigned Classes Section Component
 function AssignedClassesSection() {
   const [assignedClasses, setAssignedClasses] = React.useState(sampleAssignedClasses);
-  const [isAdding, setIsAdding] = React.useState(false);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [selectedClass, setSelectedClass] = React.useState("");
   const [selectedRole, setSelectedRole] = React.useState("Subject Teacher");
 
@@ -447,7 +457,7 @@ function AssignedClassesSection() {
 
     setAssignedClasses([...assignedClasses, newClass]);
     setSelectedClass("");
-    setIsAdding(false);
+    setIsDialogOpen(false);
     
     toast.success(`Assigned to ${classToAdd.name} as ${selectedRole}`);
   };
@@ -464,64 +474,67 @@ function AssignedClassesSection() {
           <IconSchool className="h-4 w-4" />
           <h3 className="font-semibold">Assigned Classes</h3>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => setIsAdding(!isAdding)}
-        >
-          <IconPlus className="h-4 w-4 mr-1" />
-          Assign Class
-        </Button>
-      </div>
-
-      {isAdding && (
-        <div className="flex flex-col gap-3 p-3 border rounded-lg bg-muted/30">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="class-select" className="text-xs">Select Class</Label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger id="class-select" className="w-full">
-                  <SelectValue placeholder="Choose a class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableClasses.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id.toString()}>
-                      {cls.name} ({cls.grade})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="role-select" className="text-xs">Role</Label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger id="role-select" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Class Teacher">Class Teacher</SelectItem>
-                  <SelectItem value="Subject Teacher">Subject Teacher</SelectItem>
-                  <SelectItem value="Assistant Teacher">Assistant Teacher</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" size="sm" onClick={handleAddClass}>
-              Add Assignment
-            </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => setIsAdding(false)}
             >
-              Cancel
+              <IconPlus className="h-4 w-4 mr-1" />
+              Assign Class
             </Button>
-          </div>
-        </div>
-      )}
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Class</DialogTitle>
+              <DialogDescription>
+                Assign a class to this teacher and specify their role
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="class-select">Select Class</Label>
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger id="class-select" className="w-full">
+                    <SelectValue placeholder="Choose a class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableClasses.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id.toString()}>
+                        {cls.name} ({cls.grade})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="role-select">Role</Label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger id="role-select" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Class Teacher">Class Teacher</SelectItem>
+                    <SelectItem value="Subject Teacher">Subject Teacher</SelectItem>
+                    <SelectItem value="Assistant Teacher">Assistant Teacher</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="button" onClick={handleAddClass}>
+                Add Assignment
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <div className="flex flex-col gap-2">
         {assignedClasses.length === 0 ? (
@@ -562,7 +575,7 @@ function AssignedClassesSection() {
 // Assigned Subjects Section Component
 function AssignedSubjectsSection() {
   const [assignedSubjects, setAssignedSubjects] = React.useState(sampleAssignedSubjects);
-  const [isAdding, setIsAdding] = React.useState(false);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [selectedSubject, setSelectedSubject] = React.useState("");
   const [selectedLevel, setSelectedLevel] = React.useState("Intermediate");
 
@@ -580,7 +593,7 @@ function AssignedSubjectsSection() {
 
     setAssignedSubjects([...assignedSubjects, newSubject]);
     setSelectedSubject("");
-    setIsAdding(false);
+    setIsDialogOpen(false);
     
     toast.success(`Assigned ${subjectToAdd.name} at ${selectedLevel} level`);
   };
@@ -597,65 +610,68 @@ function AssignedSubjectsSection() {
           <IconBook className="h-4 w-4" />
           <h3 className="font-semibold">Assigned Subjects</h3>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => setIsAdding(!isAdding)}
-        >
-          <IconPlus className="h-4 w-4 mr-1" />
-          Assign Subject
-        </Button>
-      </div>
-
-      {isAdding && (
-        <div className="flex flex-col gap-3 p-3 border rounded-lg bg-muted/30">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="subject-select" className="text-xs">Select Subject</Label>
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger id="subject-select" className="w-full">
-                  <SelectValue placeholder="Choose a subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSubjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id.toString()}>
-                      {subject.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="level-select" className="text-xs">Level</Label>
-              <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-                <SelectTrigger id="level-select" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Basic">Basic</SelectItem>
-                  <SelectItem value="Intermediate">Intermediate</SelectItem>
-                  <SelectItem value="Advanced">Advanced</SelectItem>
-                  <SelectItem value="Expert">Expert</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="button" size="sm" onClick={handleAddSubject}>
-              Add Subject
-            </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
             <Button
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => setIsAdding(false)}
             >
-              Cancel
+              <IconPlus className="h-4 w-4 mr-1" />
+              Assign Subject
             </Button>
-          </div>
-        </div>
-      )}
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Subject</DialogTitle>
+              <DialogDescription>
+                Assign a subject to this teacher and specify the level
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="subject-select">Select Subject</Label>
+                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                  <SelectTrigger id="subject-select" className="w-full">
+                    <SelectValue placeholder="Choose a subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSubjects.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id.toString()}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="level-select">Level</Label>
+                <Select value={selectedLevel} onValueChange={setSelectedLevel}>
+                  <SelectTrigger id="level-select" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Basic">Basic</SelectItem>
+                    <SelectItem value="Intermediate">Intermediate</SelectItem>
+                    <SelectItem value="Advanced">Advanced</SelectItem>
+                    <SelectItem value="Expert">Expert</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="button" onClick={handleAddSubject}>
+                Add Subject
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <div className="flex flex-col gap-2">
         {assignedSubjects.length === 0 ? (

@@ -112,7 +112,7 @@ const classData = [
 export default function AdminClassesPage() {
   return (
     <div className="py-4">
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between px-4">
         <h2 className="text-3xl font-semibold text-primary">Manage Classes</h2>
         <AddClassDialog />
       </div>
