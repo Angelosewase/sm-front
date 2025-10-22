@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from "@/contexts/auth-context";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,8 +8,6 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isLoading } = useAuth();
-
-  // Middleware handles the redirect, we just show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
