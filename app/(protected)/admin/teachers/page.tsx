@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { TeacherDataTable } from "./teacher-data-table";
-import { TeacherStats } from "./teacher-stats";
-import { AddTeacherDialog } from "./add-teacher-dialog";
+import { TeacherDataTable } from "../../../../components/admin/teachers/teacher-data-table";
+import { TeacherStats } from "../../../../components/admin/teachers/teacher-stats";
+import { AddTeacherDialog } from "../../../../components/admin/teachers/add-teacher-dialog";
 
 // Sample teacher data
 const teacherData = [
