@@ -2,142 +2,69 @@
 
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ChartContainer } from "../ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 
-const data = [
-  {
-    date: "Nov 24, 2023",
-    "Alpha Corp": 142.87,
-    "Beta Solutions": 65.32,
-    "Gamma Industries": 83.25,
-  },
-  {
-    date: "Nov 25, 2023",
-    "Alpha Corp": 151.43,
-    "Beta Solutions": 59.78,
-    "Gamma Industries": 79.64,
-  },
-  {
-    date: "Nov 26, 2023",
-    "Alpha Corp": 157.28,
-    "Beta Solutions": 64.21,
-    "Gamma Industries": 76.19,
-  },
-  {
-    date: "Nov 27, 2023",
-    "Alpha Corp": 162.94,
-    "Beta Solutions": 57.46,
-    "Gamma Industries": 72.84,
-  },
-  {
-    date: "Nov 28, 2023",
-    "Alpha Corp": 148.37,
-    "Beta Solutions": 49.82,
-    "Gamma Industries": 81.56,
-  },
-  {
-    date: "Nov 29, 2023",
-    "Alpha Corp": 139.56,
-    "Beta Solutions": 55.63,
-    "Gamma Industries": 92.38,
-  },
-  {
-    date: "Nov 30, 2023",
-    "Alpha Corp": 145.83,
-    "Beta Solutions": 61.27,
-    "Gamma Industries": 88.75,
-  },
-  {
-    date: "Dec 01, 2023",
-    "Alpha Corp": 138.29,
-    "Beta Solutions": 68.94,
-    "Gamma Industries": 93.42,
-  },
-  {
-    date: "Dec 02, 2023",
-    "Alpha Corp": 129.64,
-    "Beta Solutions": 74.56,
-    "Gamma Industries": 97.18,
-  },
-  {
-    date: "Dec 03, 2023",
-    "Alpha Corp": 119.82,
-    "Beta Solutions": 71.38,
-    "Gamma Industries": 89.43,
-  },
-  {
-    date: "Dec 04, 2023",
-    "Alpha Corp": 128.54,
-    "Beta Solutions": 63.95,
-    "Gamma Industries": 92.76,
-  },
-  {
-    date: "Dec 05, 2023",
-    "Alpha Corp": 137.21,
-    "Beta Solutions": 58.47,
-    "Gamma Industries": 84.29,
-  },
-  {
-    date: "Dec 06, 2023",
-    "Alpha Corp": 134.68,
-    "Beta Solutions": 69.12,
-    "Gamma Industries": 79.38,
-  },
-  {
-    date: "Dec 07, 2023",
-    "Alpha Corp": 152.73,
-    "Beta Solutions": 73.89,
-    "Gamma Industries": 81.42,
-  },
-  {
-    date: "Dec 08, 2023",
-    "Alpha Corp": 168.59,
-    "Beta Solutions": 78.54,
-    "Gamma Industries": 75.68,
-  },
+// Sample academic performance data over time
+const performanceData = [
+  { date: "Week 1", "Total Enrollment": 245, "Active Classes": 9, "average score": 80, "Pass Rate": 87 },
+  { date: "Week 2", "Total Enrollment": 248, "Active Classes": 9, "average score": 50, "Pass Rate": 88 },
+  { date: "Week 3", "Total Enrollment": 252, "Active Classes": 10, "average score": 60, "Pass Rate": 89 },
+  { date: "Week 4", "Total Enrollment": 255, "Active Classes": 10, "average score": 40, "Pass Rate": 90 },
+  { date: "Week 5", "Total Enrollment": 258, "Active Classes": 10, "average score": 70, "Pass Rate": 91 },
+  { date: "Week 6", "Total Enrollment": 262, "Active Classes": 10, "average score": 60, "Pass Rate": 92 },
+  { date: "Week 7", "Total Enrollment": 265, "Active Classes": 10, "average score": 50, "Pass Rate": 93 },
+  { date: "Week 8", "Total Enrollment": 267, "Active Classes": 10, "average score": 40, "Pass Rate": 94 },
 ];
 
-const summary = [
+const classStats = [
   {
-    name: "Alpha Corp",
-    tickerSymbol: "ACP",
-    value: "$168.59",
-    change: "+15.86",
-    percentageChange: "+10.4%",
+    name: "Total Enrollment",
+    value: "267",
+    change: "+22",
+    percentageChange: "+9.0%",
     changeType: "positive",
+    dataKey: "Total Enrollment",
   },
   {
-    name: "Beta Solutions",
-    tickerSymbol: "BTS",
-    value: "$78.54",
-    change: "+4.65",
-    percentageChange: "+6.3%",
+    name: "Active Classes",
+    value: "10",
+    change: "+1",
+    percentageChange: "+11.1%",
     changeType: "positive",
+    dataKey: "Active Classes",
   },
   {
-    name: "Gamma Industries",
-    tickerSymbol: "GMI",
-    value: "$75.68",
-    change: "-5.74",
-    percentageChange: "-7.1%",
+    name: "average score",
+    value: "40",
+    change: "+0.7",
+    percentageChange: "+21.9%",
     changeType: "negative",
+    dataKey: "average score",
+  },
+  {
+    name: "Pass Rate",
+    value: "94%",
+    change: "+7%",
+    percentageChange: "+8.0%",
+    changeType: "positive",
+    dataKey: "Pass Rate",
   },
 ];
 
 const sanitizeName = (name: string) => {
   return name
-    .replace(/\\s+/g, "-")
+    .replace(/\s+/g, "-")
     .replace(/[^a-zA-Z0-9-]/g, "_")
     .toLowerCase();
 };
 
-export default function Stats10() {
+export function ClassStats() {
   return (
-    <div className="flex items-center justify-center  p-4 w-full">
+    <div className="flex items-center justify-center p-4 w-full">
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-        {summary.map((item) => {
+        {classStats.map((item) => {
           const sanitizedName = sanitizeName(item.name);
           const gradientId = `gradient-${sanitizedName}`;
 
@@ -148,13 +75,10 @@ export default function Stats10() {
 
           return (
             <Card key={item.name} className="p-0">
-              <CardContent className="p-4 pb-0 flex h-32  ">
-                <div className="w-[60%] h-full  flex flex-col justify-evenly">
-                  <dt className="text-sm font-medium text-foreground">
-                    {item.name}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      ({item.tickerSymbol})
-                    </span>
+              <CardContent className="p-4 pb-0 flex h-32">
+                <div className="w-[60%] h-full flex flex-col justify-evenly">
+                  <dt className="text-sm font-medium text-foreground capitalize">
+                    {item.name}
                   </dt>
                   <div className="flex items-baseline justify-between">
                     <dd
@@ -162,7 +86,7 @@ export default function Stats10() {
                         item.changeType === "positive"
                           ? "text-green-600 dark:text-green-500"
                           : "text-red-600 dark:text-red-500",
-                        "text-lg font-semibold"
+                        "text-2xl font-semibold"
                       )}
                     >
                       {item.value}
@@ -184,17 +108,17 @@ export default function Stats10() {
                   </dd>
                 </div>
 
-                <div className=" overflow-hidden flex-1  h-full">
+                <div className="overflow-hidden flex-1 h-full">
                   <ChartContainer
                     className="w-full h-full"
                     config={{
-                      [item.name]: {
+                      [item.dataKey]: {
                         label: item.name,
                         color: color,
                       },
                     }}
                   >
-                    <RechartsPrimitive.AreaChart data={data}>
+                    <RechartsPrimitive.AreaChart data={performanceData}>
                       <defs>
                         <linearGradient
                           id={gradientId}
@@ -217,7 +141,7 @@ export default function Stats10() {
                       </defs>
                       <RechartsPrimitive.XAxis dataKey="date" hide={true} />
                       <RechartsPrimitive.Area
-                        dataKey={item.name}
+                        dataKey={item.dataKey}
                         stroke={color}
                         fill={`url(#${gradientId})`}
                         fillOpacity={0.4}

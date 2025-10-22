@@ -1,116 +1,45 @@
-"use client";
-import { useAuth } from "@/contexts/auth-context";
-import { Shield, Key, Lock } from "lucide-react";
+import React from "react";
+import { AdminStatCards } from "@/components/admin/admin-stat-cards";
+import { UserRegistrationBarChart } from "@/components/admin/user-regsitration-graph";
+import StudentGenderChart from "@/components/admin/student-gender-graph";
+import { StudentPerformanceChart } from "@/components/admin/student-performance";
+import { RecentActivity } from "@/components/admin/recent-activity";
 
-export default function DashboardPage() {
-  const { user } = useAuth();
-
+export default function AdminHomePage() {
   return (
-      <div className="">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid gap-6">
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Welcome, {user?.name || user?.email}!
-              </h2>
-              <p className="text-muted-foreground">
-                This is a protected route secured by Next.js middleware and
-                httpOnly cookies.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="bg-card border border-border rounded-lg p-6">
-                <h3 className="font-semibold mb-2">User ID</h3>
-                <p className="text-sm text-muted-foreground break-all">
-                  {user?.id}
-                </p>
-              </div>
-              <div className="bg-card border border-border rounded-lg p-6">
-                <h3 className="font-semibold mb-2">Email</h3>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-              </div>
-              <div className="bg-card border border-border rounded-lg p-6">
-                <h3 className="font-semibold mb-2">Status</h3>
-                <p className="text-sm text-green-500 flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  Authenticated
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Lock className="w-5 h-5" />
-                Security Features (Production-Ready)
-              </h3>
-              <ul className="space-y-3 text-sm text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <Key className="w-4 h-4 mt-0.5 text-green-500" />
-                  <div>
-                    <strong className="text-foreground">
-                      HttpOnly Cookies:
-                    </strong>{" "}
-                    JWT tokens stored in httpOnly cookies, inaccessible to
-                    JavaScript (XSS protection)
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Key className="w-4 h-4 mt-0.5 text-green-500" />
-                  <div>
-                    <strong className="text-foreground">
-                      Next.js Middleware:
-                    </strong>{" "}
-                    Server-side route protection before page loads
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Key className="w-4 h-4 mt-0.5 text-green-500" />
-                  <div>
-                    <strong className="text-foreground">Secure Cookies:</strong>{" "}
-                    SameSite=Lax, Secure flag in production
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Key className="w-4 h-4 mt-0.5 text-green-500" />
-                  <div>
-                    <strong className="text-foreground">Server Actions:</strong>{" "}
-                    Cookie management via Next.js server actions
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Key className="w-4 h-4 mt-0.5 text-green-500" />
-                  <div>
-                    <strong className="text-foreground">
-                      Automatic Redirects:
-                    </strong>{" "}
-                    Middleware handles auth state changes
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Key className="w-4 h-4 mt-0.5 text-green-500" />
-                  <div>
-                    <strong className="text-foreground">
-                      Password Reset Flow:
-                    </strong>{" "}
-                    OTP-based reset with 15-minute expiration
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-lg p-6">
-              <h3 className="font-semibold mb-2 text-violet-400">
-                🎉 Production Ready
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                This authentication system follows security best practices with
-                httpOnly cookies, Next.js middleware for server-side protection,
-                and proper cookie management.
-              </p>
-            </div>
-          </div>
-        </main>
+    <div className=" mx-auto p-4 space-y-4">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Overview of your school management system
+        </p>
       </div>
+
+      {/* Top Section - Stat Cards */}
+      <section>
+        <AdminStatCards />
+      </section>
+
+      {/* Registration & Gender Section */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 h-full max-h-[500px]">
+          <UserRegistrationBarChart />
+        </div>
+        <div className="lg:col-span-1 h-full max-h-[500px]">
+          <StudentGenderChart />
+        </div>
+      </section>
+
+      {/* Performance & Recent Activity Section */}
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-3 h-full max-h-[500px]">
+          <StudentPerformanceChart />
+        </div>
+        <div className="lg:col-span-2 h-full max-h-[500px]">
+          <RecentActivity />
+        </div>
+      </section>
+    </div>
   );
 }
