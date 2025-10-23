@@ -21,6 +21,7 @@ import {
   School,
   BarChart3,
   BookOpenCheck,
+  FileCog,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import type { Route } from "./nav-main";
@@ -95,6 +96,18 @@ const getHeaderTeacherRoutes = (): Route[] => [
     title: "Reports",
     icon: <BookOpenCheck className="size-10" />,
     link: "/head-teacher/reports",
+  },
+  {
+    id: "subjects",
+    title: "Subjects",
+    icon: <BookOpen className="size-10" />,
+    link: "/head-teacher/subjects",
+  },
+  {
+    id: "academic-settings",
+    title: "Academic Setup",
+    icon: <FileCog className="size-10" />,
+    link: "/head-teacher/academic-settings",
   },
 ];
 
