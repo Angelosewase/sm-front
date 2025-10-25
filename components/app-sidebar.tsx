@@ -111,12 +111,29 @@ const getHeaderTeacherRoutes = (): Route[] => [
   },
 ];
 
+const getTeacherRoutes = (): Route[] => [
+  {
+    id: "classes",
+    title: "My Classes",
+    icon: <BookOpen className="size-10" />,
+    link: `/teacher/classes`,
+  },
+  {
+    id: "students",
+    title: "My Students",
+    icon: <Users className="size-10" />,
+    link: `/teacher/students`,
+  },
+];
+
 const getDashboardRoutes = (role: string): Route[] => {
   switch (role) {
     case "admin":
       return [...getCommonRoutes(role), ...getAdminRoutes()];
     case "head-teacher":
       return [...getCommonRoutes(role), ...getHeaderTeacherRoutes()];
+    case "teacher":
+      return [...getCommonRoutes(role), ...getTeacherRoutes()];
     default:
       return [];
   }
