@@ -35,118 +35,6 @@ const mockReportData = {
   description:
     "Emma has shown excellent progress in mathematics this quarter. She consistently participates in class discussions and demonstrates strong problem-solving skills. Her test scores have improved significantly, and she shows great potential in advanced topics.",
 
-  // Performance data organized by subjects
-  subjects: [
-    {
-      name: "Mathematics",
-      overallScore: 88,
-      assessments: [
-        {
-          type: "Test",
-          name: "Algebra Fundamentals",
-          score: 92,
-          maxScore: 100,
-          date: "2024-09-15",
-        },
-        {
-          type: "CAT",
-          name: "Geometry Basics",
-          score: 85,
-          maxScore: 100,
-          date: "2024-09-28",
-        },
-        {
-          type: "Exam",
-          name: "Mid-term Mathematics",
-          score: 87,
-          maxScore: 100,
-          date: "2024-10-10",
-        },
-      ],
-    },
-    {
-      name: "English",
-      overallScore: 82,
-      assessments: [
-        {
-          type: "Test",
-          name: "Grammar & Vocabulary",
-          score: 78,
-          maxScore: 100,
-          date: "2024-09-20",
-        },
-        {
-          type: "CAT",
-          name: "Essay Writing",
-          score: 85,
-          maxScore: 100,
-          date: "2024-10-01",
-        },
-        {
-          type: "Exam",
-          name: "Literature Analysis",
-          score: 83,
-          maxScore: 100,
-          date: "2024-10-12",
-        },
-      ],
-    },
-    {
-      name: "Science",
-      overallScore: 90,
-      assessments: [
-        {
-          type: "Test",
-          name: "Physics Principles",
-          score: 88,
-          maxScore: 100,
-          date: "2024-09-18",
-        },
-        {
-          type: "CAT",
-          name: "Chemistry Lab",
-          score: 94,
-          maxScore: 100,
-          date: "2024-09-30",
-        },
-        {
-          type: "Exam",
-          name: "Biology Systems",
-          score: 89,
-          maxScore: 100,
-          date: "2024-10-08",
-        },
-      ],
-    },
-    {
-      name: "History",
-      overallScore: 75,
-      assessments: [
-        {
-          type: "Test",
-          name: "World War I",
-          score: 72,
-          maxScore: 100,
-          date: "2024-09-22",
-        },
-        {
-          type: "CAT",
-          name: "Ancient Civilizations",
-          score: 78,
-          maxScore: 100,
-          date: "2024-10-03",
-        },
-        {
-          type: "Exam",
-          name: "Modern History",
-          score: 75,
-          maxScore: 100,
-          date: "2024-10-14",
-        },
-      ],
-    },
-  ],
-
   attendance: 95,
   behavior: "Excellent",
   term: "Term 2, 2024",
@@ -195,7 +83,7 @@ export default function ReportDetailPage() {
   return (
     <div className="py-4">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 lg:px-6 mb-6">
+      <div className="flex items-center justify-between px-4 lg:px-4 mb-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <IconArrowLeft className="h-4 w-4 mr-2" />
