@@ -60,6 +60,7 @@ export function DataTable<T extends BaseEntity>({
   addButtonLabel,
   columnVisibilityLabel,
   customToolbarActions,
+  onSelectionChange,
 }: DataTableProps<T>) {
   // Destructure config with defaults
   const {
@@ -103,6 +104,8 @@ export function DataTable<T extends BaseEntity>({
     }
   }, [data, onDataChange]);
 
+ 
+
   // Initialize table
   const table = useReactTable({
     data,
@@ -132,6 +135,13 @@ export function DataTable<T extends BaseEntity>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
+
+  useEffect(() => {
+    if (onSelectionChange) {
+      const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original);
+      onSelectionChange(selectedRows);
+    }
+  }, [rowSelection, onSelectionChange]);
 
   // Handle drag end event
   function handleDragEnd(event: DragEndEvent) {

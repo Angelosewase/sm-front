@@ -20,6 +20,8 @@ import {
   UserCircle,
   School,
   BarChart3,
+  BookOpenCheck,
+  FileCog,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import type { Route } from "./nav-main";
@@ -28,9 +30,7 @@ import DashboardNavigation from "@/components/nav-main";
 import { TeamSwitcher } from "@/components/school-switcher";
 import { useAuth } from "@/contexts/auth-context";
 
-
-
-const getDashboardRoutes = (role: string): Route[] => [
+const getCommonRoutes = (role: string): Route[] => [
   {
     id: "home",
     title: "Home",
@@ -38,37 +38,106 @@ const getDashboardRoutes = (role: string): Route[] => [
     link: `/${role}`,
   },
   {
-    id: "classes",
-    title: "Classes",
-    icon: <BookOpen className="size-10" />,
-    link: `/${role}/classes`,
-  },
-  {
-    id: "teachers",
-    title: "Teachers",
-    icon: <GraduationCap className="size-10" />,
-    link: `/${role}/teachers`,
-  },
-  {
-    id: "staff",
-    title: "Staff",
-    icon: <UserCog className="size-10" />,
-    link: `/${role}/staff`,
-  },
-  {
-    id: "students",
-    title: "Students",
-    icon: <Users className="size-10" />,
-    link: `/${role}/students`,
-  },
-  {
     id: "analytics",
     title: "Analytics",
     icon: <BarChart3 className="size-10" />,
     link: `/${role}/analytics`,
   },
-
 ];
+
+const getAdminRoutes = (): Route[] => [
+  {
+    id: "classes",
+    title: "Classes",
+    icon: <BookOpen className="size-10" />,
+    link: `/admin/classes`,
+  },
+  {
+    id: "teachers",
+    title: "Teachers",
+    icon: <GraduationCap className="size-10" />,
+    link: `/admin/teachers`,
+  },
+  {
+    id: "students",
+    title: "Students",
+    icon: <Users className="size-10" />,
+    link: `/admin/students`,
+  },
+  {
+    id: "staff",
+    title: "Staff",
+    icon: <UserCog className="size-10" />,
+    link: `/admin/staff`,
+  },
+];
+
+const getHeaderTeacherRoutes = (): Route[] => [
+  {
+    id: "classes",
+    title: "Classes",
+    icon: <BookOpen className="size-10" />,
+    link: `/head-teacher/classes`,
+  },
+  {
+    id: "teachers",
+    title: "Teachers",
+    icon: <GraduationCap className="size-10" />,
+    link: `/head-teacher/teachers`,
+  },
+  {
+    id: "students",
+    title: "Students",
+    icon: <Users className="size-10" />,
+    link: `/head-teacher/students`,
+  },
+  {
+    id: "reports",
+    title: "Reports",
+    icon: <BookOpenCheck className="size-10" />,
+    link: "/head-teacher/reports",
+  },
+  {
+    id: "subjects",
+    title: "Subjects",
+    icon: <BookOpen className="size-10" />,
+    link: "/head-teacher/subjects",
+  },
+  {
+    id: "academic-settings",
+    title: "Academic Setup",
+    icon: <FileCog className="size-10" />,
+    link: "/head-teacher/academic-settings",
+  },
+];
+
+const getTeacherRoutes = (): Route[] => [
+  {
+    id: "classes",
+    title: "My Classes",
+    icon: <BookOpen className="size-10" />,
+    link: `/teacher/classes`,
+  },
+  {
+    id: "students",
+    title: "My Students",
+    icon: <Users className="size-10" />,
+    link: `/teacher/students`,
+  },
+];
+
+const getDashboardRoutes = (role: string): Route[] => {
+  switch (role) {
+    case "admin":
+      return [...getCommonRoutes(role), ...getAdminRoutes()];
+    case "head-teacher":
+      return [...getCommonRoutes(role), ...getHeaderTeacherRoutes()];
+    case "teacher":
+      return [...getCommonRoutes(role), ...getTeacherRoutes()];
+    default:
+      return [];
+  }
+};
 
 const teams = [
   { id: "1", name: "Alpha Inc.", logo: Logo, plan: "Free" },
@@ -80,8 +149,8 @@ export function DashboardSidebar() {
   const { state } = useSidebar();
   const { user } = useAuth();
   const isCollapsed = state === "collapsed";
-  
-  const dashboardRoutes = getDashboardRoutes(user?.role || '404');
+
+  const dashboardRoutes = getDashboardRoutes(user?.role || "404");
 
   return (
     <Sidebar variant="floating" collapsible="icon">
