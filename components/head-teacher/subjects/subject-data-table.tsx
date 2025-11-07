@@ -44,7 +44,8 @@ import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Textarea } from "@/components/ui/textarea";
 import { AssignSubjectDialog } from "./assign-subject-dialog";
 import type { DataTableConfig } from "@/components/datatable";
-import { useDeleteSubject, useToggleSubjectStatus } from "@/features/subjects.api";
+import { useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject } from "@/features/subjects.api";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const subjectSchema = z.object({
   id: z.number(),
@@ -61,7 +62,13 @@ export const subjectSchema = z.object({
   level: z.string(),
 });
 
-const SubjectActionsColumn = (toggleStatus: (id: string, currentStatus: string) => void, handleDelete: (id: string) => void): ColumnDef<z.infer<typeof subjectSchema>> => {
+const SubjectActionsColumn = (
+  toggleStatus: (id: string, currentStatus: string) => void,
+  handleDelete: (id: string) => void,
+  onAssignClass: (item: z.infer<typeof subjectSchema>) => void,
+  onAssignTeacher: (item: z.infer<typeof subjectSchema>) => void,
+  onDuplicate: (item: z.infer<typeof subjectSchema>) => void,
+): ColumnDef<z.infer<typeof subjectSchema>> => {
   const handleToggleStatus = (item: z.infer<typeof subjectSchema>) => {
     const id = String(item.id);
     const next = item.status.toLowerCase() === "active" ? "inactive" : "active";
@@ -69,15 +76,9 @@ const SubjectActionsColumn = (toggleStatus: (id: string, currentStatus: string) 
   };
 
   return createActionsColumn<z.infer<typeof subjectSchema>>([
-    { label: "Edit", onClick: () => { } },
-    { label: "View Details", onClick: () => { } },
-    {
-      label: "Assign to Class",
-      onClick: () => {
-        // Handled by the detail drawer trigger in the SubjectDetailViewer
-      },
-    },
-    { label: "Duplicate", onClick: () => { } },
+    { label: "Assign to Class", onClick: onAssignClass },
+    { label: "Assign to Teacher", onClick: onAssignTeacher },
+    { label: "Duplicate", onClick: onDuplicate },
     {
       label: (item) => (item.status === "Active" ? "Deactivate" : "Activate"),
       onClick: handleToggleStatus,
@@ -91,113 +92,119 @@ const SubjectActionsColumn = (toggleStatus: (id: string, currentStatus: string) 
   ]);
 };
 
-const columns = (toggleStatus: (id: string, currentStatus: string) => void, handleDelete: (id: string) => void): ColumnDef<z.infer<typeof subjectSchema>>[] => [
-  createDragColumn<z.infer<typeof subjectSchema>>(),
-  createSelectColumn<z.infer<typeof subjectSchema>>(),
-  {
-    accessorKey: "subjectName",
-    header: "Subject Name",
-    cell: ({ row }) => {
-      return <SubjectDetailViewer item={row.original} />;
+const columns = (
+  toggleStatus: (id: string, currentStatus: string) => void,
+  handleDelete: (id: string) => void,
+  onAssignClass: (item: z.infer<typeof subjectSchema>) => void,
+  onAssignTeacher: (item: z.infer<typeof subjectSchema>) => void,
+  onDuplicate: (item: z.infer<typeof subjectSchema>) => void,
+): ColumnDef<z.infer<typeof subjectSchema>>[] => [
+    createDragColumn<z.infer<typeof subjectSchema>>(),
+    createSelectColumn<z.infer<typeof subjectSchema>>(),
+    {
+      accessorKey: "subjectName",
+      header: "Subject Name",
+      cell: ({ row }) => {
+        return <SubjectDetailViewer item={row.original} />;
+      },
+      enableHiding: false,
     },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "subjectCode",
-    header: "Code",
-    cell: ({ row }) => (
-      <div className="font-mono text-sm">
-        <Badge variant="outline" className="text-muted-foreground px-2">
-          {row.original.subjectCode}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "department",
-    header: "Department",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.department}</div>
-    ),
-  },
-  {
-    accessorKey: "category",
-    header: "Category",
-    cell: ({ row }) => {
+    {
+      accessorKey: "subjectCode",
+      header: "Code",
+      cell: ({ row }) => (
+        <div className="font-mono text-sm">
+          <Badge variant="outline" className="text-muted-foreground px-2">
+            {row.original.subjectCode}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "department",
+      header: "Department",
+      cell: ({ row }) => (
+        <div className="font-medium">{row.original.department}</div>
+      ),
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) => {
 
-      const category = row.original.category;
-      const variant =
-        category === "Core"
-          ? "default"
-          : category === "Elective"
-            ? "secondary"
-            : "outline";
+        const category = row.original.category;
+        const variant =
+          category === "Core"
+            ? "default"
+            : category === "Elective"
+              ? "secondary"
+              : "outline";
 
-      return <Badge variant={variant}>{category}</Badge>;
+        return <Badge variant={variant}>{category}</Badge>;
+      },
     },
-  },
-  {
-    accessorKey: "gradeLevel",
-    header: "Grade Level",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {row.original.gradeLevel}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "teachers",
-    header: () => <div className="text-center w-full">Teachers</div>,
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Badge variant="outline" className="gap-1">
-          <IconUsers className="h-3 w-3" />
-          {row.original.teachers}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "classes",
-    header: () => <div className="text-center w-full">Classes</div>,
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Badge variant="outline" className="gap-1">
-          <IconSchool className="h-3 w-3" />
-          {row.original.classes}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "students",
-    header: () => <div className="text-center w-full">Students</div>,
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center">
-        <Badge variant="outline" className="gap-1">
-          <IconBook2 className="h-3 w-3" />
-          {row.original.students}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      // console.log("the status is: ", row.original.status)
-      return <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status.toLowerCase() === "active" ? (
-          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <IconCircleDashed />
-        )}
-        {row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1)}
-      </Badge>
+    {
+      accessorKey: "gradeLevel",
+      header: "Grade Level",
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {row.original.gradeLevel}
+        </div>
+      ),
     },
-  },
-  SubjectActionsColumn(toggleStatus, handleDelete),
-];
+    {
+      accessorKey: "teachers",
+      header: () => <div className="text-center w-full">Teachers</div>,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <Badge variant="outline" className="gap-1">
+            <IconUsers className="h-3 w-3" />
+            {row.original.teachers}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "classes",
+      header: () => <div className="text-center w-full">Classes</div>,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <Badge variant="outline" className="gap-1">
+            <IconSchool className="h-3 w-3" />
+            {row.original.classes}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "students",
+      header: () => <div className="text-center w-full">Students</div>,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <Badge variant="outline" className="gap-1">
+            <IconBook2 className="h-3 w-3" />
+            {row.original.students}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        // console.log("the status is: ", row.original.status)
+        return <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {row.original.status.toLowerCase() === "active" ? (
+            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+          ) : (
+            <IconCircleDashed />
+          )}
+          {row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1)}
+        </Badge>
+      },
+    },
+    SubjectActionsColumn(toggleStatus, handleDelete, onAssignClass, onAssignTeacher, onDuplicate),
+  ];
 
 
 export function SubjectDataTable({
@@ -209,6 +216,40 @@ export function SubjectDataTable({
 }) {
   const toggleStatus = useToggleSubjectStatus();
   const deleteSubjectMutation = useDeleteSubject();
+  const { mutate: updateSubject } = useUpdateSubject();
+  const { mutate: createSubject } = useCreateSubject();
+
+  const [assignTeacherOpen, setAssignTeacherOpen] = React.useState(false);
+  const [assignClassOpen, setAssignClassOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [viewOpen, setViewOpen] = React.useState(false);
+  const [activeSubject, setActiveSubject] = React.useState<z.infer<typeof subjectSchema> | null>(null);
+
+  const openAssignTeacher = (item: z.infer<typeof subjectSchema>) => {
+    setActiveSubject(item);
+    setAssignTeacherOpen(true);
+  };
+  const openAssignClass = (item: z.infer<typeof subjectSchema>) => {
+    setActiveSubject(item);
+    setAssignClassOpen(true);
+  };
+  const openEdit = (item: z.infer<typeof subjectSchema>) => {
+    return <SubjectDetailViewer item={item} />
+  };
+  const openView = (item: z.infer<typeof subjectSchema>) => {
+    setActiveSubject(item);
+    setViewOpen(true);
+  };
+  const handleDuplicate = (item: z.infer<typeof subjectSchema>) => {
+    // Create a duplicate with minimal fields; user can edit after creation
+    createSubject({
+      // @ts-ignore keep flexible if DTO differs
+      subjectName: `${item.subjectName} (Copy)`,
+      // @ts-ignore keep flexible if DTO differs
+      subjectCode: `${item.subjectCode}-COPY`,
+    } as any);
+  };
+
   const tabs = [
     {
       value: "all-subjects",
@@ -242,15 +283,76 @@ export function SubjectDataTable({
   };
 
   return (
-    <GenericDataTable<z.infer<typeof subjectSchema>>
-      data={data}
-      columns={columns(toggleStatus, deleteSubjectMutation.mutate)}
-      tabs={tabs}
-      defaultTab="all-subjects"
-      config={mergedConfig}
-      addButtonLabel="Add Subject"
-      columnVisibilityLabel="Customize Columns"
-    />
+    <>
+      <GenericDataTable<z.infer<typeof subjectSchema>>
+        data={data}
+        columns={columns(
+          toggleStatus,
+          deleteSubjectMutation.mutate,
+          openAssignClass,
+          openAssignTeacher,
+          handleDuplicate,
+        )}
+        tabs={tabs}
+        defaultTab="all-subjects"
+        config={mergedConfig}
+        addButtonLabel="Add Subject"
+        columnVisibilityLabel="Customize Columns"
+      />
+
+      {/* Assign to Teacher */}
+      {activeSubject && (
+        <AssignSubjectDialog
+          mode="teacher"
+          subjectId={activeSubject.id}
+          subjectName={activeSubject.subjectName}
+          open={assignTeacherOpen}
+          onOpenChange={setAssignTeacherOpen}
+        />
+      )}
+
+      {/* Assign to Class (keeps existing mock flow) */}
+      {activeSubject && (
+        <AssignSubjectDialog
+          mode="class"
+          subjectId={activeSubject.id}
+          subjectName={activeSubject.subjectName}
+          open={assignClassOpen}
+          onOpenChange={setAssignClassOpen}
+        />
+      )}
+
+      {/* View Details Modal */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Subject Details</DialogTitle>
+            <DialogDescription>Basic subject information.</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-2 text-sm">
+            <div>
+              <div className="text-muted-foreground">Name</div>
+              <div className="font-medium">{activeSubject?.subjectName}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Code</div>
+              <div className="font-medium">{activeSubject?.subjectCode}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Department</div>
+              <div className="font-medium">{activeSubject?.department}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Category</div>
+              <div className="font-medium">{activeSubject?.category}</div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setViewOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

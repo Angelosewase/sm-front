@@ -49,3 +49,29 @@ export async function logout() {
   await clearAuthCookies();
   redirect('/login');
 }
+
+
+export async function setSchoolCookie(school: any) {
+  const cookieStore = await cookies();
+  
+  cookieStore.set('school', JSON.stringify(school), {
+    httpOnly: false, // Accessible on client for display
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24, // 24 hours
+    path: '/',
+  });
+}
+
+
+export async function getSchoolCookie(school: any) {
+  const cookieStore = await cookies();
+  
+  cookieStore.set('school', JSON.stringify(school), {
+    httpOnly: false, // Accessible on client for display
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24, // 24 hours
+    path: '/',
+  });
+}

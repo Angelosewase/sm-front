@@ -22,59 +22,58 @@ import {
 import { toast } from "react-toastify";
 import { Badge } from "@/components/ui/badge";
 import { IconX } from "@tabler/icons-react";
+import { Input } from "@/components/ui/input";
+import { useAssignSubjectToTeacher, useUsers } from "@/features/users.api";
+import { useClasses } from "@/features/classes.api";
 
 interface AssignSubjectDialogProps {
   trigger?: React.ReactNode;
-  subjectId?: number;
+  subjectId?: number | string;
   subjectName?: string;
+  mode?: "class" | "teacher";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function AssignSubjectDialog({
   trigger,
   subjectId,
   subjectName,
+  mode = "class",
+  open: controlledOpen,
+  onOpenChange,
 }: AssignSubjectDialogProps) {
-  const [open, setOpen] = React.useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
+  const assignTeacherMutation = useAssignSubjectToTeacher();
+
   const [selectedClass, setSelectedClass] = React.useState("");
   const [selectedTeacher, setSelectedTeacher] = React.useState("");
+  const [academicYear, setAcademicYear] = React.useState("");
+  const [term, setTerm] = React.useState("");
   const [assignedClasses, setAssignedClasses] = React.useState<
-    Array<{ id: string; className: string; teacher: string }>
+    Array<{ id: string; className: string; teacher: string | undefined }>
   >([]);
 
-  const availableClasses = [
-    { id: "1", name: "Grade 9A", students: 28 },
-    { id: "2", name: "Grade 9B", students: 30 },
-    { id: "3", name: "Grade 10A", students: 25 },
-    { id: "4", name: "Grade 10B", students: 27 },
-    { id: "5", name: "Grade 11A", students: 24 },
-    { id: "6", name: "Grade 11B", students: 26 },
-    { id: "7", name: "Grade 12A", students: 22 },
-    { id: "8", name: "Grade 12B", students: 23 },
-  ];
+  const { data: teachersData } = useUsers({ role: "teacher", limit: 50 });
+  const { data: availableClassesData } = useClasses();
 
-  const availableTeachers = [
-    { id: "1", name: "Sarah Johnson", department: "Mathematics" },
-    { id: "2", name: "Michael Chen", department: "Science" },
-    { id: "3", name: "Emma Davis", department: "English" },
-    { id: "4", name: "David Kim", department: "Mathematics" },
-    { id: "5", name: "Lisa Wong", department: "Science" },
-    { id: "6", name: "James Wilson", department: "Social Studies" },
-    { id: "7", name: "Nina Patel", department: "Languages" },
-    { id: "8", name: "Carlos Rodriguez", department: "Arts" },
-  ];
+  const availableClasses = availableClassesData?.items || [];
 
+  const availableTeachers = teachersData?.items || [];
   const handleAddAssignment = () => {
     if (!selectedClass || !selectedTeacher) {
       toast.error("Please select both class and teacher");
       return;
     }
 
-    const classObj = availableClasses.find((c) => c.id === selectedClass);
-    const teacherObj = availableTeachers.find((t) => t.id === selectedTeacher);
+    const classObj = availableClasses.find((c) => c._id === selectedClass);
+    const teacherObj = availableTeachers.find((t) => t._id === selectedTeacher);
 
     if (classObj && teacherObj) {
       const isAlreadyAssigned = assignedClasses.some(
-        (c) => c.id === classObj.id
+        (c) => c.id === classObj._id
       );
 
       if (isAlreadyAssigned) {
@@ -85,7 +84,7 @@ export function AssignSubjectDialog({
       setAssignedClasses([
         ...assignedClasses,
         {
-          id: classObj.id,
+          id: classObj._id,
           className: classObj.name,
           teacher: teacherObj.name,
         },
@@ -103,6 +102,34 @@ export function AssignSubjectDialog({
   };
 
   const handleSubmit = () => {
+    if (mode === "teacher") {
+      if (!subjectId) {
+        toast.error("Missing subjectId");
+        return;
+      }
+      if (!selectedTeacher || !academicYear) {
+        toast.error("Please select a teacher and academic year");
+        return;
+      }
+      assignTeacherMutation.mutate(
+        {
+          subjectId: String(subjectId),
+          teacherId: selectedTeacher,
+          academicYear,
+          term: term || undefined,
+        },
+        {
+          onSuccess: () => {
+            setOpen(false);
+            setSelectedTeacher("");
+            setAcademicYear("");
+            setTerm("");
+          },
+        }
+      );
+      return;
+    }
+
     if (assignedClasses.length === 0) {
       toast.error("Please assign at least one class");
       return;
@@ -125,7 +152,7 @@ export function AssignSubjectDialog({
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="outline" size="sm">
-            Assign to Class
+            {mode === "teacher" ? "Assign to Teacher" : "Assign to Class"}
           </Button>
         )}
       </DialogTrigger>
@@ -135,92 +162,137 @@ export function AssignSubjectDialog({
             Assign Subject{subjectName ? `: ${subjectName}` : ""}
           </DialogTitle>
           <DialogDescription>
-            Assign this subject to classes and designate teachers to teach each
-            class.
+            {mode === "teacher"
+              ? "Assign this subject to a teacher for an academic year and term."
+              : "Assign this subject to classes and designate teachers to teach each class."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="class-select">Select Class</Label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger id="class-select" className="w-full">
-                  <SelectValue placeholder="Choose a class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableClasses.map((classItem) => (
-                    <SelectItem key={classItem.id} value={classItem.id}>
-                      {classItem.name} ({classItem.students} students)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
+        {mode === "teacher" ? (
+          <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="teacher-select">Select Teacher</Label>
-              <Select
-                value={selectedTeacher}
-                onValueChange={setSelectedTeacher}
-              >
+              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
                 <SelectTrigger id="teacher-select" className="w-full">
                   <SelectValue placeholder="Choose a teacher" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableTeachers.map((teacher) => (
-                    <SelectItem key={teacher.id} value={teacher.id}>
-                      {teacher.name}
+                  {teachersData?.items?.map((t) => (
+                    <SelectItem key={t._id} value={t._id}>
+                      {t.fullName || t.name || t.email || t._id}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <Button
-            type="button"
-            onClick={handleAddAssignment}
-            variant="outline"
-            className="w-full"
-          >
-            Add Assignment
-          </Button>
-
-          {/* Display Assigned Classes */}
-          {assignedClasses.length > 0 && (
-            <div className="grid gap-2">
-              <Label>Assigned Classes ({assignedClasses.length})</Label>
-              <div className="rounded-md border p-3 max-h-[200px] overflow-y-auto">
-                <div className="flex flex-col gap-2">
-                  {assignedClasses.map((assignment) => (
-                    <div
-                      key={assignment.id}
-                      className="flex items-center justify-between rounded-md border bg-muted/50 p-2"
-                    >
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">
-                          {assignment.className}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Teacher: {assignment.teacher}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveAssignment(assignment.id)}
-                      >
-                        <IconX className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="academicYear">Academic Year</Label>
+                <Input
+                  id="academicYear"
+                  placeholder="e.g. 2024/2025"
+                  value={academicYear}
+                  onChange={(e) => setAcademicYear(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="term">Term</Label>
+                <Select value={term} onValueChange={setTerm}>
+                  <SelectTrigger id="term" className="w-full">
+                    <SelectValue placeholder="Select term (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Term 1">Term 1</SelectItem>
+                    <SelectItem value="Term 2">Term 2</SelectItem>
+                    <SelectItem value="Term 3">Term 3</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="class-select">Select Class</Label>
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger id="class-select" className="w-full">
+                    <SelectValue placeholder="Choose a class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableClasses.map((classItem) => (
+                      <SelectItem key={classItem._id} value={classItem._id}>
+                        {classItem.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="teacher-select">Select Teacher</Label>
+                <Select
+                  value={selectedTeacher}
+                  onValueChange={setSelectedTeacher}
+                >
+                  <SelectTrigger id="teacher-select" className="w-full">
+                    <SelectValue placeholder="Choose a teacher" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTeachers.map((teacher) => (
+                      <SelectItem key={teacher._id} value={teacher._id}>
+                        {teacher.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handleAddAssignment}
+              variant="outline"
+              className="w-full"
+            >
+              Add Assignment
+            </Button>
+
+            {assignedClasses.length > 0 && (
+              <div className="grid gap-2">
+                <Label>Assigned Classes ({assignedClasses.length})</Label>
+                <div className="rounded-md border p-3 max-h-[200px] overflow-y-auto">
+                  <div className="flex flex-col gap-2">
+                    {assignedClasses.map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className="flex items-center justify-between rounded-md border bg-muted/50 p-2"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">
+                            {assignment.className}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Teacher: {assignment.teacher}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveAssignment(assignment.id)}
+                        >
+                          <IconX className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <DialogFooter>
           <Button
@@ -234,7 +306,7 @@ export function AssignSubjectDialog({
             Cancel
           </Button>
           <Button type="button" onClick={handleSubmit}>
-            Save Assignments
+            {mode === "teacher" ? "Assign" : "Save Assignments"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi, LoginCredentials, LoginResponse } from '@/lib/api/auth';
-import { setAuthCookie, setUserCookie, clearAuthCookies } from '@/lib/actions/auth';
+import { setAuthCookie, setUserCookie, clearAuthCookies, setSchoolCookie } from '@/lib/actions/auth';
 
 interface User {
   id: string;
@@ -45,12 +45,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check if user is logged in on mount from cookie
     const userCookie = getCookie('user');
+    const schoolCookie = getCookie('school');
 
     if (userCookie) {
       try {
         setUser(JSON.parse(userCookie));
       } catch (error) {
         console.error('Failed to parse user data:', error);
+      }
+    }
+    if (schoolCookie) {
+      try {
+        setUserSchool(JSON.parse(schoolCookie));
+      } catch (error) {
+        console.error('Failed to parse school data:', error);
       }
     }
     setIsLoading(false);
@@ -62,7 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Store token and user data in cookies via server action
     await setAuthCookie(response.accessToken);
     await setUserCookie(response.user);
-
+    await setSchoolCookie(response.school);
+    
     setUser(response.user);
     setUserSchool(response.school);
     if (response.user.role == 'head teacher') {
