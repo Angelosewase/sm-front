@@ -1,123 +1,62 @@
 "use client";
 
 import React from "react";
-import { ClassDataTable } from "../../../../components/admin/classes/class-data-table";
-import { ClassStats } from "../../../../components/admin/classes/class-stats";
-import { AddClassDialog } from "../../../../components/admin/classes/add-class-dialog";
-
-// Sample class data
-const classData = [
-  {
-    id: 1,
-    className: "Mathematics 101",
-    gradeLevel: "Grade 9",
-    teacher: "Sarah Johnson",
-    status: "Active",
-    enrolled: "28",
-    capacity: "30",
-    schedule: "Mon/Wed/Fri 9:00-10:30",
-  },
-  {
-    id: 2,
-    className: "English Literature",
-    gradeLevel: "Grade 10",
-    teacher: "Michael Chen",
-    status: "Active",
-    enrolled: "25",
-    capacity: "30",
-    schedule: "Tue/Thu 10:00-11:30",
-  },
-  {
-    id: 3,
-    className: "Physics Advanced",
-    gradeLevel: "Grade 11",
-    teacher: "Emma Davis",
-    status: "Active",
-    enrolled: "22",
-    capacity: "25",
-    schedule: "Mon/Wed 13:00-14:30",
-  },
-  {
-    id: 4,
-    className: "Chemistry Basics",
-    gradeLevel: "Grade 9",
-    teacher: "David Kim",
-    status: "Active",
-    enrolled: "30",
-    capacity: "30",
-    schedule: "Tue/Thu 14:00-15:30",
-  },
-  {
-    id: 5,
-    className: "World History",
-    gradeLevel: "Grade 10",
-    teacher: "Lisa Wong",
-    status: "Active",
-    enrolled: "27",
-    capacity: "30",
-    schedule: "Mon/Wed/Fri 11:00-12:00",
-  },
-  {
-    id: 6,
-    className: "Computer Science",
-    gradeLevel: "Grade 11",
-    teacher: "James Wilson",
-    status: "Active",
-    enrolled: "20",
-    capacity: "25",
-    schedule: "Tue/Thu 9:00-10:30",
-  },
-  {
-    id: 7,
-    className: "Biology Lab",
-    gradeLevel: "Grade 10",
-    teacher: "Nina Patel",
-    status: "Active",
-    enrolled: "24",
-    capacity: "25",
-    schedule: "Wed/Fri 13:00-15:00",
-  },
-  {
-    id: 8,
-    className: "Art & Design",
-    gradeLevel: "Grade 9",
-    teacher: "Carlos Rodriguez",
-    status: "Inactive",
-    enrolled: "15",
-    capacity: "20",
-    schedule: "Mon/Wed 15:00-16:30",
-  },
-  {
-    id: 9,
-    className: "Spanish Language",
-    gradeLevel: "Grade 10",
-    teacher: "Maria Garcia",
-    status: "Active",
-    enrolled: "29",
-    capacity: "30",
-    schedule: "Tue/Thu 11:00-12:30",
-  },
-  {
-    id: 10,
-    className: "Physical Education",
-    gradeLevel: "Grade 9",
-    teacher: "Alex Thompson",
-    status: "Active",
-    enrolled: "32",
-    capacity: "35",
-    schedule: "Mon/Wed/Fri 14:00-15:00",
-  },
-];
+import { ClassDataTable, ClassStats, AddClassDialog } from "@/components/admin/classes";
+import { useClasses } from "@/hooks/use-classes";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminClassesPage() {
+  const [page, setPage] = React.useState(1);
+  const [search, setSearch] = React.useState("");
+  const [gradeLevel, setGradeLevel] = React.useState<string | undefined>();
+
+  const { data: classesData, isLoading, error } = useClasses({
+    page,
+    limit: 100,
+    search: search || undefined,
+    gradeLevel,
+  });
+
+  if (error) {
+    return (
+      <div className="py-4">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-destructive">Error loading classes</h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              {(error as any)?.response?.data?.message || "Failed to fetch classes. Please try again later."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-4">
       <div className="flex items-center justify-between px-4">
         <h2 className="text-3xl font-semibold text-primary">Manage Classes</h2>
         <AddClassDialog />
       </div>
-      <ClassStats />
-      <ClassDataTable data={classData} />
+      {isLoading ? (
+        <>
+          <div className="flex items-center justify-center p-4 w-full">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          </div>
+          <div className="px-4">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        </>
+      ) : (
+        <>
+          <ClassStats data={classesData?.data || []} />
+          <ClassDataTable data={classesData?.data || []} isLoading={isLoading} />
+        </>
+      )}
     </div>
   );
 }

@@ -61,6 +61,8 @@ export function DataTable<T extends BaseEntity>({
   columnVisibilityLabel,
   customToolbarActions,
   onSelectionChange,
+  getRowId,
+  onTabChange,
 }: DataTableProps<T>) {
   // Destructure config with defaults
   const {
@@ -93,8 +95,8 @@ export function DataTable<T extends BaseEntity>({
   );
 
   const dataIds = useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ id }) => id) || [],
-    [data]
+    () => data?.map((row) => getRowId ? getRowId(row) : (row.id || row._id || '')) || [],
+    [data, getRowId]
   );
 
   // Notify parent of data changes
@@ -118,7 +120,7 @@ export function DataTable<T extends BaseEntity>({
       globalFilter,
       pagination,
     },
-    getRowId: (row) => row.id.toString(),
+    getRowId: getRowId ? getRowId : (row) => (row.id || row._id)?.toString() || '',
     enableRowSelection: enableSelection,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
