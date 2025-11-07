@@ -1,5 +1,10 @@
+@import url("https://fonts.cdnfonts.com/css/lufga");
 @import "tailwindcss";
 @import "tw-animate-css";
+
+*{
+  font-family: "Lufga", sans-serif;
+}
 
 @custom-variant dark (&:is(.dark *));
 
