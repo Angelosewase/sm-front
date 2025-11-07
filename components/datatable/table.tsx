@@ -74,8 +74,9 @@ export function DataTable<T extends BaseEntity>({
     pageSizeOptions = [10, 20, 30, 40, 50],
   } = config;
 
-  // State management
+ 
   const [data, setData] = useState<T[]>(initialData);
+  
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -86,6 +87,10 @@ export function DataTable<T extends BaseEntity>({
     pageSize: pageSize,
   });
 
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
+
   // DnD setup
   const sortableId = useId();
   const sensors = useSensors(
@@ -94,6 +99,7 @@ export function DataTable<T extends BaseEntity>({
     useSensor(KeyboardSensor, {})
   );
 
+  const getRowKey = (row: any) => (row?.id ?? row?._id)?.toString?.() ?? "";
   const dataIds = useMemo<UniqueIdentifier[]>(
     () => data?.map((row) => getRowId ? getRowId(row) : (row.id || row._id || '')) || [],
     [data, getRowId]
@@ -106,7 +112,7 @@ export function DataTable<T extends BaseEntity>({
     }
   }, [data, onDataChange]);
 
- 
+
 
   // Initialize table
   const table = useReactTable({
@@ -137,6 +143,8 @@ export function DataTable<T extends BaseEntity>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
+
+  console.log("table is: ", table.getRowModel())
 
   useEffect(() => {
     if (onSelectionChange) {
@@ -178,9 +186,9 @@ export function DataTable<T extends BaseEntity>({
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -223,9 +231,9 @@ export function DataTable<T extends BaseEntity>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   ))}
                 </TableRow>

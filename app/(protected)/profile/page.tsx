@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, userSchool } = useAuth();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [isEditEmailOpen, setIsEditEmailOpen] = useState(false);
@@ -221,6 +221,16 @@ export default function ProfilePage() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">Role</p>
               <p className="text-sm mt-1 capitalize">{user?.role || "User"}</p>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">School ID</p>
+              <p className="text-sm font-mono mt-1 break-all">{userSchool?.id || 'Not Yet'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">School Name</p>
+              <p className="text-sm mt-1 capitalize">{userSchool?.name || "Not Yet"}</p>
             </div>
           </div>
         </div>
