@@ -79,7 +79,7 @@ export function createSelectColumn<T extends BaseEntity>(): ColumnDef<T> {
  */
 export function createActionsColumn<T extends BaseEntity>(
   actions?: {
-    label: string;
+    label: string | ((item: T) => React.ReactNode);
     onClick: (item: T) => void;
     variant?: "default" | "destructive";
   }[]
@@ -108,7 +108,7 @@ export function createActionsColumn<T extends BaseEntity>(
                 variant={action.variant}
                 onClick={() => action.onClick(row.original)}
               >
-                {action.label}
+                {typeof action.label === "function" ? action.label(row.original) : action.label}
               </DropdownMenuItem>
             </React.Fragment>
           ))}

@@ -16,11 +16,10 @@ export default function HeadTeacherSubjects() {
 
   const { data, isLoading, isError, refetch, isFetching } = useSubjects({ q, page, limit, sortBy, order });
 
-  console.log("data is", data);
   const tableData = useMemo(() => {
     const items = data?.items || [];
     return items.map((s, idx) => ({
-      id: Number((s as any).id) || idx + 1,
+      id: (s as any)._id || idx + 1,
       subjectName: (s as any).name ?? "",
       subjectCode: (s as any).code ?? "",
       department: (s as any).department ?? "",
