@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const userCookie = request.cookies.get("user")?.value;
   const { pathname } = request.nextUrl;
 
-  const roles = ["admin", "teacher", "head-teacher"];
+  const roles = ["admin", "teacher", "head teacher"];
   const isProtectedRoute =
     roles.some((role) => pathname.startsWith(`/${role}`)) ||
     pathname.startsWith("/setup-school-profile");
@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
   if (isProtectedRoute && token && userCookie) {
     try {
       const user = JSON.parse(userCookie);
-      const userRole = user.role;
+      const userRole = user.role == "head teacher" ? "head-teacher" : user.role;
       const accessingRole = roles.find((role) =>
         pathname.startsWith(`/${role}`)
       );
@@ -40,7 +40,10 @@ export function middleware(request: NextRequest) {
   if (isAuthRoute && token && userCookie) {
     try {
       const user = JSON.parse(userCookie);
-      const url = new URL(`/${user.role}`, request.url);
+      const url = new URL(
+        `/${user.role == "head teacher" ? "head-teacher" : user.role}`,
+        request.url
+      );
       return NextResponse.redirect(url);
     } catch {
       // If parsing fails, let them stay on auth page

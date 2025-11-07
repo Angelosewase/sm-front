@@ -150,7 +150,7 @@ export function DashboardSidebar() {
   const { user } = useAuth();
   const isCollapsed = state === "collapsed";
 
-  const dashboardRoutes = getDashboardRoutes(user?.role || "404");
+  const dashboardRoutes = getDashboardRoutes(user?.role == "head teacher" ? 'head-teacher' : user?.role || '404' || "404");
 
   return (
     <Sidebar variant="floating" collapsible="icon">

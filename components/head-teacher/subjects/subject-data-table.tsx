@@ -164,23 +164,27 @@ const columns: ColumnDef<z.infer<typeof subjectSchema>>[] = [
     ),
   },
   createActionsColumn<z.infer<typeof subjectSchema>>([
-    { label: "Edit", onClick: () => {} },
-    { label: "View Details", onClick: () => {} },
+    { label: "Edit", onClick: () => { } },
+    { label: "View Details", onClick: () => { } },
     {
       label: "Assign to Class",
       onClick: (item) => {
         // This will be handled by the AssignSubjectDialog in the detail viewer
       },
     },
-    { label: "Duplicate", onClick: () => {} },
-    { label: "Deactivate", onClick: () => {}, variant: "destructive" },
+    { label: "Duplicate", onClick: () => { } },
+    { label: "Deactivate", onClick: () => { }, variant: "destructive" },
   ]),
 ];
 
+import type { DataTableConfig } from "@/components/datatable";
+
 export function SubjectDataTable({
   data,
+  config,
 }: {
   data: z.infer<typeof subjectSchema>[];
+  config?: DataTableConfig<z.infer<typeof subjectSchema>>;
 }) {
   const tabs = [
     {
@@ -204,20 +208,23 @@ export function SubjectDataTable({
     },
   ];
 
+  const mergedConfig: DataTableConfig<z.infer<typeof subjectSchema>> = {
+    enableDragDrop: true,
+    enableSelection: true,
+    enableColumnVisibility: true,
+    enablePagination: true,
+    pageSize: 10,
+    pageSizeOptions: [10, 20, 30, 40, 50],
+    ...(config || {}),
+  };
+
   return (
     <GenericDataTable<z.infer<typeof subjectSchema>>
       data={data}
       columns={columns}
       tabs={tabs}
       defaultTab="all-subjects"
-      config={{
-        enableDragDrop: true,
-        enableSelection: true,
-        enableColumnVisibility: true,
-        enablePagination: true,
-        pageSize: 10,
-        pageSizeOptions: [10, 20, 30, 40, 50],
-      }}
+      config={mergedConfig}
       addButtonLabel="Add Subject"
       columnVisibilityLabel="Customize Columns"
     />

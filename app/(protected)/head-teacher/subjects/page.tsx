@@ -1,231 +1,99 @@
 "use client";
 
-import React from "react";
-import {
-  SubjectDataTable,
-  AddSubjectDialog,
-  SubjectStats,
-} from "@/components/head-teacher/subjects";
-
-// Sample data for subjects
-const sampleSubjects = [
-  {
-    id: 1,
-    subjectName: "Mathematics",
-    subjectCode: "MATH101",
-    department: "Mathematics",
-    category: "Core",
-    gradeLevel: "All Grades",
-    teachers: "3",
-    classes: "8",
-    students: "224",
-    status: "Active",
-    creditHours: "4",
-    level: "Intermediate",
-  },
-  {
-    id: 2,
-    subjectName: "English Language",
-    subjectCode: "ENG101",
-    department: "English",
-    category: "Core",
-    gradeLevel: "All Grades",
-    teachers: "4",
-    classes: "8",
-    students: "224",
-    status: "Active",
-    creditHours: "4",
-    level: "Intermediate",
-  },
-  {
-    id: 3,
-    subjectName: "Physics",
-    subjectCode: "PHY201",
-    department: "Science",
-    category: "Core",
-    gradeLevel: "Grade 11",
-    teachers: "2",
-    classes: "4",
-    students: "98",
-    status: "Active",
-    creditHours: "4",
-    level: "Advanced",
-  },
-  {
-    id: 4,
-    subjectName: "Chemistry",
-    subjectCode: "CHEM201",
-    department: "Science",
-    category: "Core",
-    gradeLevel: "Grade 11",
-    teachers: "2",
-    classes: "4",
-    students: "98",
-    status: "Active",
-    creditHours: "4",
-    level: "Advanced",
-  },
-  {
-    id: 5,
-    subjectName: "Biology",
-    subjectCode: "BIO201",
-    department: "Science",
-    category: "Core",
-    gradeLevel: "Grade 10",
-    teachers: "2",
-    classes: "4",
-    students: "112",
-    status: "Active",
-    creditHours: "3",
-    level: "Intermediate",
-  },
-  {
-    id: 6,
-    subjectName: "History",
-    subjectCode: "HIST101",
-    department: "Social Studies",
-    category: "Core",
-    gradeLevel: "All Grades",
-    teachers: "2",
-    classes: "6",
-    students: "168",
-    status: "Active",
-    creditHours: "3",
-    level: "Intermediate",
-  },
-  {
-    id: 7,
-    subjectName: "Geography",
-    subjectCode: "GEO101",
-    department: "Social Studies",
-    category: "Elective",
-    gradeLevel: "Grade 9",
-    teachers: "1",
-    classes: "2",
-    students: "56",
-    status: "Active",
-    creditHours: "3",
-    level: "Beginner",
-  },
-  {
-    id: 8,
-    subjectName: "Computer Science",
-    subjectCode: "CS101",
-    department: "Technology",
-    category: "Elective",
-    gradeLevel: "Grade 10",
-    teachers: "2",
-    classes: "3",
-    students: "84",
-    status: "Active",
-    creditHours: "3",
-    level: "Intermediate",
-  },
-  {
-    id: 9,
-    subjectName: "Art & Design",
-    subjectCode: "ART101",
-    department: "Arts",
-    category: "Elective",
-    gradeLevel: "All Grades",
-    teachers: "2",
-    classes: "5",
-    students: "70",
-    status: "Active",
-    creditHours: "2",
-    level: "Beginner",
-  },
-  {
-    id: 10,
-    subjectName: "Music",
-    subjectCode: "MUS101",
-    department: "Arts",
-    category: "Optional",
-    gradeLevel: "All Grades",
-    teachers: "1",
-    classes: "3",
-    students: "42",
-    status: "Active",
-    creditHours: "2",
-    level: "Beginner",
-  },
-  {
-    id: 11,
-    subjectName: "Physical Education",
-    subjectCode: "PE101",
-    department: "Physical Education",
-    category: "Core",
-    gradeLevel: "All Grades",
-    teachers: "3",
-    classes: "8",
-    students: "224",
-    status: "Active",
-    creditHours: "2",
-    level: "Beginner",
-  },
-  {
-    id: 12,
-    subjectName: "Spanish",
-    subjectCode: "SPA101",
-    department: "Languages",
-    category: "Elective",
-    gradeLevel: "Grade 9",
-    teachers: "2",
-    classes: "4",
-    students: "56",
-    status: "Active",
-    creditHours: "3",
-    level: "Beginner",
-  },
-  {
-    id: 13,
-    subjectName: "French",
-    subjectCode: "FRE101",
-    department: "Languages",
-    category: "Optional",
-    gradeLevel: "Grade 10",
-    teachers: "1",
-    classes: "2",
-    students: "28",
-    status: "Inactive",
-    creditHours: "3",
-    level: "Beginner",
-  },
-];
+import React, { useMemo, useState } from "react";
+import { SubjectDataTable, AddSubjectDialog } from "@/components/head-teacher/subjects";
+import { useSubjects } from "@/features/subjects.api";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function HeadTeacherSubjects() {
+  const [q, setQ] = useState<string>("");
+  const [page, setPage] = useState<number>(1); // 1-based
+  const [limit, setLimit] = useState<number>(10);
+  const sortBy = "createdAt";
+  const order: "asc" | "desc" = "desc";
+
+  const { data, isLoading, isError, refetch, isFetching } = useSubjects({ q, page, limit, sortBy, order });
+
+  console.log("data is", data);
+  const tableData = useMemo(() => {
+    const items = data?.items || [];
+    return items.map((s, idx) => ({
+      id: Number((s as any).id) || idx + 1,
+      subjectName: (s as any).name ?? "",
+      subjectCode: (s as any).code ?? "",
+      department: (s as any).department ?? "",
+      category: (s as any).subjectType ?? "",
+      gradeLevel: (s as any).gradeLevels ? (s as any).gradeLevels.join(", ") : "",
+      teachers: "0",
+      classes: "0",
+      students: "0",
+      status: (s as any).status ?? "Active",
+      creditHours: String((s as any).creditHours ?? ""),
+      level: (s as any).level ?? "",
+    }));
+  }, [data]);
+
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
   return (
     <div className="mx-auto p-4 space-y-4">
-      {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Subject Management</h1>
-        <p className="text-muted-foreground">
-          Manage subjects, assign them to classes, and track performance
-        </p>
+        <p className="text-muted-foreground">Manage subjects, assign them to classes, and track performance</p>
       </div>
 
-      {/* Stats Section */}
-      <section>
-        <SubjectStats
-          totalSubjects={13}
-          activeSubjects={12}
-          totalTeachers={18}
-          averageClassSize={28}
-        />
-      </section>
+      {/* Controls */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search subjects..."
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
+            className="w-[220px] md:w-[300px]"
+          />
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>Search</Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <AddSubjectDialog />
+        </div>
+      </div>
 
       {/* Data Table Section */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold">All Subjects</h2>
-            <p className="text-sm text-muted-foreground">
-              View and manage all subjects in the curriculum
-            </p>
+        {isError && (
+          <div className="text-sm text-red-500">Failed to load subjects.</div>
+        )}
+        <SubjectDataTable
+          data={tableData}
+          // Disable internal pagination since we use server-side pagination above
+          // @ts-ignore - component supports config prop
+          config={{ enablePagination: false }}
+        />
+        <div className="flex flex-row gap-4 items-center">
+          <span className="text-sm text-muted-foreground">Rows per page </span>
+          <Select value={String(limit)} onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}>
+            <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="40">40</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || isFetching}>Prev</Button>
+            <span className="text-sm">Page {page} of {totalPages}</span>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages || isFetching}>Next</Button>
           </div>
-          <AddSubjectDialog />
         </div>
-        <SubjectDataTable data={sampleSubjects} />
+        {isLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
       </section>
     </div>
   );

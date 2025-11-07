@@ -13,6 +13,10 @@ export interface LoginResponse {
     name?: string;
     role: string;
   };
+  school: {
+    id: string
+    name: string
+  }
 }
 
 export interface RequestResetData {
