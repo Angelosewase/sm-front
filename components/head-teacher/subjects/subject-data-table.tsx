@@ -40,10 +40,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "react-toastify";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Textarea } from "@/components/ui/textarea";
 import { AssignSubjectDialog } from "./assign-subject-dialog";
+import type { DataTableConfig } from "@/components/datatable";
+import { useDeleteSubject, useToggleSubjectStatus } from "@/features/subjects.api";
 
 export const subjectSchema = z.object({
   id: z.number(),
@@ -60,7 +61,37 @@ export const subjectSchema = z.object({
   level: z.string(),
 });
 
-const columns: ColumnDef<z.infer<typeof subjectSchema>>[] = [
+const SubjectActionsColumn = (toggleStatus: (id: string, currentStatus: string) => void, handleDelete: (id: string) => void): ColumnDef<z.infer<typeof subjectSchema>> => {
+  const handleToggleStatus = (item: z.infer<typeof subjectSchema>) => {
+    const id = String(item.id);
+    const next = item.status.toLowerCase() === "active" ? "inactive" : "active";
+    toggleStatus(id, next);
+  };
+
+  return createActionsColumn<z.infer<typeof subjectSchema>>([
+    { label: "Edit", onClick: () => { } },
+    { label: "View Details", onClick: () => { } },
+    {
+      label: "Assign to Class",
+      onClick: () => {
+        // Handled by the detail drawer trigger in the SubjectDetailViewer
+      },
+    },
+    { label: "Duplicate", onClick: () => { } },
+    {
+      label: (item) => (item.status === "Active" ? "Deactivate" : "Activate"),
+      onClick: handleToggleStatus,
+      variant: "destructive",
+    },
+    {
+      label: "Delete",
+      onClick: (item) => handleDelete(String(item.id)),
+      variant: "destructive",
+    },
+  ]);
+};
+
+const columns = (toggleStatus: (id: string, currentStatus: string) => void, handleDelete: (id: string) => void): ColumnDef<z.infer<typeof subjectSchema>>[] => [
   createDragColumn<z.infer<typeof subjectSchema>>(),
   createSelectColumn<z.infer<typeof subjectSchema>>(),
   {
@@ -93,6 +124,7 @@ const columns: ColumnDef<z.infer<typeof subjectSchema>>[] = [
     accessorKey: "category",
     header: "Category",
     cell: ({ row }) => {
+
       const category = row.original.category;
       const variant =
         category === "Core"
@@ -152,32 +184,21 @@ const columns: ColumnDef<z.infer<typeof subjectSchema>>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Active" ? (
+    cell: ({ row }) => {
+      // console.log("the status is: ", row.original.status)
+      return <Badge variant="outline" className="text-muted-foreground px-1.5">
+        {row.original.status.toLowerCase() === "active" ? (
           <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
         ) : (
           <IconCircleDashed />
         )}
-        {row.original.status}
+        {row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1)}
       </Badge>
-    ),
-  },
-  createActionsColumn<z.infer<typeof subjectSchema>>([
-    { label: "Edit", onClick: () => { } },
-    { label: "View Details", onClick: () => { } },
-    {
-      label: "Assign to Class",
-      onClick: (item) => {
-        // This will be handled by the AssignSubjectDialog in the detail viewer
-      },
     },
-    { label: "Duplicate", onClick: () => { } },
-    { label: "Deactivate", onClick: () => { }, variant: "destructive" },
-  ]),
+  },
+  SubjectActionsColumn(toggleStatus, handleDelete),
 ];
 
-import type { DataTableConfig } from "@/components/datatable";
 
 export function SubjectDataTable({
   data,
@@ -186,6 +207,8 @@ export function SubjectDataTable({
   data: z.infer<typeof subjectSchema>[];
   config?: DataTableConfig<z.infer<typeof subjectSchema>>;
 }) {
+  const toggleStatus = useToggleSubjectStatus();
+  const deleteSubjectMutation = useDeleteSubject();
   const tabs = [
     {
       value: "all-subjects",
@@ -221,7 +244,7 @@ export function SubjectDataTable({
   return (
     <GenericDataTable<z.infer<typeof subjectSchema>>
       data={data}
-      columns={columns}
+      columns={columns(toggleStatus, deleteSubjectMutation.mutate)}
       tabs={tabs}
       defaultTab="all-subjects"
       config={mergedConfig}

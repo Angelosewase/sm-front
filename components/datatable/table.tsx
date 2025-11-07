@@ -142,8 +142,7 @@ export function DataTable<T extends BaseEntity>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  console.log("table is: ", table.getRowModel())
-
+  
   useEffect(() => {
     if (onSelectionChange) {
       const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original);
