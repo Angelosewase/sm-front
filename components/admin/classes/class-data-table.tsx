@@ -44,222 +44,110 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "react-toastify";
+import { Textarea } from "@/components/ui/textarea";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
+import { Class } from "@/lib/api/classes";
+import { useUpdateClass, useDeleteClass } from "@/hooks/use-classes";
+import { useTeachers } from "@/hooks/use-teachers";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const classSchema = z.object({
-  id: z.number(),
-  className: z.string(),
+  _id: z.string(),
+  name: z.string(),
   gradeLevel: z.string(),
-  teacher: z.string(),
-  status: z.string(),
-  enrolled: z.string(),
-  capacity: z.string(),
-  schedule: z.string(),
+  classTeacher: z.object({
+    _id: z.string(),
+    name: z.string(),
+    email: z.string(),
+  }).optional().nullable(),
+  status: z.enum(["active", "inactive"]),
+  studentCount: z.number(),
+  capacity: z.number(),
+  description: z.string().optional(),
 });
 
-const columns: ColumnDef<z.infer<typeof classSchema>>[] = [
-  createDragColumn<z.infer<typeof classSchema>>(),
-  createSelectColumn<z.infer<typeof classSchema>>(),
-  {
-    accessorKey: "className",
-    header: "Class Name",
-    cell: ({ row }) => {
-      return <ClassDetailViewer item={row.original} />;
-    },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "gradeLevel",
-    header: "Grade Level",
-    cell: ({ row }) => (
-      <div className="w-24">
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.gradeLevel}
-        </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "teacher",
-    header: "Teacher",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.teacher}</div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Active" ? (
-          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <IconCircleDashed />
-        )}
-        {row.original.status}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "enrolled",
-    header: () => <div className="w-full text-right">Enrolled</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            pending: `Updating ${row.original.className}`,
-            success: "Enrollment updated",
-            error: "Error updating enrollment",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-enrolled`} className="sr-only">
-          Enrolled
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.enrolled}
-          id={`${row.original.id}-enrolled`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "capacity",
-    header: () => <div className="w-full text-right">Capacity</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            pending: `Updating ${row.original.className}`,
-            success: "Capacity updated",
-            error: "Error updating capacity",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-capacity`} className="sr-only">
-          Capacity
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.capacity}
-          id={`${row.original.id}-capacity`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "schedule",
-    header: "Schedule",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {row.original.schedule}
-      </div>
-    ),
-  },
-  createActionsColumn<z.infer<typeof classSchema>>([
-    { label: "Edit", onClick: () => {} },
-    { label: "View Students", onClick: () => {} },
-    { label: "Duplicate", onClick: () => {} },
-    { label: "Archive", onClick: () => {}, variant: "destructive" },
-  ]),
-];
+export type ClassData = z.infer<typeof classSchema>;
 
-export function ClassDataTable({
-  data,
-}: {
-  data: z.infer<typeof classSchema>[];
-}) {
-  const tabs = [
-    {
-      value: "all-classes",
-      label: "All Classes",
-    },
-    {
-      value: "grade-9",
-      label: "Grade 9",
-      badge: 3,
-      content: (
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      ),
-    },
-    {
-      value: "grade-10",
-      label: "Grade 10",
-      badge: 4,
-      content: (
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      ),
-    },
-    {
-      value: "grade-11",
-      label: "Grade 11",
-      badge: 2,
-      content: (
-        <div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>
-      ),
-    },
-  ];
-
-  return (
-    <GenericDataTable<z.infer<typeof classSchema>>
-      data={data}
-      columns={columns}
-      tabs={tabs}
-      defaultTab="all-classes"
-      config={{
-        enableDragDrop: true,
-        enableSelection: true,
-        enableColumnVisibility: true,
-        enablePagination: true,
-        pageSize: 10,
-        pageSizeOptions: [10, 20, 30, 40, 50],
-      }}
-      addButtonLabel="Add Class"
-      columnVisibilityLabel="Customize Columns"
-    />
-  );
+interface ClassDataTableProps {
+  data: Class[];
+  isLoading?: boolean;
 }
 
-// Sample attendance data for charts
-const attendanceData = [
-  { week: "Week 1", attendance: 92, enrollment: 28 },
-  { week: "Week 2", attendance: 94, enrollment: 28 },
-  { week: "Week 3", attendance: 91, enrollment: 28 },
-  { week: "Week 4", attendance: 93, enrollment: 28 },
-  { week: "Week 5", attendance: 95, enrollment: 28 },
-  { week: "Week 6", attendance: 94, enrollment: 28 },
-];
-
-const chartConfig = {
-  attendance: {
-    label: "Attendance %",
-    color: "var(--primary)",
-  },
-  enrollment: {
-    label: "Enrollment",
-    color: "var(--primary)",
-  },
-} satisfies ChartConfig;
-
-function ClassDetailViewer({ item }: { item: z.infer<typeof classSchema> }) {
+function ClassDetailViewer({ item }: { item: ClassData }) {
   const isMobile = useIsMobile();
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [selectedTeacher, setSelectedTeacher] = React.useState(item.classTeacher?._id || '');
+  const [selectedGrade, setSelectedGrade] = React.useState(item.gradeLevel || '');
+  const [selectedStatus, setSelectedStatus] = React.useState<'active' | 'inactive'>(item.status || 'active');
+
+  const updateClassMutation = useUpdateClass();
+  const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({ limit: 100 });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const updateData = {
+      name: formData.get("className") as string,
+      gradeLevel: selectedGrade,
+      capacity: Number(formData.get("capacity")),
+      description: formData.get("description") as string || undefined,
+      status: selectedStatus as 'active' | 'inactive',
+      classTeacher: selectedTeacher,
+    };
+
+    updateClassMutation.mutate(
+      { id: item._id, data: updateData },
+      {
+        onSuccess: () => {
+          setIsEditing(false);
+        },
+      }
+    );
+  };
+
+  // Sample attendance data for charts
+  const attendanceData = [
+    { week: "Week 1", attendance: 92, enrollment: item.studentCount },
+    { week: "Week 2", attendance: 94, enrollment: item.studentCount },
+    { week: "Week 3", attendance: 91, enrollment: item.studentCount },
+    { week: "Week 4", attendance: 93, enrollment: item.studentCount },
+    { week: "Week 5", attendance: 95, enrollment: item.studentCount },
+    { week: "Week 6", attendance: 94, enrollment: item.studentCount },
+  ];
+
+  const chartConfig = {
+    attendance: {
+      label: "Attendance %",
+      color: "var(--primary)",
+    },
+    enrollment: {
+      label: "Enrollment",
+      color: "var(--primary)",
+    },
+  } satisfies ChartConfig;
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.className}
+          {item.name}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.className}</DrawerTitle>
+          <DrawerTitle>{item.name}</DrawerTitle>
           <DrawerDescription>
-            Class performance and attendance for the last 6 weeks
+            Class performance and attendance overview
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -308,31 +196,46 @@ function ClassDetailViewer({ item }: { item: z.infer<typeof classSchema> }) {
               <Separator />
               <div className="grid gap-2">
                 <div className="flex gap-2 leading-none font-medium">
-                  Attendance trending up by 3.3% this month{" "}
+                  Class maintaining strong attendance rates{" "}
                   <IconTrendingUp className="size-4" />
                 </div>
                 <div className="text-muted-foreground">
                   Showing attendance and enrollment data for the last 6 weeks.
-                  The class maintains strong attendance rates with consistent
-                  participation.
                 </div>
               </div>
               <Separator />
             </>
           )}
-          <form className="flex flex-col gap-4">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-3">
               <Label htmlFor="className">Class Name</Label>
-              <Input id="className" defaultValue={item.className} />
+              <Input 
+                id="className" 
+                name="className"
+                defaultValue={item.name} 
+                disabled={!isEditing}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="gradeLevel">Grade Level</Label>
-                <Select defaultValue={item.gradeLevel}>
+                <Select 
+                  value={selectedGrade}
+                  onValueChange={setSelectedGrade}
+                  disabled={!isEditing}
+                >
                   <SelectTrigger id="gradeLevel" className="w-full">
                     <SelectValue placeholder="Select grade level" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="Grade 1">Grade 1</SelectItem>
+                    <SelectItem value="Grade 2">Grade 2</SelectItem>
+                    <SelectItem value="Grade 3">Grade 3</SelectItem>
+                    <SelectItem value="Grade 4">Grade 4</SelectItem>
+                    <SelectItem value="Grade 5">Grade 5</SelectItem>
+                    <SelectItem value="Grade 6">Grade 6</SelectItem>
+                    <SelectItem value="Grade 7">Grade 7</SelectItem>
+                    <SelectItem value="Grade 8">Grade 8</SelectItem>
                     <SelectItem value="Grade 9">Grade 9</SelectItem>
                     <SelectItem value="Grade 10">Grade 10</SelectItem>
                     <SelectItem value="Grade 11">Grade 11</SelectItem>
@@ -342,63 +245,318 @@ function ClassDetailViewer({ item }: { item: z.infer<typeof classSchema> }) {
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="status">Status</Label>
-                <Select defaultValue={item.status}>
+                <Select 
+                  value={selectedStatus}
+                  onValueChange={(value) => setSelectedStatus(value as 'active' | 'inactive')}
+                  disabled={!isEditing}
+                >
                   <SelectTrigger id="status" className="w-full">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Archived">Archived</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
-                <Label htmlFor="enrolled">Enrolled Students</Label>
-                <Input id="enrolled" defaultValue={item.enrolled} />
+                <Label htmlFor="studentCount">Enrolled Students</Label>
+                <Input 
+                  id="studentCount" 
+                  value={item.studentCount}
+                  disabled
+                  className="bg-muted"
+                />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="capacity">Class Capacity</Label>
-                <Input id="capacity" defaultValue={item.capacity} />
+                <Input 
+                  id="capacity" 
+                  name="capacity"
+                  type="number"
+                  defaultValue={item.capacity} 
+                  disabled={!isEditing}
+                  min={item.studentCount}
+                />
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="teacher">Teacher</Label>
-              <Select defaultValue={item.teacher}>
+              <Label htmlFor="teacher">Class Teacher</Label>
+              <Select 
+                value={selectedTeacher || undefined}
+                onValueChange={setSelectedTeacher}
+                disabled={!isEditing || isLoadingTeachers}
+              >
                 <SelectTrigger id="teacher" className="w-full">
-                  <SelectValue placeholder="Select teacher" />
+                  <SelectValue placeholder={isLoadingTeachers ? "Loading teachers..." : "Select teacher"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
-                  <SelectItem value="Michael Chen">Michael Chen</SelectItem>
-                  <SelectItem value="Emma Davis">Emma Davis</SelectItem>
-                  <SelectItem value="David Kim">David Kim</SelectItem>
-                  <SelectItem value="Lisa Wong">Lisa Wong</SelectItem>
-                  <SelectItem value="James Wilson">James Wilson</SelectItem>
-                  <SelectItem value="Nina Patel">Nina Patel</SelectItem>
-                  <SelectItem value="Carlos Rodriguez">
-                    Carlos Rodriguez
-                  </SelectItem>
-                  <SelectItem value="Maria Garcia">Maria Garcia</SelectItem>
-                  <SelectItem value="Alex Thompson">Alex Thompson</SelectItem>
+                  {teachersData?.data && teachersData.data.length > 0 ? (
+                    teachersData.data.map((teacher) => (
+                      <SelectItem key={teacher._id} value={teacher._id}>
+                        {teacher.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      No teachers available
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-3">
-              <Label htmlFor="schedule">Schedule</Label>
-              <Input id="schedule" defaultValue={item.schedule} />
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                defaultValue={item.description || ""}
+                disabled={!isEditing}
+                rows={3}
+              />
             </div>
+            {isEditing && (
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSelectedTeacher(item.classTeacher?._id || '');
+                    setSelectedGrade(item.gradeLevel || '');
+                    setSelectedStatus(item.status || 'active');
+                  }}
+                  disabled={updateClassMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateClassMutation.isPending}>
+                  {updateClassMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            )}
           </form>
         </div>
         <DrawerFooter>
-          <Button>Save Changes</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DrawerClose>
+          {!isEditing && (
+            <>
+              <Button onClick={() => setIsEditing(true)}>Edit Class</Button>
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </>
+          )}
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+function DeleteClassDialog({ classId, className }: { classId: string; className: string }) {
+  const [open, setOpen] = React.useState(false);
+  const deleteClassMutation = useDeleteClass();
+
+  const handleDelete = () => {
+    deleteClassMutation.mutate(classId, {
+      onSuccess: () => {
+        setOpen(false);
+      },
+    });
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Class</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete &quot;{className}&quot;? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleteClassMutation.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={handleDelete}
+            disabled={deleteClassMutation.isPending}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {deleteClassMutation.isPending ? "Deleting..." : "Delete"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
+  const [deleteDialogState, setDeleteDialogState] = React.useState<{
+    open: boolean;
+    classId: string;
+    className: string;
+  }>({ open: false, classId: "", className: "" });
+
+  const deleteClassMutation = useDeleteClass();
+
+  const columns: ColumnDef<ClassData>[] = [
+    createDragColumn<ClassData>(),
+    createSelectColumn<ClassData>(),
+    {
+      accessorKey: "name",
+      header: "Class Name",
+      cell: ({ row }) => {
+        return <ClassDetailViewer item={row.original} />;
+      },
+      enableHiding: false,
+    },
+    {
+      accessorKey: "gradeLevel",
+      header: "Grade Level",
+      cell: ({ row }) => (
+        <div className="w-24">
+          <Badge variant="outline" className="text-muted-foreground px-1.5">
+            {row.original.gradeLevel}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "classTeacher",
+      header: "Teacher",
+      cell: ({ row }) => (
+        <div className="font-medium">
+          {row.original.classTeacher?.name || 'No teacher assigned'}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
+        <Badge variant="outline" className="text-muted-foreground px-1.5">
+          {row.original.status === "active" ? (
+            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+          ) : (
+            <IconCircleDashed />
+          )}
+          {row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1)}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "studentCount",
+      header: () => <div className="w-full text-right">Enrolled</div>,
+      cell: ({ row }) => (
+        <div className="text-right font-medium">{row.original.studentCount}</div>
+      ),
+    },
+    {
+      accessorKey: "capacity",
+      header: () => <div className="w-full text-right">Capacity</div>,
+      cell: ({ row }) => (
+        <div className="text-right font-medium">{row.original.capacity}</div>
+      ),
+    },
+    createActionsColumn<ClassData>([
+      { 
+        label: "View Details", 
+        onClick: (row) => {
+          // The ClassDetailViewer is already in the name cell
+        } 
+      },
+      { 
+        label: "Delete", 
+        onClick: (row) => {
+          setDeleteDialogState({
+            open: true,
+            classId: row._id,
+            className: row.name,
+          });
+        }, 
+        variant: "destructive" 
+      },
+    ]),
+  ];
+
+  const tabs = [
+    {
+      value: "all-classes",
+      label: "All Classes",
+    },
+    {
+      value: "active",
+      label: "Active",
+      badge: data.filter(c => c.status === "active").length,
+    },
+    {
+      value: "inactive",
+      label: "Inactive",
+      badge: data.filter(c => c.status === "inactive").length,
+    },
+  ];
+
+  // Filter data based on active tab
+  const [activeTab, setActiveTab] = React.useState("all-classes");
+  const filteredData = React.useMemo(() => {
+    if (activeTab === "all-classes") return data;
+    return data.filter(c => c.status === activeTab);
+  }, [data, activeTab]);
+
+  const handleDelete = () => {
+    deleteClassMutation.mutate(deleteDialogState.classId, {
+      onSuccess: () => {
+        setDeleteDialogState({ open: false, classId: "", className: "" });
+      },
+    });
+  };
+
+  return (
+    <>
+      <GenericDataTable<ClassData>
+        data={filteredData}
+        columns={columns}
+        tabs={tabs}
+        defaultTab="all-classes"
+        onTabChange={setActiveTab}
+        getRowId={(row) => row._id}
+        config={{
+          enableDragDrop: true,
+          enableSelection: true,
+          enableColumnVisibility: true,
+          enablePagination: true,
+          pageSize: 10,
+          pageSizeOptions: [10, 20, 30, 40, 50],
+        }}
+        addButtonLabel="Add Class"
+        columnVisibilityLabel="Customize Columns"
+      />
+
+      <AlertDialog 
+        open={deleteDialogState.open} 
+        onOpenChange={(open) => setDeleteDialogState({ ...deleteDialogState, open })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{deleteDialogState.className}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteClassMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              disabled={deleteClassMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteClassMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

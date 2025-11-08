@@ -1,5 +1,6 @@
 export interface BaseEntity {
-  id: number | string;
+  id?: number | string;
+  _id?: string;
   [key: string]: any;
 }
 
@@ -38,5 +39,6 @@ export interface DataTableProps<T extends BaseEntity> {
   columnVisibilityLabel?: string;
   customToolbarActions?: React.ReactNode;
   onSelectionChange?: (selected: T[]) => void;
-  onTabChange?: (value: string) => void;
+  getRowId?: (row: T) => string;
+  onTabChange?: (tab: string) => void;
 }
