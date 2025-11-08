@@ -74,9 +74,8 @@ export function DataTable<T extends BaseEntity>({
     pageSizeOptions = [10, 20, 30, 40, 50],
   } = config;
 
- 
+
   const [data, setData] = useState<T[]>(initialData);
-  
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -86,6 +85,17 @@ export function DataTable<T extends BaseEntity>({
     pageIndex: 0,
     pageSize: pageSize,
   });
+
+  // Active tab state (for tabbed tables)
+  const [activeTab, setActiveTab] = useState<string>(defaultTab || tabs[0]?.value);
+  useEffect(() => {
+    // keep activeTab in sync if defaultTab or tabs change
+    setActiveTab((prev) => prev ? prev : defaultTab || tabs[0]?.value);
+  }, [defaultTab, tabs]);
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    onTabChange?.(value);
+  };
 
   useEffect(() => {
     setData(initialData);
@@ -144,7 +154,7 @@ export function DataTable<T extends BaseEntity>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  
+
   useEffect(() => {
     if (onSelectionChange) {
       const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original);
@@ -277,11 +287,17 @@ export function DataTable<T extends BaseEntity>({
   if (tabs.length > 0) {
     return (
       <Tabs
-        defaultValue={defaultTab || tabs[0]?.value}
+        value={activeTab}
+        onValueChange={handleTabChange}
         className="w-full flex-col justify-start gap-4"
       >
         <div className="flex items-center justify-between px-4 lg:px-6">
-          <TabNavigation tabs={tabs} defaultTab={defaultTab} />
+          <TabNavigation
+            tabs={tabs}
+            defaultTab={defaultTab}
+            value={activeTab}
+            onValueChange={handleTabChange}
+          />
           <div className="flex items-center gap-2">
             <div className="relative">
               <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

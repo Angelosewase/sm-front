@@ -1,115 +1,39 @@
 "use client";
 
-import React from "react";
+import React, {useMemo, useState} from "react";
 import { ClassDataTable } from "@/components/head-teacher/classes/class-data-table";
 import { ClassStats } from "@/components/head-teacher/classes/class-stats";
 import { AddClassDialog } from "@/components/head-teacher/classes/add-class-dialog";
-
-// Sample class data
-const classData = [
-  {
-    id: 1,
-    className: "Mathematics 101",
-    gradeLevel: "Grade 9",
-    teacher: "Sarah Johnson",
-    status: "Active",
-    enrolled: "28",
-    capacity: "30",
-    schedule: "Mon/Wed/Fri 9:00-10:30",
-  },
-  {
-    id: 2,
-    className: "English Literature",
-    gradeLevel: "Grade 10",
-    teacher: "Michael Chen",
-    status: "Active",
-    enrolled: "25",
-    capacity: "30",
-    schedule: "Tue/Thu 10:00-11:30",
-  },
-  {
-    id: 3,
-    className: "Physics Advanced",
-    gradeLevel: "Grade 11",
-    teacher: "Emma Davis",
-    status: "Active",
-    enrolled: "22",
-    capacity: "25",
-    schedule: "Mon/Wed 13:00-14:30",
-  },
-  {
-    id: 4,
-    className: "Chemistry Basics",
-    gradeLevel: "Grade 9",
-    teacher: "David Kim",
-    status: "Active",
-    enrolled: "30",
-    capacity: "30",
-    schedule: "Tue/Thu 14:00-15:30",
-  },
-  {
-    id: 5,
-    className: "World History",
-    gradeLevel: "Grade 10",
-    teacher: "Lisa Wong",
-    status: "Active",
-    enrolled: "27",
-    capacity: "30",
-    schedule: "Mon/Wed/Fri 11:00-12:00",
-  },
-  {
-    id: 6,
-    className: "Computer Science",
-    gradeLevel: "Grade 11",
-    teacher: "James Wilson",
-    status: "Active",
-    enrolled: "20",
-    capacity: "25",
-    schedule: "Tue/Thu 9:00-10:30",
-  },
-  {
-    id: 7,
-    className: "Biology Lab",
-    gradeLevel: "Grade 10",
-    teacher: "Nina Patel",
-    status: "Active",
-    enrolled: "24",
-    capacity: "25",
-    schedule: "Wed/Fri 13:00-15:00",
-  },
-  {
-    id: 8,
-    className: "Art & Design",
-    gradeLevel: "Grade 9",
-    teacher: "Carlos Rodriguez",
-    status: "Inactive",
-    enrolled: "15",
-    capacity: "20",
-    schedule: "Mon/Wed 15:00-16:30",
-  },
-  {
-    id: 9,
-    className: "Spanish Language",
-    gradeLevel: "Grade 10",
-    teacher: "Maria Garcia",
-    status: "Active",
-    enrolled: "29",
-    capacity: "30",
-    schedule: "Tue/Thu 11:00-12:30",
-  },
-  {
-    id: 10,
-    className: "Physical Education",
-    gradeLevel: "Grade 9",
-    teacher: "Alex Thompson",
-    status: "Active",
-    enrolled: "32",
-    capacity: "35",
-    schedule: "Mon/Wed/Fri 14:00-15:00",
-  },
-];
+import { useClasses } from "@/features/classes.api";
 
 export default function HeadTeacherClassesPage() {
+   const [q, setQ] = useState<string>("");
+    const [page, setPage] = useState<number>(1); // 1-based
+    const [limit, setLimit] = useState<number>(10);
+    const sortBy = "createdAt";
+    const order: "asc" | "desc" = "desc";
+  
+  const { data, isLoading, isError, refetch, isFetching } = useClasses({ q, page, limit, sortBy, order });
+
+  console.log("data is: ", data )
+
+  const classData = useMemo(() => {
+    const items = data?.items || [];
+    return items.map((s, idx) => ({
+      id: (s as any)._id || idx + 1,
+      className: (s as any).name ?? "",
+      gradeLevel: (s as any).level ?? "",
+      teacher: (s as any).formTeacher ?? "",
+      status: (s as any).status ?? "Active",
+      enrolled: (s as any).enrolled ?? "0",
+      capacity: (s as any).capacity ?? "0",
+      schedule: (s as any).schedule ?? "",
+    }));
+  }, [data]);
+
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
   return (
     <div className="py-4">
       <div className="flex items-center justify-between px-4">

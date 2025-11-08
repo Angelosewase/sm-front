@@ -11,10 +11,12 @@ export default function HeadTeacherSubjects() {
   const [q, setQ] = useState<string>("");
   const [page, setPage] = useState<number>(1); // 1-based
   const [limit, setLimit] = useState<number>(10);
+  const [category, setCategory] = useState<string | undefined>(undefined);
+  const [gradeLevel, setGradeLevel] = useState<string | undefined>(undefined);
   const sortBy = "createdAt";
   const order: "asc" | "desc" = "desc";
 
-  const { data, isLoading, isError, refetch, isFetching } = useSubjects({ q, page, limit, sortBy, order });
+  const { data, isLoading, isError, refetch, isFetching } = useSubjects({ q, page, limit, sortBy, order, subjectType: category?.toLowerCase(), gradeLevel: gradeLevel !== '#' ? gradeLevel : undefined });
 
   const tableData = useMemo(() => {
     const items = data?.items || [];
@@ -29,6 +31,7 @@ export default function HeadTeacherSubjects() {
       classes: "0",
       students: "0",
       status: (s as any).status ?? "Active",
+      subjectType: (s as any).subjectType ?? "",
       creditHours: String((s as any).creditHours ?? ""),
       level: (s as any).level ?? "",
     }));
@@ -45,18 +48,27 @@ export default function HeadTeacherSubjects() {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-2 md:px-4">
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search subjects..."
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
+          <Select
+            value={gradeLevel ?? ""}
+            onValueChange={(v) => {
+              setGradeLevel(v || undefined);
               setPage(1);
             }}
-            className="w-[220px] md:w-[300px]"
-          />
-          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>Search</Button>
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by grade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="#">Any Grade</SelectItem>
+              <SelectItem value="Grade 9">Grade 9</SelectItem>
+              <SelectItem value="Grade 10">Grade 10</SelectItem>
+              <SelectItem value="Grade 11">Grade 11</SelectItem>
+              <SelectItem value="Grade 12">Grade 12</SelectItem>
+              <SelectItem value="All Grades">All Grades</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-2">
           <AddSubjectDialog />
@@ -73,6 +85,16 @@ export default function HeadTeacherSubjects() {
           // Disable internal pagination since we use server-side pagination above
           // @ts-ignore - component supports config prop
           config={{ enablePagination: false }}
+          onTabChange={(value) => {
+            const map: Record<string, string | undefined> = {
+              "all-subjects": undefined,
+              core: "Core",
+              elective: "Elective",
+              optional: "Optional",
+            };
+            setCategory(map[value]);
+            setPage(1);
+          }}
         />
         <div className="flex flex-row gap-4 items-center">
           <span className="text-sm text-muted-foreground">Rows per page </span>

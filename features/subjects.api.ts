@@ -1,51 +1,21 @@
 // api/subject.mutations.ts
-'use client'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { CreateSubjectDto, UpdateSubjectDto, Subject, ListSubjectsFilter, PaginatedSubjectsResponse } from '@/types/subjects.dto'
-import { getAuthToken } from '@/lib/actions/auth';
-import { toast } from 'react-toastify';
+"use client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import {
+  CreateSubjectDto,
+  UpdateSubjectDto,
+  Subject,
+  ListSubjectsFilter,
+  PaginatedSubjectsResponse,
+  AssignTeacherDto,
+  AssignClassAndTeacherDto,
+} from "@/types/subjects.dto";
+import { getAuthToken } from "@/lib/actions/auth";
 
-const API_BASE_URL = 'http://localhost:3000/api/subjects'; // Adjust based on your API base URL
+import { toast } from "react-toastify";
+import { createSubject, updateSubject, fetchSubjects, fetchSubjectById, deleteSubject, assignSubjectToTeacher, assignSubjectToClassAndTeacher, fetchSchoolStats, fetchTeacherWorkload, fetchClassesOfSubject, fetchSubjectsOfClass, fetchClassesOfTeacher, fetchSubjectsOfTeacher, fetchTeacherSchedule, assignSubjectBulk } from "./subjects.mutations";
 
-
-// Create a new subject
-const createSubject = async (dto: CreateSubjectDto): Promise<Subject> => {
-  const response = await axios.post<Subject>(API_BASE_URL, dto, {
-    headers: { Authorization: `Bearer ${ await getAuthToken()}` },
-  });
-  return response.data;
-};
-
-const updateSubject = async (id: string, dto: UpdateSubjectDto): Promise<Subject> => {
-  const response = await axios.patch<Subject>(`${API_BASE_URL}/${id}`, dto, {
-    headers: { Authorization: `Bearer ${ await getAuthToken()}` },
-  });
-  return response.data;
-};
-
-const fetchSubjects = async (filter: ListSubjectsFilter = {}): Promise<PaginatedSubjectsResponse> => {
-  const response = await axios.get<PaginatedSubjectsResponse>(API_BASE_URL, {
-    params: filter,
-    headers: { Authorization: `Bearer ${ await getAuthToken()}` },
-  });
-  return response.data;
-};
-
-const fetchSubjectById = async (id: string): Promise<Subject> => {
-  const response = await axios.get<Subject>(`${API_BASE_URL}/${id}`, {
-    headers: { Authorization: `Bearer ${ await getAuthToken()}` },
-  });
-  return response.data;
-};
-
-
-// Delete a subject
-const deleteSubject = async (id: string): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/${id}`, {
-    headers: { Authorization: `Bearer ${await getAuthToken()}` },
-  });
-};
 
 // Mutation hooks
 export const useCreateSubject = () => {
@@ -54,20 +24,19 @@ export const useCreateSubject = () => {
     mutationFn: createSubject,
     onSuccess: () => {
       // Invalidate all subjects queries
-      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
   });
 };
 
-
 export const useUpdateSubject = () => {
   const queryClient = useQueryClient();
   return useMutation<Subject, Error, { id: string; dto: UpdateSubjectDto }>({
-    mutationFn: ({id, dto}) => updateSubject(id, dto),
+    mutationFn: ({ id, dto }) => updateSubject(id, dto),
     onSuccess: (_, variables) => {
       // Invalidate the specific subject and all subjects queries
-      queryClient.invalidateQueries({ queryKey: ['subject', variables.id] });
-      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ["subject", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
   });
 };
@@ -76,12 +45,17 @@ export const useToggleSubjectStatus = () => {
   const updateSubjectMutation = useUpdateSubject();
 
   return (id: string, nextStatus: string) => {
-  
     updateSubjectMutation.mutate(
       { id, dto: { status: nextStatus } },
       {
-        onSuccess: () => toast.success(`Subject ${nextStatus.toLowerCase() == 'active' ? 'Activated' : 'Deactivated'} successfully.`),
-        onError: (err) => toast.error(err.message || 'Failed to update subject status'),
+        onSuccess: () =>
+          toast.success(
+            `Subject ${
+              nextStatus.toLowerCase() == "active" ? "Activated" : "Deactivated"
+            } successfully.`
+          ),
+        onError: (err) =>
+          toast.error(err.message || "Failed to update subject status"),
       }
     );
   };
@@ -89,7 +63,7 @@ export const useToggleSubjectStatus = () => {
 // Query hooks
 export const useSubjects = (filter: ListSubjectsFilter = {}) => {
   return useQuery<PaginatedSubjectsResponse, Error>({
-    queryKey: ['subjects', filter],
+    queryKey: ["subjects", filter],
     queryFn: () => fetchSubjects(filter),
     // staleTime: 1 * 30 * 1000,
   });
@@ -97,7 +71,7 @@ export const useSubjects = (filter: ListSubjectsFilter = {}) => {
 
 export const useSubjectById = (id: string) => {
   return useQuery<Subject, Error>({
-    queryKey: ['subject', id],
+    queryKey: ["subject", id],
     queryFn: () => fetchSubjectById(id),
     enabled: !!id,
     staleTime: 1 * 30 * 1000,
@@ -111,11 +85,96 @@ export const useDeleteSubject = () => {
     onSuccess: (_, id) => {
       toast.success(`Subject deleted successfully.`);
       // Invalidate the specific subject and all subjects queries
-      queryClient.invalidateQueries({ queryKey: ['subject', id] });
-      queryClient.invalidateQueries({ queryKey: ['subjects'] });
+      queryClient.invalidateQueries({ queryKey: ["subject", id] });
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) => toast.error(err.message || 'Failed to delete subject'),
+    onError: (err) => toast.error(err.message || "Failed to delete subject"),
   });
 };
 
+export const useAssignSubjectToTeacher = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, AssignTeacherDto>({
+    mutationFn: assignSubjectToTeacher,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      toast.success("Subject assigned to teacher");
+    },
+    onError: (err) => toast.error(err.message || "Failed to assign subject"),
+  });
+};
+
+export const useAssignSubjectToClassAndTeacher = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, AssignClassAndTeacherDto>({
+    mutationFn: assignSubjectToClassAndTeacher,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      toast.success("Subject assigned to class and teacher");
+    },
+    onError: (err) => toast.error(err.message || "Failed to assign subject"),
+  });
+
+};
+
+export const useSchoolStats = (schoolId: string, academicYear: string) =>
+  useQuery({
+    queryKey: ["schoolStats", schoolId, academicYear],
+    queryFn: () => fetchSchoolStats(schoolId, academicYear),
+    enabled: !!schoolId,
+  });
+
+export const useTeacherWorkload = (teacherId: string, academicYear: string) =>
+  useQuery({
+    queryKey: ["teacherWorkload", teacherId, academicYear],
+    queryFn: () => fetchTeacherWorkload(teacherId, academicYear),
+    enabled: !!teacherId,
+  });
+
+export const useClassesOfSubject = (subjectId: string, params = {}) =>
+  useQuery({
+    queryKey: ["subjectClasses", subjectId, params],
+    queryFn: () => fetchClassesOfSubject(subjectId, params),
+    enabled: !!subjectId,
+  });
+
+export const useSubjectsOfClass = (classId: string, params = {}) =>
+  useQuery({
+    queryKey: ["classSubjects", classId, params],
+    queryFn: () => fetchSubjectsOfClass(classId, params),
+    enabled: !!classId,
+  });
+
+export const useClassesOfTeacher = (teacherId: string, params = {}) =>
+  useQuery({
+    queryKey: ["teacherClasses", teacherId, params],
+    queryFn: () => fetchClassesOfTeacher(teacherId, params),
+    enabled: !!teacherId,
+  });
+
+export const useSubjectsOfTeacher = (teacherId: string, params = {}) =>
+  useQuery({
+    queryKey: ["teacherSubjects", teacherId, params],
+    queryFn: () => fetchSubjectsOfTeacher(teacherId, params),
+    enabled: !!teacherId,
+  });
+
+export const useTeacherSchedule = (teacherId: string, academicYear: string, term?: string) =>
+  useQuery({
+    queryKey: ["teacherSchedule", teacherId, academicYear, term],
+    queryFn: () => fetchTeacherSchedule(teacherId, academicYear, term),
+    enabled: !!teacherId && !!academicYear,
+  });
+
+export const useAssignSubjectBulk = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { subjectId: string; assignments: any }>({
+    mutationFn: ({ subjectId, assignments }) => assignSubjectBulk(subjectId, assignments),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      toast.success("Subjects assigned successfully");
+    },
+    onError: (err) => toast.error(err.message || "Failed to assign subjects"),
+  });
+};
 
