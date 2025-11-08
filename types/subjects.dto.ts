@@ -15,7 +15,6 @@ export interface CreateSubjectDto {
   prerequisites?: string;
 }
 
-
 export interface PaginatedSubjectsResponse {
   items: Subject[];
   total: number;
@@ -32,7 +31,9 @@ export interface ListSubjectsFilter {
   page?: number;
   limit?: number;
   sortBy?: string;
-  order?: 'asc' | 'desc';
+  order?: "asc" | "desc";
+  subjectType?: string;
+  gradeLevel?: string;
 }
 
 export interface UpdateSubjectDto {
@@ -60,3 +61,18 @@ export interface Subject extends CreateSubjectDto {
 export interface ListSubjectsFilter {
   school?: string;
 }
+
+export type AssignTeacherDto = {
+  subjectId: string;
+  teacherId: string;
+  academicYear: string;
+  term?: string;
+};
+
+export type AssignClassAndTeacherDto = {
+  subjectId: string;
+  classId: string;
+  teacherId: string;
+  academicYear: string;
+  term?: string;
+};

@@ -54,10 +54,3 @@ export type PaginatedUsersResponse = {
   page: number;
   limit: number;
 };
-
-export type AssignTeacherDto = {
-  subjectId: string;
-  teacherId: string;
-  academicYear: string;
-  term?: string;
-};

@@ -13,16 +13,21 @@ import { TabsList, TabsTrigger } from "../ui/tabs";
 interface TabNavigationProps {
   tabs: TabConfig[];
   defaultTab?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }
 
-export function TabNavigation({ tabs, defaultTab }: TabNavigationProps) {
+export function TabNavigation({ tabs, defaultTab, value, onValueChange }: TabNavigationProps) {
   return (
     <>
       <Label htmlFor="view-selector" className="sr-only">
         View
       </Label>
       {/* Mobile dropdown */}
-      <Select defaultValue={defaultTab || tabs[0]?.value}>
+      <Select
+        value={value ?? defaultTab ?? tabs[0]?.value}
+        onValueChange={onValueChange}
+      >
         <SelectTrigger
           className="flex w-fit @4xl/main:hidden"
           size="sm"

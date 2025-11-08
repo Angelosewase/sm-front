@@ -44,7 +44,7 @@ import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Textarea } from "@/components/ui/textarea";
 import { AssignSubjectDialog } from "./assign-subject-dialog";
 import type { DataTableConfig } from "@/components/datatable";
-import { useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject } from "@/features/subjects.api";
+import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject } from "@/features/subjects.api";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const subjectSchema = z.object({
@@ -58,6 +58,7 @@ export const subjectSchema = z.object({
   classes: z.string(),
   students: z.string(),
   status: z.string(),
+  subjectType: z.string(),
   creditHours: z.string(),
   level: z.string(),
 });
@@ -210,9 +211,11 @@ const columns = (
 export function SubjectDataTable({
   data,
   config,
+  onTabChange,
 }: {
   data: z.infer<typeof subjectSchema>[];
   config?: DataTableConfig<z.infer<typeof subjectSchema>>;
+  onTabChange?: (value: string) => void;
 }) {
   const toggleStatus = useToggleSubjectStatus();
   const deleteSubjectMutation = useDeleteSubject();
@@ -258,17 +261,17 @@ export function SubjectDataTable({
     {
       value: "core",
       label: "Core Subjects",
-      badge: data.filter((s) => s.category === "Core").length,
+      badge: data.filter((s) => s.subjectType === "Core").length,
     },
     {
       value: "elective",
       label: "Elective Subjects",
-      badge: data.filter((s) => s.category === "Elective").length,
+      badge: data.filter((s) => s.subjectType === "Elective").length,
     },
     {
       value: "optional",
       label: "Optional Subjects",
-      badge: data.filter((s) => s.category === "Optional").length,
+      badge: data.filter((s) => s.subjectType === "Optional").length,
     },
   ];
 
@@ -298,6 +301,8 @@ export function SubjectDataTable({
         config={mergedConfig}
         addButtonLabel="Add Subject"
         columnVisibilityLabel="Customize Columns"
+        onTabChange={onTabChange}
+
       />
 
       {/* Assign to Teacher */}
@@ -358,6 +363,7 @@ export function SubjectDataTable({
 
 function SubjectDetailViewer({ item }: { item: z.infer<typeof subjectSchema> }) {
   const isMobile = useIsMobile();
+  const { data: subjectClasses } = useClassesOfSubject(item.id?.toString() || '', { academicYear: "2024/2025" })
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
@@ -389,7 +395,7 @@ function SubjectDetailViewer({ item }: { item: z.infer<typeof subjectSchema> }) 
                     <IconSchool className="h-4 w-4" />
                     <span>Classes</span>
                   </div>
-                  <div className="text-2xl font-bold">{item.classes}</div>
+                  <div className="text-2xl font-bold">{subjectClasses?.totalClasses}</div>
                 </div>
                 <div className="flex flex-col gap-2 rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-muted-foreground text-xs">

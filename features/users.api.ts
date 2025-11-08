@@ -9,7 +9,7 @@ import {
   PaginatedSubjectsResponse,
 } from "@/types/subjects.dto";
 import { getAuthToken } from "@/lib/actions/auth";
-import { AssignTeacherDto, ListUsersFilter, PaginatedUsersResponse } from "@/types/users.dto";
+import { ListUsersFilter, PaginatedUsersResponse } from "@/types/users.dto";
 import { toast } from "react-toastify";
 
 const API_BASE_URL = "http://localhost:3000/api/users";
@@ -37,33 +37,5 @@ export const useUsers = (filter: ListUsersFilter = {}) => {
   return useQuery<PaginatedUsersResponse, Error>({
     queryKey: ["users", filter],
     queryFn: () => fetchUsers(filter),
-  });
-};
-
-// Assign subject to teacher
-const assignSubjectToTeacher = async (dto: AssignTeacherDto): Promise<void> => {
-  const token = await getAuthToken();
-  await axios.post(
-    `${API_BASE_URL}/${dto.subjectId}/assign-teacher`,
-    {
-      teacherId: dto.teacherId,
-      academicYear: dto.academicYear,
-      term: dto.term,
-    },
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-};
-
-export const useAssignSubjectToTeacher = () => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, AssignTeacherDto>({
-    mutationFn: assignSubjectToTeacher,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subjects"] });
-      toast.success("Subject assigned to teacher");
-    },
-    onError: (err) => toast.error(err.message || "Failed to assign subject"),
   });
 };

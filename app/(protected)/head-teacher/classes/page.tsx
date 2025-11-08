@@ -15,13 +15,15 @@ export default function HeadTeacherClassesPage() {
   
   const { data, isLoading, isError, refetch, isFetching } = useClasses({ q, page, limit, sortBy, order });
 
+  console.log("data is: ", data )
+
   const classData = useMemo(() => {
     const items = data?.items || [];
     return items.map((s, idx) => ({
       id: (s as any)._id || idx + 1,
       className: (s as any).name ?? "",
-      gradeLevel: (s as any).gradeLevels ? (s as any).gradeLevels.join(", ") : "",
-      teacher: (s as any).teacher ?? "",
+      gradeLevel: (s as any).level ?? "",
+      teacher: (s as any).formTeacher ?? "",
       status: (s as any).status ?? "Active",
       enrolled: (s as any).enrolled ?? "0",
       capacity: (s as any).capacity ?? "0",

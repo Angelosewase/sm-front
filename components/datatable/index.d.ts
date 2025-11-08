@@ -38,4 +38,5 @@ export interface DataTableProps<T extends BaseEntity> {
   columnVisibilityLabel?: string;
   customToolbarActions?: React.ReactNode;
   onSelectionChange?: (selected: T[]) => void;
+  onTabChange?: (value: string) => void;
 }
