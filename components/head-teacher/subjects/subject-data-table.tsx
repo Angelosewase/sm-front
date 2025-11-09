@@ -44,8 +44,9 @@ import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Textarea } from "@/components/ui/textarea";
 import { AssignSubjectDialog } from "./assign-subject-dialog";
 import type { DataTableConfig } from "@/components/datatable";
-import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject } from "@/features/subjects.api";
+import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment } from "@/features/subjects.api";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import SubjectDetailViewer from "./subject-detail-viewer";
 
 export const subjectSchema = z.object({
   id: z.number(),
@@ -54,13 +55,14 @@ export const subjectSchema = z.object({
   department: z.string(),
   category: z.string(),
   gradeLevel: z.string(),
-  teachers: z.string(),
-  classes: z.string(),
+  teachers: z.any(),
+  classes: z.any(),
   students: z.string(),
   status: z.string(),
   subjectType: z.string(),
   creditHours: z.string(),
   level: z.string(),
+  prerequisites: z.string(),
 });
 
 const SubjectActionsColumn = (
@@ -150,42 +152,6 @@ const columns = (
       cell: ({ row }) => (
         <div className="text-sm text-muted-foreground">
           {row.original.gradeLevel}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "teachers",
-      header: () => <div className="text-center w-full">Teachers</div>,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Badge variant="outline" className="gap-1">
-            <IconUsers className="h-3 w-3" />
-            {row.original.teachers}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "classes",
-      header: () => <div className="text-center w-full">Classes</div>,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Badge variant="outline" className="gap-1">
-            <IconSchool className="h-3 w-3" />
-            {row.original.classes}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "students",
-      header: () => <div className="text-center w-full">Students</div>,
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Badge variant="outline" className="gap-1">
-            <IconBook2 className="h-3 w-3" />
-            {row.original.students}
-          </Badge>
         </div>
       ),
     },
@@ -361,198 +327,209 @@ export function SubjectDataTable({
   );
 }
 
-function SubjectDetailViewer({ item }: { item: z.infer<typeof subjectSchema> }) {
-  const isMobile = useIsMobile();
-  const { data: subjectClasses } = useClassesOfSubject(item.id?.toString() || '', { academicYear: "2024/2025" })
 
-  return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
-      <DrawerTrigger asChild>
-        <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.subjectName}
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.subjectName}</DrawerTitle>
-          <DrawerDescription>
-            Subject details, assignments, and performance metrics
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          {!isMobile && (
-            <>
-              <div className="grid grid-cols-4 gap-3">
-                <div className="flex flex-col gap-2 rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <IconUsers className="h-4 w-4" />
-                    <span>Teachers</span>
-                  </div>
-                  <div className="text-2xl font-bold">{item.teachers}</div>
-                </div>
-                <div className="flex flex-col gap-2 rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <IconSchool className="h-4 w-4" />
-                    <span>Classes</span>
-                  </div>
-                  <div className="text-2xl font-bold">{subjectClasses?.totalClasses}</div>
-                </div>
-                <div className="flex flex-col gap-2 rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <IconBook2 className="h-4 w-4" />
-                    <span>Students</span>
-                  </div>
-                  <div className="text-2xl font-bold">{item.students}</div>
-                </div>
-                <div className="flex flex-col gap-2 rounded-lg border p-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                    <IconAward className="h-4 w-4" />
-                    <span>Avg Score</span>
-                  </div>
-                  <div className="text-2xl font-bold">85%</div>
-                </div>
-              </div>
-              <Separator />
-            </>
-          )}
-          <form className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="subjectName">Subject Name</Label>
-              <Input id="subjectName" defaultValue={item.subjectName} />
-            </div>
+// function SubjectDetailViewer({ item }: { item: z.infer<typeof subjectSchema> }) {
+//   const isMobile = useIsMobile();
+//   const { data: subjectAnalytics } = useClassesOfSubject(item.id?.toString() || '', { academicYear: "2024/2025" })
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="subjectCode">Subject Code</Label>
-                <Input id="subjectCode" defaultValue={item.subjectCode} />
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="creditHours">Credit Hours</Label>
-                <Input id="creditHours" defaultValue={item.creditHours} />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="department">Department</Label>
-                <Select defaultValue={item.department}>
-                  <SelectTrigger id="department" className="w-full">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mathematics">Mathematics</SelectItem>
-                    <SelectItem value="Science">Science</SelectItem>
-                    <SelectItem value="English">English</SelectItem>
-                    <SelectItem value="Social Studies">
-                      Social Studies
-                    </SelectItem>
-                    <SelectItem value="Languages">Languages</SelectItem>
-                    <SelectItem value="Technology">Technology</SelectItem>
-                    <SelectItem value="Arts">Arts</SelectItem>
-                    <SelectItem value="Physical Education">
-                      Physical Education
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="category">Category</Label>
-                <Select defaultValue={item.category}>
-                  <SelectTrigger id="category" className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Core">Core</SelectItem>
-                    <SelectItem value="Elective">Elective</SelectItem>
-                    <SelectItem value="Optional">Optional</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+//   return (
+//     <Drawer direction={isMobile ? "bottom" : "right"}>
+//       <DrawerTrigger asChild>
+//         <Button variant="link" className="text-foreground w-fit px-0 text-left">
+//           {item.subjectName}
+//         </Button>
+//       </DrawerTrigger>
+//       <DrawerContent>
+//         <DrawerHeader className="gap-1">
+//           <DrawerTitle>{item.subjectName}</DrawerTitle>
+//           <DrawerDescription>
+//             Subject details, assignments, and performance metrics
+//           </DrawerDescription>
+//         </DrawerHeader>
+//         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
+//           {!isMobile && (
+//             <>
+//               <div className="grid grid-cols-4 gap-3">
+//                 <div className="flex flex-col gap-2 rounded-lg border p-3">
+//                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
+//                     <IconUsers className="h-4 w-4" />
+//                     <span>Teachers</span>
+//                   </div>
+//                   <div className="text-2xl font-bold">{subjectAnalytics?.totalTeachers}</div>
+//                 </div>
+//                 <div className="flex flex-col gap-2 rounded-lg border p-3">
+//                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
+//                     <IconSchool className="h-4 w-4" />
+//                     <span>Classes</span>
+//                   </div>
+//                   <div className="text-2xl font-bold">{subjectAnalytics?.totalClasses}</div>
+//                 </div>
+//                 <div className="flex flex-col gap-2 rounded-lg border p-3">
+//                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
+//                     <IconBook2 className="h-4 w-4" />
+//                     <span>Students</span>
+//                   </div>
+//                   <div className="text-2xl font-bold">{subjectAnalytics?.totalStudents}</div>
+//                 </div>
+//                 <div className="flex flex-col gap-2 rounded-lg border p-3">
+//                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
+//                     <IconAward className="h-4 w-4" />
+//                     <span>Avg Score</span>
+//                   </div>
+//                   <div className="text-2xl font-bold">{subjectAnalytics?.avgScore}</div>
+//                 </div>
+//               </div>
+//               <Separator />
+//             </>
+//           )}
+//           <form className="flex flex-col gap-4">
+//             <div className="flex flex-col gap-3">
+//               <Label htmlFor="subjectName">Subject Name</Label>
+//               <Input id="subjectName" defaultValue={item.subjectName} />
+//             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="gradeLevel">Grade Level</Label>
-                <Select defaultValue={item.gradeLevel}>
-                  <SelectTrigger id="gradeLevel" className="w-full">
-                    <SelectValue placeholder="Select grade level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Grade 9">Grade 9</SelectItem>
-                    <SelectItem value="Grade 10">Grade 10</SelectItem>
-                    <SelectItem value="Grade 11">Grade 11</SelectItem>
-                    <SelectItem value="Grade 12">Grade 12</SelectItem>
-                    <SelectItem value="All Grades">All Grades</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="level">Level</Label>
-                <Select defaultValue={item.level}>
-                  <SelectTrigger id="level" className="w-full">
-                    <SelectValue placeholder="Select level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Beginner">Beginner</SelectItem>
-                    <SelectItem value="Intermediate">Intermediate</SelectItem>
-                    <SelectItem value="Advanced">Advanced</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+//             <div className="grid grid-cols-2 gap-4">
+//               <div className="flex flex-col gap-3">
+//                 <Label htmlFor="subjectCode">Subject Code</Label>
+//                 <Input id="subjectCode" defaultValue={item.subjectCode} />
+//               </div>
+//               <div className="flex flex-col gap-3">
+//                 <Label htmlFor="creditHours">Credit Hours</Label>
+//                 <Input id="creditHours" defaultValue={item.creditHours} />
+//               </div>
+//             </div>
 
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="status">Status</Label>
-              <Select defaultValue={item.status}>
-                <SelectTrigger id="status" className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+//             <div className="grid grid-cols-2 gap-4">
+//               <div className="flex flex-col gap-3">
+//                 <Label htmlFor="department">Department</Label>
+//                 <Select defaultValue={item.department}>
+//                   <SelectTrigger id="department" className="w-full">
+//                     <SelectValue placeholder="Select department" />
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     <SelectItem value="Mathematics">Mathematics</SelectItem>
+//                     <SelectItem value="Science">Science</SelectItem>
+//                     <SelectItem value="English">English</SelectItem>
+//                     <SelectItem value="Social Studies">
+//                       Social Studies
+//                     </SelectItem>
+//                     <SelectItem value="Languages">Languages</SelectItem>
+//                     <SelectItem value="Technology">Technology</SelectItem>
+//                     <SelectItem value="Arts">Arts</SelectItem>
+//                     <SelectItem value="Physical Education">
+//                       Physical Education
+//                     </SelectItem>
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+//               <div className="flex flex-col gap-3">
+//                 <Label htmlFor="category">Category</Label>
+//                 <Select defaultValue={item.category}>
+//                   <SelectTrigger id="category" className="w-full">
+//                     <SelectValue placeholder="Select category" />
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     <SelectItem value="Core">Core</SelectItem>
+//                     <SelectItem value="Elective">Elective</SelectItem>
+//                     <SelectItem value="Optional">Optional</SelectItem>
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+//             </div>
 
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Brief description of the subject..."
-                rows={3}
-              />
-            </div>
+//             <div className="grid grid-cols-2 gap-4">
+//               <div className="flex flex-col gap-3">
+//                 <Label htmlFor="gradeLevel">Grade Level</Label>
+//                 <Select defaultValue={item.gradeLevel}>
+//                   <SelectTrigger id="gradeLevel" className="w-full">
+//                     <SelectValue placeholder="Select grade level" />
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     <SelectItem value="Grade 9">Grade 9</SelectItem>
+//                     <SelectItem value="Grade 10">Grade 10</SelectItem>
+//                     <SelectItem value="Grade 11">Grade 11</SelectItem>
+//                     <SelectItem value="Grade 12">Grade 12</SelectItem>
+//                     <SelectItem value="All Grades">All Grades</SelectItem>
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+//               <div className="flex flex-col gap-3">
+//                 <Label htmlFor="level">Level</Label>
+//                 <Select defaultValue={item.level}>
+//                   <SelectTrigger id="level" className="w-full">
+//                     <SelectValue placeholder="Select level" />
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     <SelectItem value="Beginner">Beginner</SelectItem>
+//                     <SelectItem value="Intermediate">Intermediate</SelectItem>
+//                     <SelectItem value="Advanced">Advanced</SelectItem>
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+//             </div>
 
-            <Separator />
+//             <div className="flex flex-col gap-3">
+//               <Label htmlFor="status">Status</Label>
+//               <Select defaultValue={item.status}>
+//                 <SelectTrigger id="status" className="w-full">
+//                   <SelectValue placeholder="Select status" />
+//                 </SelectTrigger>
+//                 <SelectContent>
+//                   <SelectItem value="active">Active</SelectItem>
+//                   <SelectItem value="inactive">Inactive</SelectItem>
+//                 </SelectContent>
+//               </Select>
+//             </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <Label>Class Assignments</Label>
-                <AssignSubjectDialog
-                  subjectId={item.id}
-                  subjectName={item.subjectName}
-                  trigger={
-                    <Button variant="outline" size="sm">
-                      Assign to Class
-                    </Button>
-                  }
-                />
-              </div>
-              <div className="rounded-md border p-3 text-muted-foreground text-sm">
-                Currently assigned to {item.classes} class(es) with{" "}
-                {item.students} students total.
-              </div>
-            </div>
-          </form>
-        </div>
-        <DrawerFooter>
-          <Button>Save Changes</Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
-  );
-}
+//             <div className="flex flex-col gap-3">
+//               <Label htmlFor="description">Description</Label>
+//               <Textarea
+//                 id="description"
+//                 placeholder="Brief description of the subject..."
+//                 rows={3}
+//               />
+//             </div>
+
+//             <div className="flex flex-col gap-3">
+//               <Label htmlFor="prerequisite">Prerequisite</Label>
+//               <Textarea
+//                 defaultValue={item.prerequisites}
+//                 id="prerequisite"
+//                 placeholder="Brief description of the subject..."
+//                 rows={3}
+//               />
+//             </div>
+//             <Separator />
+
+//             <div className="flex flex-col gap-3">
+//               <div className="flex items-center justify-between">
+//                 <Label>Class Assignments</Label>
+//                 <AssignSubjectDialog
+//                   subjectId={item.id}
+//                   subjectName={item.subjectName}
+//                   trigger={
+//                     <Button variant="outline" size="sm">
+//                       Assign to Class
+//                     </Button>
+//                   }
+//                 />
+//               </div>
+//               <div className="rounded-md border p-3 text-muted-foreground text-sm">
+//                 Currently assigned to {item.classes} class(es) with{" "}
+//                 {item.students} students total.
+//               </div>
+//             </div>
+//           </form>
+//         </div>
+//         <DrawerFooter>
+//           <Button>Save Changes</Button>
+//           <DrawerClose asChild>
+//             <Button variant="outline">Cancel</Button>
+//           </DrawerClose>
+//         </DrawerFooter>
+//       </DrawerContent>
+//     </Drawer>
+//   );
+// }
 

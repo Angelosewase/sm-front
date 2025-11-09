@@ -34,6 +34,7 @@ export default function HeadTeacherSubjects() {
       subjectType: (s as any).subjectType ?? "",
       creditHours: String((s as any).creditHours ?? ""),
       level: (s as any).level ?? "",
+      prerequisites: (s as any).prerequisites ?? "",
     }));
   }, [data]);
 
@@ -41,7 +42,7 @@ export default function HeadTeacherSubjects() {
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="mx-auto p-4 space-y-4">
+    <div className="mx-auto py-4 space-y-4">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Subject Management</h1>
         <p className="text-muted-foreground">Manage subjects, assign them to classes, and track performance</p>
