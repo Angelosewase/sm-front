@@ -38,9 +38,10 @@ import {
 
 interface CreateSchoolDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void;
   onSubmit?: (data: SchoolFormData) => void | Promise<void>;
   isLoading?: boolean;
+  preventClose?: boolean;
 }
 
 export interface SchoolFormData {
@@ -85,6 +86,7 @@ export function CreateSchoolDialog({
   onOpenChange,
   onSubmit,
   isLoading = false,
+  preventClose = false,
 }: CreateSchoolDialogProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<SchoolFormData>({
@@ -157,8 +159,15 @@ export function CreateSchoolDialog({
     return false;
   };
 
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (preventClose && !nextOpen) {
+      return;
+    }
+    onOpenChange?.(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange} modal>
       <DialogContent
         className="sm:min-w-[70vw] max-h-[95vh] overflow-hidden p-0 shadow-xl flex"
         showCloseButton={false}

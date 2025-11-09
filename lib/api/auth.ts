@@ -5,18 +5,27 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  role: string;
+}
+
+export interface AuthUserSchool {
+  id: string;
+  name: string;
+}
+
 export interface LoginResponse {
   accessToken: string;
-  user: {
-    id: string;
-    email: string;
-    name?: string;
-    role: string;
-  };
-  school: {
-    id: string
-    name: string
-  }
+  user: AuthUser;
+  school: AuthUserSchool | null;
+}
+
+export interface ProfileResponse {
+  user: AuthUser;
+  school: AuthUserSchool | null;
 }
 
 export interface RequestResetData {
@@ -48,8 +57,8 @@ export const authApi = {
     return data;
   },
 
-  getProfile: async () => {
-    const { data } = await axiosInstance.get('/auth/profile');
+  getProfile: async (): Promise<ProfileResponse> => {
+    const { data } = await axiosInstance.get<ProfileResponse>('/auth/profile');
     return data;
   },
 

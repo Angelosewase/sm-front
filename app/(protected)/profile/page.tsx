@@ -1,5 +1,6 @@
 "use client";
 import { useAuth } from "@/contexts/auth-context";
+import { useBusiness } from "@/contexts/school-context";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,8 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, userSchool } = useAuth();
+  const { user } = useAuth();
+  const { school } = useBusiness();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [isEditEmailOpen, setIsEditEmailOpen] = useState(false);
@@ -226,11 +228,11 @@ export default function ProfilePage() {
           <div className="grid sm:grid-cols-2 gap-4 mt-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">School ID</p>
-              <p className="text-sm font-mono mt-1 break-all">{userSchool?.id || 'Not Yet'}</p>
+              <p className="text-sm font-mono mt-1 break-all">{school?.id || 'Not Yet'}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">School Name</p>
-              <p className="text-sm mt-1 capitalize">{userSchool?.name || "Not Yet"}</p>
+              <p className="text-sm mt-1 capitalize">{school?.name || "Not Yet"}</p>
             </div>
           </div>
         </div>
