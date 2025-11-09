@@ -1,11 +1,11 @@
 import { axiosInstance } from '../axios';
 
-// Teacher entity matching API response
-export interface Teacher {
+// Staff entity matching API response
+export interface Staff {
   _id: string;
   email: string;
   name?: string;
-  role: 'teacher';
+  role: 'staff';
   phone?: string;
   school?: string;
   createdAt?: string;
@@ -14,8 +14,8 @@ export interface Teacher {
 }
 
 // Paginated list response
-export interface TeacherListResponse {
-  items: Teacher[];
+export interface StaffListResponse {
+  items: Staff[];
   total: number;
   page: number;
   limit: number;
@@ -24,8 +24,8 @@ export interface TeacherListResponse {
   hasPrev: boolean;
 }
 
-// Query parameters for listing teachers
-export interface TeacherQueryParams {
+// Query parameters for listing staff members
+export interface StaffQueryParams {
   q?: string;          // Search across name and email
   email?: string;      // Filter by exact email
   school?: string;     // Filter by school ObjectId
@@ -35,16 +35,16 @@ export interface TeacherQueryParams {
   order?: 'asc' | 'desc'; // Sort order
 }
 
-// Data for creating a new teacher
-export interface CreateTeacherData {
+// Data for creating a new staff member
+export interface CreateStaffData {
   email: string;       // Required: unique email
   name?: string;       // Optional: display name
   phone?: string;      // Optional: contact phone
   school?: string;     // Optional: school ObjectId
 }
 
-// Data for updating an existing teacher
-export interface UpdateTeacherData {
+// Data for updating an existing staff member
+export interface UpdateStaffData {
   name?: string;       // Optional: updated display name
   email?: string;      // Optional: updated email (must be unique)
   phone?: string;      // Optional: updated contact number
@@ -52,51 +52,51 @@ export interface UpdateTeacherData {
 }
 
 // Delete response
-export interface DeleteTeacherResponse {
+export interface DeleteStaffResponse {
   deleted: boolean;
 }
 
-export const teachersApi = {
+export const staffApi = {
   /**
-   * Get paginated list of teachers with optional filters
+   * Get paginated list of staff members with optional filters
    */
-  getTeachers: async (params?: TeacherQueryParams): Promise<TeacherListResponse> => {
-    const { data } = await axiosInstance.get<TeacherListResponse>('/teachers', {
+  getStaff: async (params?: StaffQueryParams): Promise<StaffListResponse> => {
+    const { data } = await axiosInstance.get<StaffListResponse>('/staff', {
       params,
     });
     return data;
   },
 
   /**
-   * Get a single teacher by ID
+   * Get a single staff member by ID
    */
-  getTeacherById: async (id: string): Promise<Teacher> => {
-    const { data } = await axiosInstance.get<Teacher>(`/teachers/${id}`);
+  getStaffById: async (id: string): Promise<Staff> => {
+    const { data } = await axiosInstance.get<Staff>(`/staff/${id}`);
     return data;
   },
 
   /**
-   * Create a new teacher
+   * Create a new staff member
    * Password is generated automatically by the system
    */
-  createTeacher: async (teacherData: CreateTeacherData): Promise<Teacher> => {
-    const { data } = await axiosInstance.post<Teacher>('/teachers', teacherData);
+  createStaff: async (staffData: CreateStaffData): Promise<Staff> => {
+    const { data } = await axiosInstance.post<Staff>('/staff', staffData);
     return data;
   },
 
   /**
-   * Update an existing teacher
+   * Update an existing staff member
    */
-  updateTeacher: async (id: string, teacherData: UpdateTeacherData): Promise<Teacher> => {
-    const { data } = await axiosInstance.patch<Teacher>(`/teachers/${id}`, teacherData);
+  updateStaff: async (id: string, staffData: UpdateStaffData): Promise<Staff> => {
+    const { data } = await axiosInstance.patch<Staff>(`/staff/${id}`, staffData);
     return data;
   },
 
   /**
-   * Delete a teacher permanently
+   * Delete a staff member permanently
    */
-  deleteTeacher: async (id: string): Promise<DeleteTeacherResponse> => {
-    const { data } = await axiosInstance.delete<DeleteTeacherResponse>(`/teachers/${id}`);
+  deleteStaff: async (id: string): Promise<DeleteStaffResponse> => {
+    const { data } = await axiosInstance.delete<DeleteStaffResponse>(`/staff/${id}`);
     return data;
   },
 };

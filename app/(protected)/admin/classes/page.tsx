@@ -1,7 +1,11 @@
 "use client";
 
 import React from "react";
-import { ClassDataTable, ClassStats, AddClassDialog } from "@/components/admin/classes";
+import {
+  ClassDataTable,
+  ClassStats,
+  AddClassDialog,
+} from "@/components/admin/classes";
 import { useClasses } from "@/hooks/use-classes";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -10,7 +14,11 @@ export default function AdminClassesPage() {
   const [search, setSearch] = React.useState("");
   const [gradeLevel, setGradeLevel] = React.useState<string | undefined>();
 
-  const { data: classesData, isLoading, error } = useClasses({
+  const {
+    data: classesData,
+    isLoading,
+    error,
+  } = useClasses({
     page,
     limit: 100,
     search: search || undefined,
@@ -22,9 +30,12 @@ export default function AdminClassesPage() {
       <div className="py-4">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-destructive">Error loading classes</h3>
+            <h3 className="text-lg font-semibold text-destructive">
+              Error loading classes
+            </h3>
             <p className="text-sm text-muted-foreground mt-2">
-              {(error as any)?.response?.data?.message || "Failed to fetch classes. Please try again later."}
+              {(error as any)?.response?.data?.message ||
+                "Failed to fetch classes. Please try again later."}
             </p>
           </div>
         </div>
@@ -53,8 +64,11 @@ export default function AdminClassesPage() {
         </>
       ) : (
         <>
-          <ClassStats data={classesData?.data || []} />
-          <ClassDataTable data={classesData?.data || []} isLoading={isLoading} />
+          <ClassStats data={[]} />
+          <ClassDataTable
+            data={classesData?.data || []}
+            isLoading={isLoading}
+          />
         </>
       )}
     </div>
