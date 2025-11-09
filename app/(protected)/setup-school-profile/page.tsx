@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/auth-context";
+import { useBusiness } from "@/contexts/business-context";
 import {
   CreateSchoolPayload,
   School as SchoolType,
@@ -117,8 +117,12 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function SetupSchoolProfilePage() {
-  const { userSchool, refreshUser } = useAuth();
-  const [createDialogOpen, setCreateDialogOpen] = useState(!userSchool);
+  const {
+    school,
+    setSchool: setBusinessSchool,
+    isLoading: isBusinessLoading,
+  } = useBusiness();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [fetchErrorNotified, setFetchErrorNotified] = useState(false);
 
   const {
@@ -127,8 +131,8 @@ export default function SetupSchoolProfilePage() {
     isFetching: isSchoolFetching,
     error: fetchError,
     refetch,
-  } = useSchool<SchoolType>(userSchool?.id, {
-    enabled: !!userSchool?.id,
+  } = useSchool<SchoolType>(school?.id, {
+    enabled: !!school?.id,
   });
 
   const schoolProfile = useMemo<SchoolProfile | null>(() => {
@@ -146,13 +150,16 @@ export default function SetupSchoolProfilePage() {
   }, [fetchedSchool]);
 
   useEffect(() => {
-    if (!userSchool?.id) {
+    if (isBusinessLoading) {
+      return;
+    }
+    if (!school?.id) {
       setCreateDialogOpen(true);
       return;
     }
     setCreateDialogOpen(false);
     refetch();
-  }, [refetch, userSchool?.id]);
+  }, [isBusinessLoading, refetch, school?.id]);
 
   useEffect(() => {
     if (fetchError && !fetchErrorNotified) {
@@ -171,7 +178,7 @@ export default function SetupSchoolProfilePage() {
   const createSchoolMutation = useCreateSchool({
     onSuccess: async (school) => {
       toast.success("School created successfully!");
-      await refreshUser();
+      setBusinessSchool({ id: school.id, name: school.name });
       setCreateDialogOpen(false);
     },
     onError: (error) => {
@@ -261,7 +268,7 @@ export default function SetupSchoolProfilePage() {
         onOpenChange={setCreateDialogOpen}
         onSubmit={handleCreateSchool}
         isLoading={createSchoolMutation.isPending}
-        preventClose={!userSchool}
+        preventClose={!school}
       />
     </div>
   );

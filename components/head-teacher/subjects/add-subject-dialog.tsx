@@ -25,10 +25,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-toastify";
 import { useCreateSubject } from "@/features/subjects.api";
 import { CreateSubjectDto } from "@/types/subjects.dto";
-import { useAuth } from "@/contexts/auth-context";
+import { useBusiness } from "@/contexts/business-context";
 
 export function AddSubjectDialog() {
-  const {userSchool} = useAuth()
+  const { school } = useBusiness();
   const [open, setOpen] = React.useState(false);
   const createSubjectMutation = useCreateSubject();
 
@@ -43,7 +43,7 @@ export function AddSubjectDialog() {
       maxScore: formData.get("maxScore") ? Number(formData.get("maxScore")) : undefined,
       category: formData.get("category") as string | undefined,
       minPassingScore: formData.get("minPassingScore") ? Number(formData.get("minPassingScore")) : undefined,
-      school: userSchool?.id,
+      school: school?.id,
       department: formData.get("department") as string | undefined,
       creditHours: formData.get("creditHours") ? Number(formData.get("creditHours")) : undefined,
       level: formData.get("level") as string | undefined,

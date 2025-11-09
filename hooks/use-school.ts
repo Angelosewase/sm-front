@@ -11,6 +11,7 @@ import {
   type School,
   type UpdateSchoolPayload,
 } from "@/lib/api/school";
+import { toast } from "react-toastify";
 
 export const schoolKeys = {
   all: ["school"] as const,
@@ -40,6 +41,10 @@ export function useSchool<TData = School>(
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
     ...options,
+    // onError: (error: any) => {
+    //   const message = error.response?.data?.message || "Failed to fetch school";
+    //   toast.error(message);
+    // },
   });
 }
 
@@ -50,13 +55,27 @@ type CreateOptions = Omit<
 
 export function useCreateSchool(options?: CreateOptions) {
   const queryClient = useQueryClient();
+  const userOnSuccess = options?.onSuccess as
+    | ((...args: any[]) => unknown)
+    | undefined;
 
   return useMutation({
     mutationFn: (payload: CreateSchoolPayload) =>
       schoolApi.createSchool(payload),
     ...options,
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: schoolKeys.all });
+    onSuccess: async (data, variables, context, mutation) => {
+      toast.success("School created successfully!");
+      try {
+        if (userOnSuccess) {
+          await userOnSuccess(data, variables, context, mutation);
+        }
+      } finally {
+        await queryClient.invalidateQueries({ queryKey: schoolKeys.all });
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to create school";
+      toast.error(message);
     },
   });
 }
@@ -70,15 +89,29 @@ type UpdateOptions = Omit<
 
 export function useUpdateSchool(options?: UpdateOptions) {
   const queryClient = useQueryClient();
+  const userOnSuccess = options?.onSuccess as
+    | ((...args: any[]) => unknown)
+    | undefined;
 
   return useMutation({
     mutationFn: ({ id, payload }: UpdateVariables) =>
       schoolApi.updateSchool(id, payload),
     ...options,
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: schoolKeys.detail(variables.id),
-      });
+    onSuccess: async (data, variables, context, mutation) => {
+      toast.success("School updated successfully!");
+      try {
+        if (userOnSuccess) {
+          await userOnSuccess(data, variables, context, mutation);
+        }
+      } finally {
+        await queryClient.invalidateQueries({
+          queryKey: schoolKeys.detail(variables.id),
+        });
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to update school";
+      toast.error(message);
     },
   });
 }

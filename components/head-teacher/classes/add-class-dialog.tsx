@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateClass } from "@/features/classes.api";
 import { useUsers } from "@/features/users.api";
-import { useAuth } from "@/contexts/auth-context";
+import { useBusiness } from "@/contexts/business-context";
 
 const createClassSchema = z.object({
   name: z.string().min(1, 'Required').max(20, 'Max 20 chars'),
@@ -49,7 +49,7 @@ const createClassSchema = z.object({
 type FormValues = z.infer<typeof createClassSchema>;
 
 export function AddClassDialog() {
-  const {userSchool} = useAuth()
+  const { school } = useBusiness();
   const createClassMutation = useCreateClass();
   const { data: teachers } = useUsers({ role: "teacher", limit: 50 });
   const [open, setOpen] = React.useState(false);
@@ -74,7 +74,7 @@ export function AddClassDialog() {
     try {
     const data_ = {
       ...data,
-      school: userSchool ? userSchool.id : ''
+      school: school ? school.id : ''
     }
       await toast.promise(createClassMutation.mutateAsync(data_ as any), {
         pending: `Creating class: ${data.name}`,

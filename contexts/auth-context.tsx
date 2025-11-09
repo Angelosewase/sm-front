@@ -2,8 +2,14 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, LoginCredentials, LoginResponse } from '@/lib/api/auth';
-import { setAuthCookie, setUserCookie, clearAuthCookies, setSchoolCookie } from '@/lib/actions/auth';
+import {
+  authApi,
+  type AuthUserSchool,
+  type LoginCredentials,
+  type LoginResponse,
+} from '@/lib/api/auth';
+import { setAuthCookie, setUserCookie, clearAuthCookies } from '@/lib/actions/auth';
+import { useBusiness, type BusinessSchool } from '@/contexts/business-context';
 
 interface User {
   id: string;
@@ -14,16 +20,11 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  userSchool: UserSchool | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
-interface UserSchool {
-  id: string;
-  name: string;
+  // refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -39,14 +40,13 @@ function getCookie(name: string): string | null {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userSchool, setUserSchool] = useState<UserSchool | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { setSchool: setBusinessSchool, clearSchool } = useBusiness();
 
   useEffect(() => {
     // Check if user is logged in on mount from cookie
     const userCookie = getCookie('user');
-    const schoolCookie = getCookie('school');
 
     if (userCookie) {
       try {
@@ -55,19 +55,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to parse user data:', error);
       }
     }
-    if (schoolCookie) {
-      try {
-        setUserSchool(JSON.parse(schoolCookie));
-      } catch (error) {
-        console.error('Failed to parse school data:', error);
-      }
-    }
     setIsLoading(false);
   }, []);
 
+  const normalizeBusinessSchool = (school: AuthUserSchool | null): BusinessSchool | null =>
+    school ? { id: school.id, name: school.name } : null;
+
   const applyAuthState = async (payload: {
     user: User;
-    school: UserSchool | null;
+    school: AuthUserSchool | null;
     accessToken?: string;
   }) => {
     if (payload.accessToken) {
@@ -75,22 +71,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await setAuthCookie(normalizedToken);
     }
     await setUserCookie(payload.user);
-    await setSchoolCookie(payload.school);
     setUser(payload.user);
-    setUserSchool(payload.school);
+    setBusinessSchool(normalizeBusinessSchool(payload.school));
   };
 
-  const refreshUser = async () => {
-    try {
-      const response = await authApi.getProfile();
-      await applyAuthState({
-        user: response.user,
-        school: response.school ?? null,
-      });
-    } catch (error) {
-      console.error('Failed to refresh user profile:', error);
-    }
-  };
+  // const refreshUser = async () => {
+  //   try {
+  //     const response = await authApi.getProfile();
+  //     await applyAuthState({
+  //       user: response.user,
+  //       school: response.school ?? null,
+  //     });
+  //   } catch (error) {
+  //     console.error('Failed to refresh user profile:', error);
+  //   }
+  // };
 
   const login = async (credentials: LoginCredentials) => {
     const response: LoginResponse = await authApi.login(credentials);
@@ -99,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!userSchoolData && response.user.role !== 'admin') {
       await clearAuthCookies();
       setUser(null);
-      setUserSchool(null);
+      clearSchool();
       throw new Error('Your account is not associated with a school. Please contact your administrator.');
     }
 
@@ -123,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await clearAuthCookies();
     setUser(null);
-    setUserSchool(null);
+    clearSchool();
     router.push('/login');
     router.refresh(); // Refresh to update middleware
   };
@@ -132,12 +127,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        userSchool,
         isAuthenticated: !!user,
         isLoading,
         login,
         logout,
-        refreshUser,
+        // refreshUser,
       }}
     >
       {children}
