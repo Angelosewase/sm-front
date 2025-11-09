@@ -10,11 +10,12 @@ import {
   PaginatedSubjectsResponse,
   AssignTeacherDto,
   AssignClassAndTeacherDto,
+  RemoveFromClassDto,
 } from "@/types/subjects.dto";
 import { getAuthToken } from "@/lib/actions/auth";
 
 import { toast } from "react-toastify";
-import { createSubject, updateSubject, fetchSubjects, fetchSubjectById, deleteSubject, assignSubjectToTeacher, assignSubjectToClassAndTeacher, fetchSchoolStats, fetchTeacherWorkload, fetchClassesOfSubject, fetchSubjectsOfClass, fetchClassesOfTeacher, fetchSubjectsOfTeacher, fetchTeacherSchedule, assignSubjectBulk } from "./subjects.mutations";
+import { createSubject, updateSubject, fetchSubjects, fetchSubjectById, deleteSubject, assignSubjectToTeacher, assignSubjectToClassAndTeacher, fetchSchoolStats, fetchTeacherWorkload, fetchClassesOfSubject, fetchSubjectsOfClass, fetchClassesOfTeacher, fetchSubjectsOfTeacher, fetchTeacherSchedule, assignSubjectBulk, removeSubjectFromClass, deleteAssignment } from "./subjects.mutations";
 
 
 // Mutation hooks
@@ -100,7 +101,10 @@ export const useAssignSubjectToTeacher = () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       toast.success("Subject assigned to teacher");
     },
-    onError: (err) => toast.error(err.message || "Failed to assign subject"),
+    onError: (err: any) => {
+      console.log("the error is: ",err.response.data.message);
+      toast.error(err.response.data.message || "Failed to assign subject");
+    },
   });
 };
 
@@ -177,4 +181,34 @@ export const useAssignSubjectBulk = () => {
     onError: (err) => toast.error(err.message || "Failed to assign subjects"),
   });
 };
+
+
+export const useDeleteAssignment = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (assignmentId: string) => deleteAssignment(assignmentId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subjects"] });
+      qc.invalidateQueries({ queryKey: ["classSubjects"] });
+      qc.invalidateQueries({ queryKey: ["teacherSubjects"] });
+      toast.success("Assignment removed");
+    },
+    onError: (e) => toast.error(e.message ?? "Failed to delete assignment"),
+  });
+};
+
+
+export const useRemoveSubjectFromClass = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, RemoveFromClassDto>({
+    mutationFn: removeSubjectFromClass,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["subjects"] });
+      qc.invalidateQueries({ queryKey: ["classSubjects"] });
+      toast.success("Subject removed from class");
+    },
+    onError: (e) => toast.error(e.message ?? "Failed to remove"),
+  });
+};
+
 

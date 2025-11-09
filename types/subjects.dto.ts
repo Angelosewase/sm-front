@@ -76,3 +76,11 @@ export type AssignClassAndTeacherDto = {
   academicYear: string;
   term?: string;
 };
+
+
+export type RemoveFromClassDto = {
+      subjectId: string;
+      classId: string;
+      academicYear: string;
+      term?: string;
+};

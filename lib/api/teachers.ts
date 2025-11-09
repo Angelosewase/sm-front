@@ -60,9 +60,12 @@ export const teachersApi = {
   /**
    * Get paginated list of teachers with optional filters
    */
-  getTeachers: async (params?: TeacherQueryParams): Promise<TeacherListResponse> => {
-    const { data } = await axiosInstance.get<TeacherListResponse>('/teachers', {
-      params,
+  getTeachers: async (params?: { page?: number; limit?: number; role?: string }): Promise<TeacherListResponse> => {
+    const { data } = await axiosInstance.get<TeacherListResponse>('/api/teachers', {
+      params: {
+        ...params,
+        // role: 'teacher', // Filter by teacher role
+      },
     });
     return data;
   },

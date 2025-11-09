@@ -124,7 +124,7 @@ export function AddClassDialog() {
                     <SelectValue placeholder={isLoadingTeachers ? "Loading teachers..." : "Select teacher"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {teachersData?.data.map((teacher) => (
+                    {teachersData?.items.map((teacher) => (
                       <SelectItem key={teacher._id} value={teacher._id}>
                         {teacher.name}
                       </SelectItem>

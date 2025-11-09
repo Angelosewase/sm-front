@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getAuthToken } from "@/lib/actions/auth";
-import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassAndTeacherDto } from "@/types/subjects.dto";
+import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassAndTeacherDto, RemoveFromClassDto } from "@/types/subjects.dto";
 
 
 
@@ -84,7 +84,7 @@ export const assignSubjectToClassAndTeacher = async (
 
 export const fetchSchoolStats = async (schoolId: string, academicYear?: string) => {
   const response = await axios.get(
-    `http://localhost:3000/api/subjects/analytics/school/${schoolId}`,
+    `${API_BASE_URL}/analytics/school/${schoolId}`,
     {
       params: academicYear ? { academicYear } : undefined,
       headers: { Authorization: `Bearer ${await getAuthToken()}` },
@@ -96,7 +96,7 @@ export const fetchSchoolStats = async (schoolId: string, academicYear?: string) 
 // Teacher workload
 export const fetchTeacherWorkload = async (teacherId: string, academicYear?: string) => {
   const response = await axios.get(
-    `http://localhost:3000/api/subjects/analytics/teacher/${teacherId}/workload`,
+    `${API_BASE_URL}/analytics/teacher/${teacherId}/workload`,
     {
       params: academicYear ? { academicYear } : undefined,
       headers: { Authorization: `Bearer ${await getAuthToken()}` },
@@ -108,7 +108,7 @@ export const fetchTeacherWorkload = async (teacherId: string, academicYear?: str
 // Subject's classes
 export const fetchClassesOfSubject = async (subjectId: string, params = {}) => {
   const response = await axios.get(
-    `http://localhost:3000/api/subjects/${subjectId}/classes`,
+    `${API_BASE_URL}/${subjectId}/classes`,
     {
       params,
       headers: { Authorization: `Bearer ${await getAuthToken()}` },
@@ -120,7 +120,7 @@ export const fetchClassesOfSubject = async (subjectId: string, params = {}) => {
 // Classes subjects
 export const fetchSubjectsOfClass = async (classId: string, params = {}) => {
   const response = await axios.get(
-    `http://localhost:3000/api/subjects/class/${classId}/subjects`,
+    `${API_BASE_URL}/class/${classId}/subjects`,
     {
       params,
       headers: { Authorization: `Bearer ${await getAuthToken()}` },
@@ -132,7 +132,7 @@ export const fetchSubjectsOfClass = async (classId: string, params = {}) => {
 // Teacher's classes
 export const fetchClassesOfTeacher = async (teacherId: string, params = {}) => {
   const response = await axios.get(
-    `http://localhost:3000/api/subjects/teacher/${teacherId}/classes`,
+    `${API_BASE_URL}/teacher/${teacherId}/classes`,
     {
       params,
       headers: { Authorization: `Bearer ${await getAuthToken()}` },
@@ -144,7 +144,7 @@ export const fetchClassesOfTeacher = async (teacherId: string, params = {}) => {
 // Teacher's subjects
 export const fetchSubjectsOfTeacher = async (teacherId: string, params = {}) => {
   const response = await axios.get(
-    `http://localhost:3000/api/subjects/teacher/${teacherId}/subjects`,
+    `${API_BASE_URL}/teacher/${teacherId}/subjects`,
     {
       params,
       headers: { Authorization: `Bearer ${await getAuthToken()}` },
@@ -156,7 +156,7 @@ export const fetchSubjectsOfTeacher = async (teacherId: string, params = {}) => 
 // Teacher schedule
 export const fetchTeacherSchedule = async (teacherId: string, academicYear: string, term?: string) => {
   const response = await axios.get(
-    `http://localhost:3000/api/subjects/teacher/${teacherId}/schedule`,
+    `${API_BASE_URL}/teacher/${teacherId}/schedule`,
     {
       params: { academicYear, ...(term ? { term } : {}) },
       headers: { Authorization: `Bearer ${await getAuthToken()}` },
@@ -175,4 +175,26 @@ export const assignSubjectBulk = async (subjectId: string, assignments: any) => 
     { headers: { Authorization: `Bearer ${token}` } }
   );
 };
-// Usage: useMutation({ mutationFn: ({ subjectId, assignments }) => assignSubjectBulk(subjectId, assignments) })
+
+
+/* -------------------------------------------------------------------------- */
+/*  3. Delete assignment                                                      */
+/* -------------------------------------------------------------------------- */
+export const deleteAssignment = async (assignmentId: string) => {
+  const response = await axios.delete(
+    `${API_BASE_URL}/assignments/${assignmentId}`,
+    { headers: { Authorization: `Bearer ${await getAuthToken()}` } }
+  );
+  return response.data;
+};
+
+/* -------------------------------------------------------------------------- */
+/*  4. Remove subject from class (DELETE /remove-from-class)                 */
+/* -------------------------------------------------------------------------- */
+export const removeSubjectFromClass = async (body: RemoveFromClassDto) => {
+  const response = await axios.delete(`${API_BASE_URL}/remove-from-class`, {
+    data: body,
+    headers: { Authorization: `Bearer ${await getAuthToken()}` },
+  });
+  return response.data;
+};

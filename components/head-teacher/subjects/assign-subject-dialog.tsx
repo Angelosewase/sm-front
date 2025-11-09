@@ -22,7 +22,6 @@ import {
 import { toast } from "react-toastify";
 import { IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import { useUsers } from "@/features/users.api";
 import { useClasses } from "@/features/classes.api";
 import {
   useAssignSubjectToTeacher,
@@ -30,6 +29,7 @@ import {
   useAssignSubjectBulk,
 } from "@/features/subjects.api";
 import { useTerms, useAcademicYears } from "@/features/academic-terms.api";
+import { useTeachers } from "@/hooks/use-teachers";
 
 interface AssignSubjectDialogProps {
   trigger?: React.ReactNode;
@@ -44,7 +44,7 @@ export function AssignSubjectDialog({
   trigger,
   subjectId,
   subjectName,
-  mode = "class",
+  mode,
   open: controlledOpen,
   onOpenChange,
 }: AssignSubjectDialogProps) {
@@ -65,10 +65,10 @@ export function AssignSubjectDialog({
     Array<{ id: string; className: string; teacher: string | undefined }>
   >([]);
 
-  const { data: teachersData } = useUsers({ role: "teacher", limit: 50 });
+  const { data: teachersData } = useTeachers()
   const { data: availableClassesData } = useClasses();
 
-  const availableClasses = availableClassesData?.items ?? [];
+  const availableClasses = availableClassesData?.data ?? [];
   const availableTeachers = teachersData?.items ?? [];
 
   const { data: academicYearsData } = useAcademicYears();
@@ -113,8 +113,9 @@ export function AssignSubjectDialog({
     toast.success("Assignment removed");
   };
 
+
   const handleSubmit = () => {
-    /* ---- teacher mode --------------------------------------------------- */
+ /* ---- teacher mode --------------------------------------------------- */
     if (mode === "teacher") {
       if (!subjectId) {
         toast.error("Missing subjectId");
@@ -176,43 +177,43 @@ export function AssignSubjectDialog({
     }
 
 
-/* ---- bulk (multiple) mode ------------------------------------------ */
-if (assignedClasses.length > 0) {
-  if (!subjectId || !academicYear) {
-    toast.error("Missing subjectId or academic year");
-    return;
-  }
+    /* ---- bulk (multiple) mode ------------------------------------------ */
+    if (assignedClasses.length > 0) {
+      if (!subjectId || !academicYear) {
+        toast.error("Missing subjectId or academic year");
+        return;
+      }
 
-  const assignmentsPayload = assignedClasses.map((a) => ({
-    classId: a.id,
-    teacherId: availableTeachers.find((t) => t.name === a.teacher)?._id,
-    academicYear,
-    term: term || undefined,
-  }));
+      const assignmentsPayload = assignedClasses.map((a) => ({
+        classId: a.id,
+        teacherId: availableTeachers.find((t) => t.name === a.teacher)?._id,
+        academicYear,
+        term: term || undefined,
+      }));
 
-  assignBulkMutation.mutate(
-    { subjectId: String(subjectId), assignments: assignmentsPayload },
-    {
-      onSuccess: () => {
-        toast.success(
-          `Assigned ${subjectName || "subject"} to ${assignedClasses.length} class(es) successfully.`
-        );
-        setOpen(false);
-        setAssignedClasses([]);
-        setSelectedClass("");
-        setSelectedTeacher("");
-        setAcademicYear("");
-        setTerm("");
-      },
-      onError: (err) =>
-        toast.error(
-          err?.message || "Bulk assignment failed (maybe duplicate assignment?)"
-        ),
+      assignBulkMutation.mutate(
+        { subjectId: String(subjectId), assignments: assignmentsPayload },
+        {
+          onSuccess: () => {
+            toast.success(
+              `Assigned ${subjectName || "subject"} to ${assignedClasses.length} class(es) successfully.`
+            );
+            setOpen(false);
+            setAssignedClasses([]);
+            setSelectedClass("");
+            setSelectedTeacher("");
+            setAcademicYear("");
+            setTerm("");
+          },
+          onError: (err) =>
+            toast.error(
+              err?.message || "Bulk assignment failed (maybe duplicate assignment?)"
+            ),
+        }
+      );
+
+      return;
     }
-  );
-
-  return;
-}
 
 
     /* ---- bulk (multiple) mode ------------------------------------------ */
@@ -265,7 +266,7 @@ if (assignedClasses.length > 0) {
         <div className="flex flex-col gap-5 py-4">
           {/* ----- Class selector (only when NOT teacher mode) ----- */}
           <div className="flex flex-row gap-5 justify-between items-center mb-4">
-            {mode !== "teacher" && (
+            {mode === "class" && (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="class-select">Class</Label>
                 <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -284,7 +285,7 @@ if (assignedClasses.length > 0) {
             )}
 
             {/* ----- Teacher + Year/Term + Add button ----- */}
-            {/* <div className="flex flex-col gap-5"> */}
+
             {/* Teacher */}
             <div className="flex flex-col gap-2">
               <Label htmlFor="teacher-select">Teacher</Label>
@@ -295,7 +296,7 @@ if (assignedClasses.length > 0) {
                 <SelectContent>
                   {availableTeachers.map((t) => (
                     <SelectItem key={t._id} value={t._id}>
-                      {t.fullName ?? t.name ?? t.email ?? t._id}
+                      {t.name ?? t.email ?? t._id}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -306,49 +307,49 @@ if (assignedClasses.length > 0) {
           <div className="flex flex-row gap-5 justify-between items-center mb-4">
             {/* Year + Term (stacked on mobile) */}
             {/* <div className="flex flex-col gap-4 sm:grid-cols-2 sm:gap-3"> */}
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="academicYear">Academic Year</Label>
-               <Select>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="academicYear">Academic Year</Label>
+              <Select value={academicYear} onValueChange={setAcademicYear}>
                 <SelectTrigger id="academicYear">
                   <SelectValue placeholder="Select Academic Year" />
                 </SelectTrigger>
                 <SelectContent>
                   {academicYears.map((a) => (
-                    <SelectItem key={a._id} value={a._id}>
+                    <SelectItem key={a._id} value={a.label}>
                       {a.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="term">Term (optional)</Label>
-                <Select value={term} onValueChange={setTerm}>
-                  <SelectTrigger id="term">
-                    <SelectValue placeholder="Select term" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {terms.map((t) => (
-                      <SelectItem key={t._id} value={t._id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
+              </Select>
             </div>
 
-            {/* Add Assignment button – full width on mobile */}
-            <Button
-              type="button"
-              variant="outline"
-              className="md:col-span-2"
-              onClick={handleAddAssignment}
-            >
-              Add Assignment
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="term">Term (optional)</Label>
+              <Select value={term} onValueChange={setTerm}>
+                <SelectTrigger id="term">
+                  <SelectValue placeholder="Select term" />
+                </SelectTrigger>
+                <SelectContent>
+                  {terms.map((t) => (
+                    <SelectItem key={t._id} value={t.name}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+          </div>
+
+          {/* Add Assignment button – full width on mobile */}
+          <Button
+            type="button"
+            variant="outline"
+            className="md:col-span-2"
+            onClick={handleAddAssignment}
+          >
+            Add Assignment
+          </Button>
           {/* </div> */}
 
           {/* ----- Assigned classes list ----- */}

@@ -45,7 +45,7 @@ export interface ClassLite {
 }
 
 export interface PaginatedClassesResponse {
-  items: ClassLite[];
+  data: ClassLite[];
   total: number;
   page?: number;             // include if your backend returns it
   limit?: number;            // include if your backend returns it
