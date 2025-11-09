@@ -13,6 +13,8 @@ import {
   ChevronLeft,
   Check,
   CircleCheckBig,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import {
   Dialog,
@@ -46,9 +48,7 @@ export interface SchoolFormData {
   type: string;
   address: string;
   city: string;
-  state: string;
-  zipCode: string;
-  country: string;
+  district: string;
   phone: string;
   email: string;
   website?: string;
@@ -68,9 +68,16 @@ const schoolTypes = [
 ];
 
 const steps = [
-  { id: 1, title: "Basic Info", description: "School details" },
-  { id: 2, title: "Location", description: "Address information" },
-  { id: 3, title: "Contact", description: "Contact details" },
+  {
+    id: 1,
+    title: "School Info",
+    description: "General and location details",
+  },
+  {
+    id: 2,
+    title: "Contact Information",
+    description: "How people can reach the school",
+  },
 ];
 
 export function CreateSchoolDialog({
@@ -85,9 +92,7 @@ export function CreateSchoolDialog({
     type: "",
     address: "",
     city: "",
-    state: "",
-    zipCode: "",
-    country: "",
+    district: "",
     phone: "",
     email: "",
     website: "",
@@ -101,7 +106,7 @@ export function CreateSchoolDialog({
   };
 
   const handleNext = () => {
-    if (currentStep < 3) {
+    if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -113,7 +118,7 @@ export function CreateSchoolDialog({
   };
 
   const handleSubmit = async () => {
-    if (currentStep === 3 && onSubmit) {
+    if (currentStep === steps.length && onSubmit) {
       await onSubmit(formData);
       resetForm();
     }
@@ -125,9 +130,7 @@ export function CreateSchoolDialog({
       type: "",
       address: "",
       city: "",
-      state: "",
-      zipCode: "",
-      country: "",
+      district: "",
       phone: "",
       email: "",
       website: "",
@@ -140,18 +143,15 @@ export function CreateSchoolDialog({
 
   const isStepValid = () => {
     if (currentStep === 1) {
-      return formData.name && formData.type;
-    }
-    if (currentStep === 2) {
       return (
+        formData.name &&
+        formData.type &&
         formData.address &&
         formData.city &&
-        formData.state &&
-        formData.zipCode &&
-        formData.country
+        formData.district
       );
     }
-    if (currentStep === 3) {
+    if (currentStep === 2) {
       return formData.phone && formData.email;
     }
     return false;
@@ -164,50 +164,65 @@ export function CreateSchoolDialog({
         showCloseButton={false}
       >
         {/* Step Indicator Sidebar */}
-        <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-          <div className="p-6 border-b border-sidebar-border">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sidebar-foreground text-lg  font-serif font-semibold">
-                School Account Setup
-              </h3>
-            </div>
+        <div className="w-80 bg-sidebar border-r border-sidebar-border flex flex-col">
+          <div className="px-6 pt-8 pb-6 border-b border-sidebar-border/60 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/70">
+              Setup required
+            </p>
+            <p className="text-sm text-sidebar-foreground/80 leading-relaxed">
+              Complete your school profile to unlock the rest of the workspace.
+            </p>
           </div>
-
-          <div className="flex-1 p-6 space-y-4">
-            {steps.map((step) => (
-              <div
-                key={step.id}
-                className={`flex items-start gap-3 transition-all ${
-                  currentStep >= step.id ? "opacity-100" : "opacity-50"
-                }`}
-              >
+          <div className=" px-6 py-10">
+            <div className="h-full flex flex-col justify-center ">
+              {steps.map((step, index) => (
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 transition-all ${
-                    currentStep > step.id
-                      ? "bg-green-500 text-white"
-                      : currentStep === step.id
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar-primary/20"
-                      : "bg-sidebar-accent text-sidebar-accent-foreground"
+                  key={step.id}
+                  className={`relative flex items-start gap-4 transition-all ${
+                    currentStep >= step.id ? "opacity-100" : "opacity-60"
                   }`}
                 >
-                  {currentStep > step.id ? <CircleCheckBig /> : step.id}
-                </div>
-                <div className="flex-1 pt-0.5">
-                  <div
-                    className={`text-sm font-medium ${
-                      currentStep >= step.id
-                        ? "text-sidebar-foreground"
-                        : "text-sidebar-foreground/60"
-                    }`}
-                  >
-                    {step.title}
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+                        currentStep > step.id
+                          ? "bg-green-500 text-white"
+                          : currentStep === step.id
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar-primary/20"
+                          : "bg-sidebar-accent text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      {currentStep > step.id ? <CircleCheckBig /> : step.id}
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div
+                        className={`w-[2px] h-12 mt-2 rounded-full transition-all ${
+                          currentStep > step.id
+                            ? "bg-green-500/80"
+                            : currentStep === step.id
+                            ? "bg-sidebar-primary/30"
+                            : "bg-sidebar-border"
+                        }`}
+                      />
+                    )}
                   </div>
-                  <div className="text-xs text-sidebar-foreground/60 mt-0.5">
-                    {step.description}
+                  <div className="flex-1 pt-0.5">
+                    <div
+                      className={`text-sm font-medium ${
+                        currentStep >= step.id
+                          ? "text-sidebar-foreground"
+                          : "text-sidebar-foreground/60"
+                      }`}
+                    >
+                      {step.title}
+                    </div>
+                    <div className="text-xs text-sidebar-foreground/60 mt-1 leading-relaxed">
+                      {step.description}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
@@ -216,194 +231,176 @@ export function CreateSchoolDialog({
           <div className="flex-1 overflow-y-auto px-8 py-8">
             <DialogHeader className="mb-6">
               <DialogTitle className="flex items-center gap-2 text-2xl">
-                <Building2 className="h-6 w-6 text-blue-600" />
                 Welcome! Let's Set Up Your School
               </DialogTitle>
               <DialogDescription>
-                Step {currentStep} of 3 - {steps[currentStep - 1].description}
+                Step {currentStep} of {steps.length} -{" "}
+                {steps[currentStep - 1].description}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
-              {/* Step 1: Basic Information */}
+              {/* Step 1: School Information */}
               {currentStep === 1 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">
-                      School Name <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="name"
-                      placeholder="Enter school name"
-                      value={formData.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
-                      disabled={isLoading}
-                      className="h-11"
-                    />
-                  </div>
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">
+                          School Name <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="name"
+                          placeholder="Enter school name"
+                          value={formData.name}
+                          onChange={(e) => handleChange("name", e.target.value)}
+                          disabled={isLoading}
+                          className="h-11"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="type">
-                      School Type <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.type}
-                      onValueChange={(value) => handleChange("type", value)}
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select school type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="default">Select school type</SelectItem>
-                        {schoolTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="type">
+                          School Type <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={formData.type}
+                          onValueChange={(value) =>
+                            handleChange(
+                              "type",
+                              value === "default" ? "" : value
+                            )
+                          }
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select school type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">
+                              Select school type
+                            </SelectItem>
+                            {schoolTypes.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="establishedYear">Established Year</Label>
-                      <Input
-                        id="establishedYear"
-                        type="number"
-                        placeholder="e.g., 1990"
-                        value={formData.establishedYear}
-                        onChange={(e) =>
-                          handleChange("establishedYear", e.target.value)
-                        }
-                        disabled={isLoading}
-                        className="h-11"
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="establishedYear">
+                            Established Year
+                          </Label>
+                          <Input
+                            id="establishedYear"
+                            type="number"
+                            placeholder="e.g., 1990"
+                            value={formData.establishedYear}
+                            onChange={(e) =>
+                              handleChange("establishedYear", e.target.value)
+                            }
+                            disabled={isLoading}
+                            className="h-11"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="studentCapacity"
+                            className="flex items-center gap-2"
+                          >
+                            <Users className="h-4 w-4" />
+                            Student Capacity
+                          </Label>
+                          <Input
+                            id="studentCapacity"
+                            type="number"
+                            placeholder="e.g., 500"
+                            value={formData.studentCapacity}
+                            onChange={(e) =>
+                              handleChange("studentCapacity", e.target.value)
+                            }
+                            disabled={isLoading}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          placeholder="Brief description of the school..."
+                          value={formData.description}
+                          onChange={(e) =>
+                            handleChange("description", e.target.value)
+                          }
+                          disabled={isLoading}
+                          rows={4}
+                        />
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="studentCapacity"
-                        className="flex items-center gap-2"
-                      >
-                        <Users className="h-4 w-4" />
-                        Student Capacity
-                      </Label>
-                      <Input
-                        id="studentCapacity"
-                        type="number"
-                        placeholder="e.g., 500"
-                        value={formData.studentCapacity}
-                        onChange={(e) =>
-                          handleChange("studentCapacity", e.target.value)
-                        }
-                        disabled={isLoading}
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="address">
+                          Address <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="address"
+                          placeholder="Enter address"
+                          value={formData.address}
+                          onChange={(e) =>
+                            handleChange("address", e.target.value)
+                          }
+                          disabled={isLoading}
+                          className="h-11"
+                        />
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Brief description of the school..."
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleChange("description", e.target.value)
-                      }
-                      disabled={isLoading}
-                      rows={4}
-                    />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="city">
+                            City <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="city"
+                            placeholder="Enter city"
+                            value={formData.city}
+                            onChange={(e) =>
+                              handleChange("city", e.target.value)
+                            }
+                            disabled={isLoading}
+                            className="h-11"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="district">
+                            District <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="district"
+                            placeholder="Enter district"
+                            value={formData.district}
+                            onChange={(e) =>
+                              handleChange("district", e.target.value)
+                            }
+                            disabled={isLoading}
+                            className="h-11"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 2: Location Information */}
+              {/* Step 2: Contact Information */}
               {currentStep === 2 && (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                  <div className="space-y-2">
-                    <Label htmlFor="address">
-                      Street Address <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="address"
-                      placeholder="Enter street address"
-                      value={formData.address}
-                      onChange={(e) => handleChange("address", e.target.value)}
-                      disabled={isLoading}
-                      className="h-11"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">
-                        City <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="city"
-                        placeholder="Enter city"
-                        value={formData.city}
-                        onChange={(e) => handleChange("city", e.target.value)}
-                        disabled={isLoading}
-                        className="h-11"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="state">
-                        State/Province <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="state"
-                        placeholder="Enter state"
-                        value={formData.state}
-                        onChange={(e) => handleChange("state", e.target.value)}
-                        disabled={isLoading}
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="zipCode">
-                        ZIP/Postal Code <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="zipCode"
-                        placeholder="Enter ZIP code"
-                        value={formData.zipCode}
-                        onChange={(e) =>
-                          handleChange("zipCode", e.target.value)
-                        }
-                        disabled={isLoading}
-                        className="h-11"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="country">
-                        Country <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="country"
-                        placeholder="Enter country"
-                        value={formData.country}
-                        onChange={(e) =>
-                          handleChange("country", e.target.value)
-                        }
-                        disabled={isLoading}
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Contact Information */}
-              {currentStep === 3 && (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="flex items-center gap-2">
@@ -467,21 +464,21 @@ export function CreateSchoolDialog({
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStep === 1 || isLoading}
-                className="h-11 px-6"
+                className="h-11 px-6 rounded-lg border-none"
               >
-                <ChevronLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="" />
                 Back
               </Button>
 
-              {currentStep < 3 ? (
+              {currentStep < steps.length ? (
                 <Button
                   type="button"
                   onClick={handleNext}
                   disabled={!isStepValid() || isLoading}
-                  className="h-11 px-6"
+                  className=" px-8 rounded-2xl border-none"
                 >
                   Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
                 <Button
