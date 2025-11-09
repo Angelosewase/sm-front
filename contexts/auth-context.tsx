@@ -19,6 +19,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 interface UserSchool {
   id: string;
@@ -64,18 +65,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
   }, []);
 
+  const applyAuthState = async (payload: {
+    user: User;
+    school: UserSchool | null;
+    accessToken?: string;
+  }) => {
+    if (payload.accessToken) {
+      const normalizedToken = payload.accessToken.replace(/^Bearer\s+/i, '');
+      await setAuthCookie(normalizedToken);
+    }
+    await setUserCookie(payload.user);
+    await setSchoolCookie(payload.school);
+    setUser(payload.user);
+    setUserSchool(payload.school);
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await authApi.getProfile();
+      await applyAuthState({
+        user: response.user,
+        school: response.school ?? null,
+      });
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+    }
+  };
+
   const login = async (credentials: LoginCredentials) => {
     const response: LoginResponse = await authApi.login(credentials);
+    const userSchoolData = response.school ?? null;
 
-    // Store token and user data in cookies via server action
-    await setAuthCookie(response.accessToken);
-    await setUserCookie(response.user);
-    await setSchoolCookie(response.school);
-    
-    setUser(response.user);
-    setUserSchool(response.school);
-    if (response.user.role == 'head teacher') {
-      router.push('head-teacher')
+    if (!userSchoolData && response.user.role !== 'admin') {
+      await clearAuthCookies();
+      setUser(null);
+      setUserSchool(null);
+      throw new Error('Your account is not associated with a school. Please contact your administrator.');
+    }
+
+    await applyAuthState({
+      user: response.user,
+      school: userSchoolData,
+      accessToken: response.accessToken,
+    });
+
+    if (!userSchoolData && response.user.role === 'admin') {
+      router.push('/setup-school-profile');
+    } else if (response.user.role === 'head teacher') {
+      router.push('/head-teacher');
     } else {
       router.push(`/${response.user.role}`);
     }
@@ -86,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await clearAuthCookies();
     setUser(null);
+    setUserSchool(null);
     router.push('/login');
     router.refresh(); // Refresh to update middleware
   };
@@ -99,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         logout,
+        refreshUser,
       }}
     >
       {children}
