@@ -1,15 +1,19 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   authApi,
   type AuthUserSchool,
   type LoginCredentials,
   type LoginResponse,
-} from '@/lib/api/auth';
-import { setAuthCookie, setUserCookie, clearAuthCookies } from '@/lib/actions/auth';
-import { useBusiness, type BusinessSchool } from '@/contexts/business-context';
+} from "@/lib/api/auth";
+import {
+  setAuthCookie,
+  setUserCookie,
+  clearAuthCookies,
+} from "@/lib/actions/auth";
+import { School, useSchool } from "@/contexts/school-context";
 
 interface User {
   id: string;
@@ -31,34 +35,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper to get cookie value on client
 function getCookie(name: string): string | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
 
-  const cookies = document.cookie.split(';');
-  const cookie = cookies.find(c => c.trim().startsWith(`${name}=`));
-  return cookie ? decodeURIComponent(cookie.split('=')[1]) : null;
+  const cookies = document.cookie.split(";");
+  const cookie = cookies.find((c) => c.trim().startsWith(`${name}=`));
+  return cookie ? decodeURIComponent(cookie.split("=")[1]) : null;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { setSchool: setBusinessSchool, clearSchool } = useBusiness();
+  const { setSchool, clearSchool } = useSchool();
 
   useEffect(() => {
     // Check if user is logged in on mount from cookie
-    const userCookie = getCookie('user');
+    const userCookie = getCookie("user");
 
     if (userCookie) {
       try {
         setUser(JSON.parse(userCookie));
       } catch (error) {
-        console.error('Failed to parse user data:', error);
+        console.error("Failed to parse user data:", error);
       }
     }
     setIsLoading(false);
   }, []);
 
-  const normalizeBusinessSchool = (school: AuthUserSchool | null): BusinessSchool | null =>
+  const normalizeSchool = (school: AuthUserSchool | null): School | null =>
     school ? { id: school.id, name: school.name } : null;
 
   const applyAuthState = async (payload: {
@@ -67,12 +71,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     accessToken?: string;
   }) => {
     if (payload.accessToken) {
-      const normalizedToken = payload.accessToken.replace(/^Bearer\s+/i, '');
+      const normalizedToken = payload.accessToken.replace(/^Bearer\s+/i, "");
       await setAuthCookie(normalizedToken);
     }
     await setUserCookie(payload.user);
     setUser(payload.user);
-    setBusinessSchool(normalizeBusinessSchool(payload.school));
+    setSchool(normalizeSchool(payload.school));
   };
 
   // const refreshUser = async () => {
@@ -91,11 +95,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response: LoginResponse = await authApi.login(credentials);
     const userSchoolData = response.school ?? null;
 
-    if (!userSchoolData && response.user.role !== 'admin') {
+    if (!userSchoolData && response.user.role !== "admin") {
       await clearAuthCookies();
       setUser(null);
       clearSchool();
-      throw new Error('Your account is not associated with a school. Please contact your administrator.');
+      throw new Error(
+        "Your account is not associated with a school. Please contact your administrator."
+      );
     }
 
     await applyAuthState({
@@ -104,10 +110,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       accessToken: response.accessToken,
     });
 
-    if (!userSchoolData && response.user.role === 'admin') {
-      router.push('/setup-school-profile');
-    } else if (response.user.role === 'head teacher') {
-      router.push('/head-teacher');
+    if (!userSchoolData && response.user.role === "admin") {
+      router.push("/setup-school-profile");
+    } else if (response.user.role === "head teacher") {
+      router.push("/head-teacher");
     } else {
       router.push(`/${response.user.role}`);
     }
@@ -119,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clearAuthCookies();
     setUser(null);
     clearSchool();
-    router.push('/login');
+    router.push("/login");
     router.refresh(); // Refresh to update middleware
   };
 
@@ -142,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

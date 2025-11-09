@@ -11,12 +11,11 @@ import { SchoolProfile as SchoolProfileView } from "@/components/school-profile/
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useBusiness } from "@/contexts/business-context";
+import { useSchool as useSchoolContext} from "@/contexts/school-context";
 import {
   CreateSchoolPayload,
   School as SchoolType,
@@ -119,9 +118,9 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 export default function SetupSchoolProfilePage() {
   const {
     school,
-    setSchool: setBusinessSchool,
-    isLoading: isBusinessLoading,
-  } = useBusiness();
+    setSchool,
+    isLoading: isContextSchoolLoading,
+  } = useSchoolContext();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [fetchErrorNotified, setFetchErrorNotified] = useState(false);
 
@@ -150,7 +149,7 @@ export default function SetupSchoolProfilePage() {
   }, [fetchedSchool]);
 
   useEffect(() => {
-    if (isBusinessLoading) {
+    if (isContextSchoolLoading) {
       return;
     }
     if (!school?.id) {
@@ -159,7 +158,7 @@ export default function SetupSchoolProfilePage() {
     }
     setCreateDialogOpen(false);
     refetch();
-  }, [isBusinessLoading, refetch, school?.id]);
+  }, [isContextSchoolLoading, refetch, school?.id]);
 
   useEffect(() => {
     if (fetchError && !fetchErrorNotified) {
@@ -178,7 +177,7 @@ export default function SetupSchoolProfilePage() {
   const createSchoolMutation = useCreateSchool({
     onSuccess: async (school) => {
       toast.success("School created successfully!");
-      setBusinessSchool({ id: school.id, name: school.name });
+      setSchool({ id: school.id, name: school.name });
       setCreateDialogOpen(false);
     },
     onError: (error) => {

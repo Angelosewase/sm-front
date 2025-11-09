@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateClass } from "@/features/classes.api";
 import { useUsers } from "@/features/users.api";
-import { useBusiness } from "@/contexts/business-context";
+import { useBusiness } from "@/contexts/school-context";
 
 const createClassSchema = z.object({
   name: z.string().min(1, 'Required').max(20, 'Max 20 chars'),

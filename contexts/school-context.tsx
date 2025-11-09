@@ -9,29 +9,29 @@ import React, {
   useState,
 } from 'react';
 
-export interface BusinessSchool {
+export interface School {
   id: string;
   name: string;
 }
 
-interface BusinessContextType {
-  school: BusinessSchool | null;
+interface SchoolContextType {
+  school: School | null;
   isLoading: boolean;
-  setSchool: (school: BusinessSchool | null) => void;
+  setSchool: (school: School | null) => void;
   clearSchool: () => void;
 }
 
-const STORAGE_KEY = 'sm-business-school';
+const STORAGE_KEY = 'sm-school';
 
-const BusinessContext = createContext<BusinessContextType | undefined>(
+const SchoolContext = createContext<SchoolContextType | undefined>(
   undefined,
 );
 
-export function BusinessProvider({ children }: { children: React.ReactNode }) {
-  const [school, setSchoolState] = useState<BusinessSchool | null>(null);
+export function SchoolProvider({ children }: { children: React.ReactNode }) {
+  const [school, setSchoolState] = useState<School | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const persistSchool = useCallback((value: BusinessSchool | null) => {
+  const persistSchool = useCallback((value: School | null) => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -47,7 +47,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setSchool = useCallback(
-    (value: BusinessSchool | null) => {
+    (value: School | null) => {
       setSchoolState(value);
       persistSchool(value);
     },
@@ -65,7 +65,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     try {
       const storedValue = window.localStorage.getItem(STORAGE_KEY);
       if (storedValue) {
-        const parsed = JSON.parse(storedValue) as BusinessSchool | null;
+        const parsed = JSON.parse(storedValue) as School | null;
         setSchoolState(parsed);
       }
     } catch (error) {
@@ -88,7 +88,7 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       try {
-        const parsed = JSON.parse(event.newValue) as BusinessSchool | null;
+        const parsed = JSON.parse(event.newValue) as School | null;
         setSchoolState(parsed);
       } catch (error) {
         console.error('Failed to parse school data from storage event:', error);
@@ -109,16 +109,16 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <BusinessContext.Provider value={value}>
+    <SchoolContext.Provider value={value}>
       {children}
-    </BusinessContext.Provider>
+    </SchoolContext.Provider>
   );
 }
 
-export function useBusiness() {
-  const context = useContext(BusinessContext);
+export function useSchool() {
+  const context = useContext(SchoolContext);
   if (context === undefined) {
-    throw new Error('useBusiness must be used within a BusinessProvider');
+    throw new Error('useSchool must be used within a SchoolProvider');
   }
   return context;
 }

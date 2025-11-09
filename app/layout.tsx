@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { AuthProvider } from "@/contexts/auth-context";
-import { BusinessProvider } from "@/contexts/business-context";
+import { SchoolProvider } from "@/contexts/school-context";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -51,9 +51,9 @@ export default function RootLayout({
             pauseOnHover
           />
           <QueryProvider>
-            <BusinessProvider>
+            <SchoolProvider>
               <AuthProvider>{children}</AuthProvider>
-            </BusinessProvider>
+            </SchoolProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>
