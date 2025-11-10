@@ -54,6 +54,9 @@ import {
   useClasses,
   useRestoreClass,
   usePermanentlyDeleteClass,
+  useBulkTrashClasses,
+  useBulkRestoreClasses,
+  useBulkPermanentlyDeleteClasses,
 } from "@/hooks/use-classes";
 import { useTeachers } from "@/hooks/use-teachers";
 import {
@@ -470,6 +473,7 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
   const [academicYear, setAcademicYear] = React.useState<string | undefined>(
     undefined
   );
+  const [selectedRows, setSelectedRows] = React.useState<ClassData[]>([]);
 
   const debouncedSearch = useDebouncedValue(searchTerm);
 
@@ -509,6 +513,17 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
     [resolvedData]
   );
 
+  const selectionCount = selectedRows.length;
+  const selectedNonTrashedIds = React.useMemo(
+    () =>
+      selectedRows.filter((item) => !item.isTrashed).map((item) => item._id),
+    [selectedRows]
+  );
+  const selectedTrashedIds = React.useMemo(
+    () => selectedRows.filter((item) => item.isTrashed).map((item) => item._id),
+    [selectedRows]
+  );
+
   const filteredData = React.useMemo(() => {
     switch (activeTab) {
       case "active":
@@ -525,6 +540,9 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
   const trashClassMutation = useDeleteClass();
   const restoreClassMutation = useRestoreClass();
   const permanentlyDeleteClassMutation = usePermanentlyDeleteClass();
+  const bulkTrashMutation = useBulkTrashClasses();
+  const bulkRestoreMutation = useBulkRestoreClasses();
+  const bulkPermanentDeleteMutation = useBulkPermanentlyDeleteClasses();
 
   const [confirmState, setConfirmState] = React.useState<{
     open: boolean;
@@ -548,7 +566,39 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
   };
 
   const resetConfirmationState = () =>
-    setConfirmState({ open: false, classId: "", className: "", action: "trash" });
+    setConfirmState({
+      open: false,
+      classId: "",
+      className: "",
+      action: "trash",
+    });
+
+  const handleBulkTrash = () => {
+    if (!selectedNonTrashedIds.length) return;
+    bulkTrashMutation.mutate(selectedNonTrashedIds, {
+      onSuccess: () => {
+        setSelectedRows([]);
+      },
+    });
+  };
+
+  const handleBulkRestore = () => {
+    if (!selectedTrashedIds.length) return;
+    bulkRestoreMutation.mutate(selectedTrashedIds, {
+      onSuccess: () => {
+        setSelectedRows([]);
+      },
+    });
+  };
+
+  const handleBulkPermanentDelete = () => {
+    if (!selectedTrashedIds.length) return;
+    bulkPermanentDeleteMutation.mutate(selectedTrashedIds, {
+      onSuccess: () => {
+        setSelectedRows([]);
+      },
+    });
+  };
 
   const handleConfirm = () => {
     if (!confirmState.classId) {
@@ -564,7 +614,9 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
     } else if (confirmState.action === "restore") {
       restoreClassMutation.mutate(confirmState.classId, { onSuccess });
     } else {
-      permanentlyDeleteClassMutation.mutate(confirmState.classId, { onSuccess });
+      permanentlyDeleteClassMutation.mutate(confirmState.classId, {
+        onSuccess,
+      });
     }
   };
 
@@ -677,29 +729,6 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
     }),
   ];
 
-  const tabs = [
-    {
-      value: "all-classes",
-      label: "All Classes",
-      badge: nonTrashedData.length,
-    },
-    {
-      value: "active",
-      label: "Active",
-      badge: nonTrashedData.filter((c) => c.status === "active").length,
-    },
-    {
-      value: "inactive",
-      label: "Inactive",
-      badge: nonTrashedData.filter((c) => c.status === "inactive").length,
-    },
-    {
-      value: "trashed",
-      label: "Trash",
-      badge: trashedData.length,
-    },
-  ];
-
   const gradeLevels = React.useMemo(
     () => [
       "Grade 1",
@@ -719,93 +748,190 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
   );
 
   const isTrashView = activeTab === "trashed";
+  const hasNonTrashedSelection = selectedNonTrashedIds.length > 0;
+  const hasTrashedSelection = selectedTrashedIds.length > 0;
+
+  const statusButtons: { label: string; value: ClassesTab }[] = [
+    { label: "All", value: "all-classes" },
+    { label: "Active", value: "active" },
+    { label: "Inactive", value: "inactive" },
+  ];
 
   const filterControls = (
-    <div className="flex flex-wrap items-center gap-2 py-4 ">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative">
-          <IconSearch className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+    <div className="flex w-full flex-col gap-3 px-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center ">
+          {statusButtons.map((button, idx) => {
+            const isFirst = idx === 0;
+            const isLast = idx === statusButtons.length - 1;
+            let roundedClass = "";
+            if (isFirst) roundedClass = "rounded-none rounded-l-md";
+            else if (isLast) roundedClass = "rounded-none rounded-r-md";
+            else roundedClass = "rounded-none";
+            return (
+              <Button
+                key={button.value}
+                type="button"
+                variant={activeTab === button.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveTab(button.value)}
+                disabled={isTableLoading || isTrashView}
+                className={roundedClass}
+              >
+                {button.label}
+              </Button>
+            );
+          })}
+        </div>
+        <div className="ml-auto flex items-center  rounded-md  p-0.5">
+          <Button
+            type="button"
+            variant={!isTrashView ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("all-classes")}
+            disabled={isTableLoading || !isTrashView}
+            className="rounded-none rounded-l-md"
+          >
+            Active Classes
+          </Button>
+          <Button
+            type="button"
+            variant={isTrashView ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("trashed")}
+            disabled={isTableLoading || isTrashView}
+            className="rounded-none rounded-r-md"
+          >
+            Trash
+          </Button>
+        </div>
+      </div>
+      <div className="flex w-full flex-wrap justify-between items-center gap-16">
+        <div className="relative  flex-1">
+          <IconSearch className="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search classes..."
-            className="pl-7 w-44 lg:w-56"
+            className="pl-8"
             disabled={isTableLoading}
           />
         </div>
-        <Select
-        value={gradeLevel ?? "all"}
-        onValueChange={(value) =>
-          setGradeLevel(value === "all" ? undefined : value)
-        }
-        disabled={isTableLoading}
-      >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Grade level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All grades</SelectItem>
-            {gradeLevels.map((grade) => (
-              <SelectItem key={grade} value={grade}>
-                {grade}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={academicYear ?? "all"}
-          onValueChange={(value) =>
-            setAcademicYear(value === "all" ? undefined : value)
-          }
-          disabled={isTableLoading}
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Academic year" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All years</SelectItem>
-            {academicYearsData?.map((year) => (
-              <SelectItem key={year._id} value={year.label}>
-                {year.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setSearchTerm("");
-            setGradeLevel(undefined);
-            setAcademicYear(activeAcademicYear?.label || undefined);
-            setActiveTab("all-classes");
-          }}
-          disabled={isTableLoading}
-        >
-          Reset
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select
+            value={gradeLevel ?? "all"}
+            onValueChange={(value) =>
+              setGradeLevel(value === "all" ? undefined : value)
+            }
+            disabled={isTableLoading}
+          >
+            <SelectTrigger className="w-[140px] sm:w-[160px]">
+              <SelectValue placeholder="Grade level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All grades</SelectItem>
+              {gradeLevels.map((grade) => (
+                <SelectItem key={grade} value={grade}>
+                  {grade}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={academicYear ?? "all"}
+            onValueChange={(value) =>
+              setAcademicYear(value === "all" ? undefined : value)
+            }
+            disabled={isTableLoading}
+          >
+            <SelectTrigger className="w-[150px] sm:w-[180px]">
+              <SelectValue placeholder="Academic year" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All years</SelectItem>
+              {academicYearsData?.map((year) => (
+                <SelectItem key={year._id} value={year.label}>
+                  {year.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div className="flex items-center gap-1 rounded-md border border-input p-0.5">
-        <Button
-          type="button"
-          variant={isTrashView ? "secondary" : "default"}
-          size="sm"
-          className={!isTrashView ? "pointer-events-none" : undefined}
-          onClick={() => setActiveTab("all-classes")}
-          disabled={isTableLoading || !isTrashView}
-        >
-          Active Classes
-        </Button>
-        <Button
-          type="button"
-          variant={isTrashView ? "default" : "ghost"}
-          size="sm"
-          className={isTrashView ? "pointer-events-none" : undefined}
-          onClick={() => setActiveTab("trashed")}
-          disabled={isTableLoading || isTrashView}
-        >
-          Trash
-        </Button>
+
+      <div className="flex w-full flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchTerm("");
+              setGradeLevel(undefined);
+              setAcademicYear(activeAcademicYear?.label || undefined);
+              setActiveTab("all-classes");
+            }}
+            disabled={isTableLoading}
+          >
+            Reset
+          </Button>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {selectionCount > 0 && (
+            <Badge variant="secondary" className="font-normal">
+              {selectionCount} selected
+            </Badge>
+          )}
+          {isTrashView ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleBulkRestore}
+                disabled={
+                  isTableLoading ||
+                  !hasTrashedSelection ||
+                  bulkRestoreMutation.isPending
+                }
+              >
+                {bulkRestoreMutation.isPending
+                  ? "Restoring..."
+                  : "Restore Selected"}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkPermanentDelete}
+                disabled={
+                  isTableLoading ||
+                  !hasTrashedSelection ||
+                  bulkPermanentDeleteMutation.isPending
+                }
+              >
+                {bulkPermanentDeleteMutation.isPending
+                  ? "Deleting..."
+                  : "Delete Selected"}
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleBulkTrash}
+              disabled={
+                isTableLoading ||
+                !hasNonTrashedSelection ||
+                bulkTrashMutation.isPending
+              }
+            >
+              {bulkTrashMutation.isPending
+                ? "Moving..."
+                : "Move Selected to Trash"}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -818,7 +944,12 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
 
   const confirmationCopy: Record<
     ClassActionType,
-    { title: string; description: string; actionLabel: string; destructive?: boolean }
+    {
+      title: string;
+      description: string;
+      actionLabel: string;
+      destructive?: boolean;
+    }
   > = {
     trash: {
       title: "Move Class to Trash",
@@ -834,7 +965,9 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
     permanent: {
       title: "Permanently Delete Class",
       description: `This will permanently remove "${confirmState.className}". This action cannot be undone.`,
-      actionLabel: pendingByAction.permanent ? "Deleting..." : "Delete Permanently",
+      actionLabel: pendingByAction.permanent
+        ? "Deleting..."
+        : "Delete Permanently",
       destructive: true,
     },
   };
@@ -847,10 +980,10 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
       <GenericDataTable<ClassData>
         data={filteredData}
         columns={columns}
-        tabs={tabs}
         defaultTab="all-classes"
         onTabChange={(tab) => setActiveTab(tab as ClassesTab)}
         getRowId={(row) => row._id}
+        onSelectionChange={setSelectedRows}
         config={{
           enableDragDrop: true,
           enableSelection: true,
