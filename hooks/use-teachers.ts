@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   teachersApi,
-  CreateTeacherData,
-  UpdateTeacherData,
-  TeacherQueryParams,
 } from "@/lib/api/teachers";
 import { toast } from "react-toastify";
+import { CreateTeacherDto, TeacherQueryParams, UpdateTeacherDto } from "@/types/teachers.dto";
 
 // Query keys
 export const teachersKeys = {
@@ -46,7 +44,7 @@ export function useCreateTeacher() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateTeacherData) => teachersApi.createTeacher(data),
+    mutationFn: (data: CreateTeacherDto) => teachersApi.createTeacher(data),
     onSuccess: (teacher) => {
       // Invalidate and refetch all teachers queries
       queryClient.invalidateQueries({
@@ -81,7 +79,7 @@ export function useUpdateTeacher() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateTeacherData }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateTeacherDto }) =>
       teachersApi.updateTeacher(id, data),
     onSuccess: () => {
       // Invalidate and refetch all teachers queries

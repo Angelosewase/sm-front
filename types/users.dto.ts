@@ -1,9 +1,27 @@
 export enum Role {
   ADMIN = 'admin',
   USER = 'user',
+  STUDENT = 'student',
   HEADTEACHER= 'head teacher',
   TEACHER= 'teacher',
 }
+
+
+
+// types/user.ts
+export interface UserLite {
+  _id: string;
+  email: string;
+  name?: string;
+  role: Role;
+  phone?: string;
+  avatar?: string;
+  experience?: string;
+  school?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export interface IQueryUser {
   q?: string;
@@ -16,16 +34,9 @@ export interface IQueryUser {
   order?: 'asc' | 'desc';
 }
 
-export interface IUserLite {
-  _id: string;
-  fullName?: string;
-  name?: string;
-  email?: string;
-  role?: Role;
-}
 
 export interface IPaginatedUsersResponse {
-  items: IUserLite[];
+  items: UserLite[];
   total: number;
   page: number;
   limit: number;
@@ -40,13 +51,6 @@ export type ListUsersFilter = {
   limit?: number;
 };
 
-export type UserLite = {
-  _id: string;
-  fullName?: string;
-  name?: string;
-  email?: string;
-  role?: string;
-};
 
 export type PaginatedUsersResponse = {
   items: UserLite[];
@@ -54,3 +58,29 @@ export type PaginatedUsersResponse = {
   page: number;
   limit: number;
 };
+
+
+
+
+// types/status.ts
+export type Status = 'Active' | 'On Leave' | 'Inactive';
+
+
+
+export interface CreateUserDto {
+  email: string;
+  password: string;
+  name?: string;
+  role: Role;
+  phone?: string;
+  avatar?: string;
+  experience?: string;
+  school?: string;
+}
+
+export interface UpdateUserDto {
+  name?: string;
+  phone?: string;
+  avatar?: string;
+  experience?: string;
+}

@@ -404,7 +404,7 @@ function ClassDetailViewer({ item }: { item: ClassData }) {
                   {teachersData?.items && teachersData.items.length > 0 ? (
                     teachersData.items.map((teacher) => (
                       <SelectItem key={teacher._id} value={teacher._id}>
-                        {teacher.name}
+                        {teacher.user.name}
                       </SelectItem>
                     ))
                   ) : (

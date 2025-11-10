@@ -1,60 +1,7 @@
+import { TeacherListResponse, Teacher, DeleteTeacherResponse, CreateTeacherDto, UpdateTeacherDto } from "@/types/teachers.dto";
 import { axiosInstance } from "../axios";
 
-// Teacher entity matching API response
-export interface Teacher {
-  _id: string;
-  email: string;
-  name?: string;
-  role: 'teacher';
-  phone?: string;
-  school?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  temporaryPassword?: string; // Only present in create response
-}
 
-// Paginated list response
-export interface TeacherListResponse {
-  items: Teacher[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-// Query parameters for listing teachers
-export interface TeacherQueryParams {
-  q?: string;          // Search across name and email
-  email?: string;      // Filter by exact email
-  school?: string;     // Filter by school ObjectId
-  page?: number;       // Page number (1-based)
-  limit?: number;      // Page size (1-100)
-  sortBy?: string;     // Field to sort by
-  order?: 'asc' | 'desc'; // Sort order
-}
-
-// Data for creating a new teacher
-export interface CreateTeacherData {
-  email: string;       // Required: unique email
-  name?: string;       // Optional: display name
-  phone?: string;      // Optional: contact phone
-  school?: string;     // Optional: school ObjectId
-}
-
-// Data for updating an existing teacher
-export interface UpdateTeacherData {
-  name?: string;       // Optional: updated display name
-  email?: string;      // Optional: updated email (must be unique)
-  phone?: string;      // Optional: updated contact number
-  school?: string;     // Optional: new school ObjectId
-}
-
-// Delete response
-export interface DeleteTeacherResponse {
-  deleted: boolean;
-}
 
 export const teachersApi = {
   /**
@@ -86,7 +33,7 @@ export const teachersApi = {
    * Create a new teacher
    * Password is generated automatically by the system
    */
-  createTeacher: async (teacherData: CreateTeacherData): Promise<Teacher> => {
+  createTeacher: async (teacherData: CreateTeacherDto): Promise<Teacher> => {
     const { data } = await axiosInstance.post<Teacher>('/teachers', teacherData);
     return data;
   },
@@ -94,7 +41,7 @@ export const teachersApi = {
   /**
    * Update an existing teacher
    */
-  updateTeacher: async (id: string, teacherData: UpdateTeacherData): Promise<Teacher> => {
+  updateTeacher: async (id: string, teacherData: UpdateTeacherDto): Promise<Teacher> => {
     const { data } = await axiosInstance.patch<Teacher>(`/teachers/${id}`, teacherData);
     return data;
   },

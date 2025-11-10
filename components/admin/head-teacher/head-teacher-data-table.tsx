@@ -55,34 +55,21 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "react-toastify";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { HeadTeacher } from "@/types/head-teacher.dto";
 
-export interface headTeacherSchema {
-  id: string;
-  name: string;
-  email: string;
-  school?: string ;
-  department?: string;
-  subject?: string;
-  status?: string;
-  classesAssigned?: string;
-  totalStudents?: string;
-  experience?: string;
-  phone?: string;
-}
-
-const columns: ColumnDef<headTeacherSchema>[] = [
-  createDragColumn<headTeacherSchema>(),
-  createSelectColumn<headTeacherSchema>(),
+const columns: ColumnDef<HeadTeacher>[] = [
+  createDragColumn<HeadTeacher>(),
+  createSelectColumn<HeadTeacher>(),
   {
-    accessorKey: "name",
+    accessorKey: "user.name",
     header: "Head Teacher",
     cell: ({ row }) => {
-      const initials = row.original.name
+      const initials = row.original?.user?.name || ''
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase();
-      
+
       return (
         <div className="flex items-center gap-3">
           <Avatar className="h-8 w-8">
@@ -100,7 +87,7 @@ const columns: ColumnDef<headTeacherSchema>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <IconMail className="h-4 w-4" />
-        {row.original.email}
+        {row.original?.user?.email || ''}
       </div>
     ),
   },
@@ -110,23 +97,23 @@ const columns: ColumnDef<headTeacherSchema>[] = [
     header: "Experience",
     cell: ({ row }) => (
       <div className="text-sm text-muted-foreground">
-        {row.original.experience}
+        {row.original?.user.experience || ''}
       </div>
     ),
   },
-  createActionsColumn<headTeacherSchema>([
-    { label: "Edit Profile", onClick: () => {} },
-    { label: "View Classes", onClick: () => {} },
-    { label: "View Performance", onClick: () => {} },
-    { label: "Send Message", onClick: () => {} },
-    { label: "Remove", onClick: () => {}, variant: "destructive" },
+  createActionsColumn<HeadTeacher>([
+    { label: "Edit Profile", onClick: () => { } },
+    { label: "View Classes", onClick: () => { } },
+    { label: "View Performance", onClick: () => { } },
+    { label: "Send Message", onClick: () => { } },
+    { label: "Remove", onClick: () => { }, variant: "destructive" },
   ]),
 ];
 
 export function HeadTeacherDataTable({
   data,
 }: {
-  data: headTeacherSchema[];
+  data: HeadTeacher[];
 }) {
   const tabs = [
     {
@@ -160,7 +147,7 @@ export function HeadTeacherDataTable({
   ];
 
   return (
-    <GenericDataTable<headTeacherSchema>
+    <GenericDataTable<HeadTeacher>
       data={data}
       columns={columns}
       tabs={tabs}
@@ -227,7 +214,7 @@ const availableSubjects = [
 function TeacherDetailViewer({
   item,
 }: {
-  item: headTeacherSchema;
+  item: HeadTeacher;
 }) {
   const isMobile = useIsMobile();
 
@@ -235,12 +222,12 @@ function TeacherDetailViewer({
     <Drawer direction={isMobile ? "bottom" : "right"}>
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.name}
+          {item.user.name}
         </Button>
       </DrawerTrigger>
       <DrawerContent >
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.name}</DrawerTitle>
+          <DrawerTitle>{item.user.name}</DrawerTitle>
           <DrawerDescription>
             Teacher profile, assigned classes, and subject assignments
           </DrawerDescription>
@@ -250,11 +237,11 @@ function TeacherDetailViewer({
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
               <IconMail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{item.email}</span>
+              <span className="text-sm">{item.user.email}</span>
             </div>
             <div className="flex items-center gap-2">
               <IconPhone className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{item.phone}</span>
+              <span className="text-sm">{item.user.phone}</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -263,17 +250,7 @@ function TeacherDetailViewer({
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Experience</Label>
-                <p className="font-medium">{item.experience}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">Classes Assigned</Label>
-                <p className="font-medium">{item.classesAssigned}</p>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Total Students</Label>
-                <p className="font-medium">{item.totalStudents}</p>
+                <p className="font-medium">{item.user.experience}</p>
               </div>
             </div>
           </div>
@@ -295,17 +272,17 @@ function TeacherDetailViewer({
             <h3 className="font-semibold">Edit Teacher Information</h3>
             <div className="flex flex-col gap-3">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" defaultValue={item.name} />
+              <Input id="name" defaultValue={item.user.name} />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={item.email} />
+                <Input id="email" type="email" defaultValue={item.user.email} />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" type="tel" defaultValue={item.phone} />
+                <Input id="phone" type="tel" defaultValue={item.user.phone} />
               </div>
             </div>
 
@@ -347,35 +324,15 @@ function TeacherDetailViewer({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="subject">Subject/Specialization</Label>
-              <Input id="subject" defaultValue={item.subject} />
-            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="experience">Experience</Label>
-                <Input id="experience" defaultValue={item.experience} />
+                <Input id="experience" defaultValue={item.user.experience} />
               </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="classesAssigned">Classes Assigned</Label>
-                <Input
-                  id="classesAssigned"
-                  type="number"
-                  defaultValue={item.classesAssigned}
-                />
-              </div>
+
             </div>
 
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="totalStudents">Total Students</Label>
-              <Input
-                id="totalStudents"
-                type="number"
-                defaultValue={item.totalStudents}
-                disabled
-              />
-            </div>
           </form>
         </div>
         <DrawerFooter>
@@ -398,7 +355,7 @@ function AssignedClassesSection() {
 
   const handleAddClass = () => {
     if (!selectedClass) return;
-    
+
     const classToAdd = availableClasses.find(c => c.id.toString() === selectedClass);
     if (!classToAdd) return;
 
@@ -412,7 +369,7 @@ function AssignedClassesSection() {
     setAssignedClasses([...assignedClasses, newClass]);
     setSelectedClass("");
     setIsDialogOpen(false);
-    
+
     toast.success(`Assigned to ${classToAdd.name} as ${selectedRole}`);
   };
 
@@ -535,7 +492,7 @@ function AssignedSubjectsSection() {
 
   const handleAddSubject = () => {
     if (!selectedSubject) return;
-    
+
     const subjectToAdd = availableSubjects.find(s => s.id.toString() === selectedSubject);
     if (!subjectToAdd) return;
 
@@ -548,7 +505,7 @@ function AssignedSubjectsSection() {
     setAssignedSubjects([...assignedSubjects, newSubject]);
     setSelectedSubject("");
     setIsDialogOpen(false);
-    
+
     toast.success(`Assigned ${subjectToAdd.name} at ${selectedLevel} level`);
   };
 
