@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/contexts/auth-context";
-import { useBusiness } from "@/contexts/school-context";
+import { useSchool } from "@/contexts/school-context";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ import {
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const { school } = useBusiness();
+  const { school } = useSchool();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [isEditEmailOpen, setIsEditEmailOpen] = useState(false);
