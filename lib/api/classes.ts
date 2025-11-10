@@ -50,12 +50,14 @@ export interface ClassQueryParams {
   gradeLevel?: string;
 }
 
+const classesApiUrl = '/api/classes';
+
 export const classesApi = {
   /**
    * Get paginated list of classes
    */
   getClasses: async (params?: ClassQueryParams): Promise<ClassListResponse> => {
-    const { data } = await axiosInstance.get<ClassListResponse>('/classes', {
+    const { data } = await axiosInstance.get<ClassListResponse>(classesApiUrl, {
       params,
     });
     return data;
@@ -65,7 +67,7 @@ export const classesApi = {
    * Get a single class by ID
    */
   getClassById: async (id: string): Promise<Class> => {
-    const { data } = await axiosInstance.get<Class>(`/classes/${id}`);
+    const { data } = await axiosInstance.get<Class>(`${classesApiUrl}/${id}`);
     return data;
   },
 
@@ -73,7 +75,7 @@ export const classesApi = {
    * Create a new class
    */
   createClass: async (classData: CreateClassData): Promise<Class> => {
-    const { data } = await axiosInstance.post<Class>('/classes', classData);
+    const { data } = await axiosInstance.post<Class>(classesApiUrl, classData);
     return data;
   },
 
@@ -81,7 +83,7 @@ export const classesApi = {
    * Update an existing class
    */
   updateClass: async (id: string, classData: UpdateClassData): Promise<Class> => {
-    const { data } = await axiosInstance.patch<Class>(`/classes/${id}`, classData);
+    const { data } = await axiosInstance.patch<Class>(`${classesApiUrl}/${id}`, classData);
     return data;
   },
 
@@ -89,7 +91,7 @@ export const classesApi = {
    * Delete a class
    */
   deleteClass: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/classes/${id}`);
+    await axiosInstance.delete(`${classesApiUrl}/${id}`);
   },
 };
 

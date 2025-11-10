@@ -1,9 +1,9 @@
 "use client";
 
+import { AddStudentDialog } from "@/components/admin/students/add-student-dialog";
+import { StudentDataTable } from "@/components/admin/students/student-data-table";
+import { StudentStats } from "@/components/admin/students/student-stats";
 import React from "react";
-import { StudentDataTable } from "../../../../components/admin/students/student-data-table";
-import { StudentStats } from "../../../../components/admin/students/student-stats";
-import { AddStudentDialog } from "../../../../components/admin/students/add-student-dialog";
 
 // Sample student data
 const studentData = [

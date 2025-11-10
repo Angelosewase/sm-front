@@ -237,7 +237,7 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
           {item.name}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="max-w-2xl">
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.name}</DrawerTitle>
           <DrawerDescription>
