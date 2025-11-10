@@ -46,12 +46,12 @@ export function AddTeacherDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="mr-4">
-          Add Teacher
+          Add Head Teacher
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Teacher</DialogTitle>
+          <DialogTitle>Add New Head Teacher</DialogTitle>
           <DialogDescription>
             Add a new teacher to the system by filling in their details below.
           </DialogDescription>
@@ -219,7 +219,7 @@ export function AddTeacherDialog() {
             >
               Cancel
             </Button>
-            <Button type="submit">Add Teacher</Button>
+            <Button type="submit">Add Head Teacher</Button>
           </DialogFooter>
         </form>
       </DialogContent>

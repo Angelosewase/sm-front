@@ -46,7 +46,7 @@ export function AddTeacherDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="mr-4">
-          Add Teacher
+          Add Head Teacher
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
