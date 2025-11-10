@@ -98,10 +98,132 @@ export function useDeleteClass() {
         queryKey: classesKeys.all,
         refetchType: 'all'
       });
-      toast.success('Class deleted successfully!');
+      toast.success('Class moved to trash.');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to delete class';
+      const message = error.response?.data?.message || 'Failed to move class to trash';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to restore a trashed class
+ */
+export function useRestoreClass() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => classesApi.restoreClass(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: classesKeys.all,
+        refetchType: 'all',
+      });
+      toast.success('Class restored successfully.');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to restore class';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to permanently delete a trashed class
+ */
+export function usePermanentlyDeleteClass() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => classesApi.permanentlyDeleteClass(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: classesKeys.all,
+        refetchType: 'all',
+      });
+      toast.success('Class permanently deleted.');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to permanently delete class';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to bulk move classes to trash
+ */
+export function useBulkTrashClasses() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => classesApi.bulkTrashClasses(ids),
+    onSuccess: ({ modifiedCount }) => {
+      queryClient.invalidateQueries({
+        queryKey: classesKeys.all,
+        refetchType: 'all',
+      });
+      toast.success(
+        modifiedCount
+          ? `${modifiedCount} class${modifiedCount > 1 ? 'es' : ''} moved to trash.`
+          : 'No classes were moved to trash.'
+      );
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to move classes to trash';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to bulk restore trashed classes
+ */
+export function useBulkRestoreClasses() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => classesApi.bulkRestoreClasses(ids),
+    onSuccess: ({ modifiedCount }) => {
+      queryClient.invalidateQueries({
+        queryKey: classesKeys.all,
+        refetchType: 'all',
+      });
+      toast.success(
+        modifiedCount
+          ? `${modifiedCount} class${modifiedCount > 1 ? 'es' : ''} restored.`
+          : 'No classes were restored.'
+      );
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to restore classes';
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to bulk permanently delete trashed classes
+ */
+export function useBulkPermanentlyDeleteClasses() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => classesApi.bulkPermanentlyDeleteClasses(ids),
+    onSuccess: ({ deletedCount }) => {
+      queryClient.invalidateQueries({
+        queryKey: classesKeys.all,
+        refetchType: 'all',
+      });
+      toast.success(
+        deletedCount
+          ? `${deletedCount} class${deletedCount > 1 ? 'es' : ''} permanently deleted.`
+          : 'No classes were permanently deleted.'
+      );
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to permanently delete classes';
       toast.error(message);
     },
   });

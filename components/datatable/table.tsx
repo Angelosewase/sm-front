@@ -70,10 +70,10 @@ export function DataTable<T extends BaseEntity>({
     enableSelection = true,
     enableColumnVisibility = true,
     enablePagination = true,
+    enableSearch = true,
     pageSize = 10,
     pageSizeOptions = [10, 20, 30, 40, 50],
   } = config;
-
 
   const [data, setData] = useState<T[]>(initialData);
   const [rowSelection, setRowSelection] = useState({});
@@ -87,10 +87,12 @@ export function DataTable<T extends BaseEntity>({
   });
 
   // Active tab state (for tabbed tables)
-  const [activeTab, setActiveTab] = useState<string>(defaultTab || tabs[0]?.value);
+  const [activeTab, setActiveTab] = useState<string>(
+    defaultTab || tabs[0]?.value
+  );
   useEffect(() => {
     // keep activeTab in sync if defaultTab or tabs change
-    setActiveTab((prev) => prev ? prev : defaultTab || tabs[0]?.value);
+    setActiveTab((prev) => (prev ? prev : defaultTab || tabs[0]?.value));
   }, [defaultTab, tabs]);
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -111,7 +113,10 @@ export function DataTable<T extends BaseEntity>({
 
   const getRowKey = (row: any) => (row?.id ?? row?._id)?.toString?.() ?? "";
   const dataIds = useMemo<UniqueIdentifier[]>(
-    () => data?.map((row) => getRowId ? getRowId(row) : (row.id || row._id || '')) || [],
+    () =>
+      data?.map((row) =>
+        getRowId ? getRowId(row) : row.id || row._id || ""
+      ) || [],
     [data, getRowId]
   );
 
@@ -121,8 +126,6 @@ export function DataTable<T extends BaseEntity>({
       onDataChange(data);
     }
   }, [data, onDataChange]);
-
-
 
   // Initialize table
   const table = useReactTable({
@@ -136,7 +139,9 @@ export function DataTable<T extends BaseEntity>({
       globalFilter,
       pagination,
     },
-    getRowId: getRowId ? getRowId : (row) => (row.id || row._id)?.toString() || '',
+    getRowId: getRowId
+      ? getRowId
+      : (row) => (row.id || row._id)?.toString() || "",
     enableRowSelection: enableSelection,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -154,10 +159,11 @@ export function DataTable<T extends BaseEntity>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-
   useEffect(() => {
     if (onSelectionChange) {
-      const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original);
+      const selectedRows = table
+        .getFilteredSelectedRowModel()
+        .rows.map((row) => row.original);
       onSelectionChange(selectedRows);
     }
   }, [rowSelection, onSelectionChange]);
@@ -195,9 +201,9 @@ export function DataTable<T extends BaseEntity>({
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -240,9 +246,9 @@ export function DataTable<T extends BaseEntity>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -291,29 +297,34 @@ export function DataTable<T extends BaseEntity>({
         onValueChange={handleTabChange}
         className="w-full flex-col justify-start gap-4"
       >
-        <div className="flex items-center justify-between px-4 lg:px-6">
+        <div className="flex flex-col i justify-between px-4 lg:px-6">
           <TabNavigation
             tabs={tabs}
             defaultTab={defaultTab}
             value={activeTab}
             onValueChange={handleTabChange}
           />
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={globalFilter ?? ""}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-8 w-[200px] lg:w-[300px]"
-              />
-            </div>
-            {enableColumnVisibility && (
-              <ColumnVisibilityDropdown
-                table={table}
-                buttonLabel={columnVisibilityLabel}
-              />
-            )}
+
+          <div className=" gap-2">
+            {/* <div>
+              {enableSearch && (
+                <div className="relative">
+                  <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search..."
+                    value={globalFilter ?? ""}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    className="pl-8 w-[200px] lg:w-[300px]"
+                  />
+                </div>
+              )}
+              {enableColumnVisibility && (
+                <ColumnVisibilityDropdown
+                  table={table}
+                  buttonLabel={columnVisibilityLabel}
+                />
+              )}
+            </div> */}
             <TableToolbar
               onAddClick={onAddClick}
               addButtonLabel={addButtonLabel}
@@ -337,28 +348,30 @@ export function DataTable<T extends BaseEntity>({
   // Render without tabs
   return (
     <div className="w-full flex-col justify-start gap-4">
+      <TableToolbar
+        onAddClick={onAddClick}
+        addButtonLabel={addButtonLabel}
+        customActions={customToolbarActions}
+      />
       <div className="flex items-center justify-between px-4 lg:px-6 mb-6">
-        <div className="relative">
-          <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            value={globalFilter ?? ""}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="pl-8 w-[200px] lg:w-[300px]"
-          />
-        </div>
-        <div className="flex items-center gap-2">
+        {enableSearch && (
+          <div className="relative">
+            <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={globalFilter ?? ""}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="pl-8 w-[200px] lg:w-[300px]"
+            />
+          </div>
+        )}
+        <div className=" gap-2">
           {enableColumnVisibility && (
             <ColumnVisibilityDropdown
               table={table}
               buttonLabel={columnVisibilityLabel}
             />
           )}
-          <TableToolbar
-            onAddClick={onAddClick}
-            addButtonLabel={addButtonLabel}
-            customActions={customToolbarActions}
-          />
         </div>
       </div>
       <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
