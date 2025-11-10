@@ -19,16 +19,13 @@ export default function AdminTeachersPage() {
       {headTeachers && (
         <HeadTeacherDataTable data={headTeachers.items.map((item) => ({
           id: item._id,
-          name: item.name,
-          email: item.email,
+          name: item.user.name,
+          email: item.user.email,
           school: item.school,
           department: item.department,
-          subject: item.subject,
+          subjects: item.subjects,
           status: item.status,
-          classesAssigned: item.classesAssigned,
-          totalStudents: item.totalStudents,
-          experience: item.experience,
-          phone: item.phone,
+          phone: item.user.phone,
         }))} />
       )}
     </div>

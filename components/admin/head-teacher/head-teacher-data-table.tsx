@@ -55,29 +55,16 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "react-toastify";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { HeadTeacher } from "@/types/head-teacher.dto";
 
-export interface headTeacherSchema {
-  id: string;
-  name: string;
-  email: string;
-  school?: string ;
-  department?: string;
-  subject?: string;
-  status?: string;
-  classesAssigned?: string;
-  totalStudents?: string;
-  experience?: string;
-  phone?: string;
-}
-
-const columns: ColumnDef<headTeacherSchema>[] = [
-  createDragColumn<headTeacherSchema>(),
-  createSelectColumn<headTeacherSchema>(),
+const columns: ColumnDef<HeadTeacher>[] = [
+  createDragColumn<HeadTeacher>(),
+  createSelectColumn<HeadTeacher>(),
   {
-    accessorKey: "name",
+    accessorKey: "user.name",
     header: "Head Teacher",
     cell: ({ row }) => {
-      const initials = row.original.name
+      const initials = row.original.user.name
         .split(" ")
         .map((n) => n[0])
         .join("")

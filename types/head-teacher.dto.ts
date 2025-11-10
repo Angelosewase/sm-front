@@ -3,7 +3,7 @@ import { Status, UserLite } from "./users.dto";
 // types/head-teacher.ts
 export interface HeadTeacher {
   _id: string;
-  user: UserLite | string;
+  user: UserLite;
   headTeacherId?: string;
   department: string;
   subjects?: string[];
