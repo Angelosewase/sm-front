@@ -5,6 +5,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenuButton,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
@@ -22,13 +23,14 @@ import {
   BarChart3,
   BookOpenCheck,
   FileCog,
+  ChevronsUpDown,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import type { Route } from "./nav-main";
 import DashboardNavigation from "@/components/nav-main";
 
-import { TeamSwitcher } from "@/components/school-switcher";
 import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
 
 const getCommonRoutes = (role: string): Route[] => [
   {
@@ -155,8 +157,10 @@ export function DashboardSidebar() {
   const { state } = useSidebar();
   const { user } = useAuth();
   const isCollapsed = state === "collapsed";
-
-  const dashboardRoutes = getDashboardRoutes(user?.role == "head teacher" ? 'head-teacher' : user?.role || '404' || "404");
+  const router = useRouter();
+  const dashboardRoutes = getDashboardRoutes(
+    user?.role == "head teacher" ? "head-teacher" : user?.role || "404" || "404"
+  );
 
   return (
     <Sidebar variant="floating" collapsible="icon">
@@ -194,7 +198,21 @@ export function DashboardSidebar() {
         {user && <DashboardNavigation routes={dashboardRoutes} />}
       </SidebarContent>
       <SidebarFooter className="px-2">
-        <TeamSwitcher teams={teams} />
+        <SidebarMenuButton
+          size="lg"
+          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+          onClick={() => {
+            router.push("/setup-school-profile");
+          }}
+        >
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-background text-foreground">
+            <Logo className="size-4" />
+          </div>
+          <div className="grid flex-1 text-left text-sm leading-tight">
+            <span className="truncate font-semibold">School name</span>
+            <span className="truncate text-xs">School type</span>
+          </div>
+        </SidebarMenuButton>
       </SidebarFooter>
     </Sidebar>
   );

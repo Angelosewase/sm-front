@@ -1,20 +1,124 @@
-import { useQuery } from '@tanstack/react-query';
-import { teachersApi } from '@/lib/api/teachers';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  teachersApi,
+  CreateTeacherData,
+  UpdateTeacherData,
+  TeacherQueryParams,
+} from "@/lib/api/teachers";
+import { toast } from "react-toastify";
 
 // Query keys
 export const teachersKeys = {
-  all: ['teachers'] as const,
-  lists: () => [...teachersKeys.all, 'list'] as const,
-  list: (params?: { page?: number; limit?: number }) => [...teachersKeys.lists(), params] as const,
+  all: ["teachers"] as const,
+  lists: () => [...teachersKeys.all, "list"] as const,
+  list: (params?: TeacherQueryParams) =>
+    [...teachersKeys.lists(), params] as const,
+  details: () => [...teachersKeys.all, "detail"] as const,
+  detail: (id: string) => [...teachersKeys.details(), id] as const,
 };
 
 /**
- * Hook to fetch list of teachers
+ * Hook to fetch paginated list of teachers
  */
-export function useTeachers(params?: { page?: number; limit?: number }) {
+export function useTeachers(params?: TeacherQueryParams) {
   return useQuery({
     queryKey: teachersKeys.list(params),
     queryFn: () => teachersApi.getTeachers(params),
   });
 }
 
+/**
+ * Hook to fetch a single teacher by ID
+ */
+export function useTeacher(id: string) {
+  return useQuery({
+    queryKey: teachersKeys.detail(id),
+    queryFn: () => teachersApi.getTeacherById(id),
+    enabled: !!id,
+  });
+}
+
+/**
+ * Hook to create a new teacher
+ * Password is generated automatically by the system and sent via email
+ */
+export function useCreateTeacher() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateTeacherData) => teachersApi.createTeacher(data),
+    onSuccess: (teacher) => {
+      // Invalidate and refetch all teachers queries
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+
+      // Show success message with temporary password info
+      if (teacher.temporaryPassword) {
+        toast.success(
+          `Teacher created successfully! Temporary password: ${teacher.temporaryPassword}. A welcome email has been sent.`,
+          { autoClose: 8000 }
+        );
+      } else {
+        toast.success(
+          "Teacher created successfully! A welcome email has been sent with login credentials."
+        );
+      }
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to create teacher";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to update an existing teacher
+ */
+export function useUpdateTeacher() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateTeacherData }) =>
+      teachersApi.updateTeacher(id, data),
+    onSuccess: () => {
+      // Invalidate and refetch all teachers queries
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      toast.success("Teacher updated successfully!");
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to update teacher";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to delete a teacher
+ */
+export function useDeleteTeacher() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => teachersApi.deleteTeacher(id),
+    onSuccess: () => {
+      // Invalidate and refetch all teachers queries
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      toast.success("Teacher deleted successfully!");
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to delete teacher";
+      toast.error(message);
+    },
+  });
+}

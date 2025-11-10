@@ -278,13 +278,13 @@ function TeacherDetailViewer({
   const isMobile = useIsMobile();
 
   return (
-    <Drawer direction={isMobile ? "bottom" : "right"}>
+    <Drawer direction={isMobile ? "bottom" : "right"} >
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
           {item.name}
         </Button>
       </DrawerTrigger>
-      <DrawerContent >
+      <DrawerContent className="rounded-lg  m-1 min-w-[50vw]">
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.name}</DrawerTitle>
           <DrawerDescription>
