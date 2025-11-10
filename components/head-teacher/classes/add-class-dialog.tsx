@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCreateClass } from "@/features/classes.api";
 import { useUsers } from "@/features/users.api";
-import { useBusiness } from "@/contexts/school-context";
+import { useSchool } from "@/contexts/school-context";
 
 const createClassSchema = z.object({
   name: z.string().min(1, 'Required').max(20, 'Max 20 chars'),
@@ -49,7 +49,7 @@ const createClassSchema = z.object({
 type FormValues = z.infer<typeof createClassSchema>;
 
 export function AddClassDialog() {
-  const { school } = useBusiness();
+  const { school } = useSchool();
   const createClassMutation = useCreateClass();
   const { data: teachers } = useUsers({ role: "teacher", limit: 50 });
   const [open, setOpen] = React.useState(false);

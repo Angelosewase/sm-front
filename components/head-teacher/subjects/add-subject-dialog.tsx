@@ -25,10 +25,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-toastify";
 import { useCreateSubject } from "@/features/subjects.api";
 import { CreateSubjectDto } from "@/types/subjects.dto";
-import { useBusiness } from "@/contexts/school-context";
+import { useSchool } from "@/contexts/school-context";
 
 export function AddSubjectDialog() {
-  const { school } = useBusiness();
+  const { school } = useSchool();
   const [open, setOpen] = React.useState(false);
   const createSubjectMutation = useCreateSubject();
 
