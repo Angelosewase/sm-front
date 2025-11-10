@@ -55,28 +55,17 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "react-toastify";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Teacher } from "@/types/teachers.dto";
 
-export const teacherSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  email: z.string(),
-  department: z.string(),
-  subject: z.string(),
-  status: z.string(),
-  classesAssigned: z.string(),
-  totalStudents: z.string(),
-  experience: z.string(),
-  phone: z.string(),
-});
 
-const columns: ColumnDef<z.infer<typeof teacherSchema>>[] = [
-  createDragColumn<z.infer<typeof teacherSchema>>(),
-  createSelectColumn<z.infer<typeof teacherSchema>>(),
+const columns: ColumnDef<Teacher>[] = [
+  createDragColumn<Teacher>(),
+  createSelectColumn<Teacher>(),
   {
     accessorKey: "name",
     header: "Teacher",
     cell: ({ row }) => {
-      const initials = row.original.name
+      const initials = row.original.user?.name || ''
         .split(" ")
         .map((n) => n[0])
         .join("")
@@ -99,7 +88,7 @@ const columns: ColumnDef<z.infer<typeof teacherSchema>>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <IconMail className="h-4 w-4" />
-        {row.original.email}
+        {row.original.user.email}
       </div>
     ),
   },
@@ -108,17 +97,17 @@ const columns: ColumnDef<z.infer<typeof teacherSchema>>[] = [
     header: "Department",
     cell: ({ row }) => (
       <Badge variant="outline" className="text-muted-foreground px-2">
-        {row.original.department}
+        {row.original.qualification}
       </Badge>
     ),
   },
-  {
-    accessorKey: "subject",
-    header: "Subject",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.subject}</div>
-    ),
-  },
+  // {
+  //   accessorKey: "subject",
+  //   header: "Subject",
+  //   cell: ({ row }) => (
+  //     <div className="font-medium">{row.original.subject}</div>
+  //   ),
+  // },
   {
     accessorKey: "status",
     header: "Status",
@@ -134,33 +123,33 @@ const columns: ColumnDef<z.infer<typeof teacherSchema>>[] = [
     ),
   },
   {
-    accessorKey: "classesAssigned",
+    accessorKey: "assignedClasses",
     header: () => <div className="w-full text-center">Classes</div>,
     cell: ({ row }) => (
       <div className="text-center font-semibold">
-        {row.original.classesAssigned}
+        {row.original.assignedClasses}
       </div>
     ),
   },
-  {
-    accessorKey: "totalStudents",
-    header: () => <div className="w-full text-center">Students</div>,
-    cell: ({ row }) => (
-      <div className="text-center font-semibold">
-        {row.original.totalStudents}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "experience",
-    header: "Experience",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {row.original.experience}
-      </div>
-    ),
-  },
-  createActionsColumn<z.infer<typeof teacherSchema>>([
+  // {
+  //   accessorKey: "students",
+  //   header: () => <div className="w-full text-center">Students</div>,
+  //   cell: ({ row }) => (
+  //     <div className="text-center font-semibold">
+  //       {row.original.students}
+  //     </div>
+  //   ),
+  // },
+  // {
+  //   accessorKey: "experience",
+  //   header: "Experience",
+  //   cell: ({ row }) => (
+  //     <div className="text-sm text-muted-foreground">
+  //       {row.original.experience}
+  //     </div>
+  //   ),
+  // },
+  createActionsColumn<Teacher>([
     { label: "Edit Profile", onClick: () => {} },
     { label: "View Classes", onClick: () => {} },
     { label: "View Performance", onClick: () => {} },
@@ -172,7 +161,7 @@ const columns: ColumnDef<z.infer<typeof teacherSchema>>[] = [
 export function TeacherDataTable({
   data,
 }: {
-  data: z.infer<typeof teacherSchema>[];
+  data: Teacher[];
 }) {
   const tabs = [
     {
@@ -205,8 +194,10 @@ export function TeacherDataTable({
     },
   ];
 
+  console.log("the data being passed is: ", data)
+
   return (
-    <GenericDataTable<z.infer<typeof teacherSchema>>
+    <GenericDataTable<Teacher>
       data={data}
       columns={columns}
       tabs={tabs}
@@ -273,7 +264,7 @@ const availableSubjects = [
 function TeacherDetailViewer({
   item,
 }: {
-  item: z.infer<typeof teacherSchema>;
+  item: Teacher;
 }) {
   const isMobile = useIsMobile();
 
@@ -281,12 +272,12 @@ function TeacherDetailViewer({
     <Drawer direction={isMobile ? "bottom" : "right"} >
       <DrawerTrigger asChild>
         <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.name}
+          {item.user.name}
         </Button>
       </DrawerTrigger>
       <DrawerContent className="rounded-lg  m-1 min-w-[50vw]">
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.name}</DrawerTitle>
+          <DrawerTitle>{item.user.name}</DrawerTitle>
           <DrawerDescription>
             Teacher profile, assigned classes, and subject assignments
           </DrawerDescription>
@@ -296,23 +287,23 @@ function TeacherDetailViewer({
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
               <IconMail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{item.email}</span>
+              <span className="text-sm">{item.user.email}</span>
             </div>
             <div className="flex items-center gap-2">
               <IconPhone className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm">{item.phone}</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              {/* <div>
                 <Label className="text-xs text-muted-foreground">Department</Label>
-                <p className="font-medium">{item.department}</p>
-              </div>
+                <p className="font-medium">{item.user.department}</p>
+              </div> */}
               <div>
                 <Label className="text-xs text-muted-foreground">Experience</Label>
-                <p className="font-medium">{item.experience}</p>
+                <p className="font-medium">{item.user.experience}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            {/* <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Classes Assigned</Label>
                 <p className="font-medium">{item.classesAssigned}</p>
@@ -321,7 +312,7 @@ function TeacherDetailViewer({
                 <Label className="text-xs text-muted-foreground">Total Students</Label>
                 <p className="font-medium">{item.totalStudents}</p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <Separator />
@@ -341,17 +332,17 @@ function TeacherDetailViewer({
             <h3 className="font-semibold">Edit Teacher Information</h3>
             <div className="flex flex-col gap-3">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" defaultValue={item.name} />
+              <Input id="name" defaultValue={item.user.name} />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={item.email} />
+                <Input id="email" type="email" defaultValue={item.user.email} />
               </div>
               <div className="flex flex-col gap-3">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" type="tel" defaultValue={item.phone} />
+                <Input id="phone" type="tel" defaultValue={item.user.phone} />
               </div>
             </div>
 
@@ -393,27 +384,27 @@ function TeacherDetailViewer({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="subject">Subject/Specialization</Label>
-              <Input id="subject" defaultValue={item.subject} />
-            </div>
+              <div className="flex flex-col gap-3">
+                <Label htmlFor="subject">Subject/Specialization</Label>
+                <Input id="subject" defaultValue={item.subjectsCanTeach?.join(", ")} />
+              </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="experience">Experience</Label>
-                <Input id="experience" defaultValue={item.experience} />
+                <Input id="experience" defaultValue={item.qualification} />
               </div>
-              <div className="flex flex-col gap-3">
+              {/* <div className="flex flex-col gap-3">
                 <Label htmlFor="classesAssigned">Classes Assigned</Label>
                 <Input
                   id="classesAssigned"
                   type="number"
                   defaultValue={item.classesAssigned}
                 />
-              </div>
+              </div> */}
             </div>
 
-            <div className="flex flex-col gap-3">
+            {/* <div className="flex flex-col gap-3">
               <Label htmlFor="totalStudents">Total Students</Label>
               <Input
                 id="totalStudents"
@@ -421,7 +412,7 @@ function TeacherDetailViewer({
                 defaultValue={item.totalStudents}
                 disabled
               />
-            </div>
+            </div> */}
           </form>
         </div>
         <DrawerFooter>

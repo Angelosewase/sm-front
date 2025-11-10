@@ -52,8 +52,21 @@ export interface UpdateSubjectDto {
   prerequisites?: string;
 }
 
-export interface Subject extends CreateSubjectDto {
-  id: string;
+export interface Subject {
+  _id: string;
+  name: string;
+  subjectCode: string;
+  shortName: string;
+  maxScore: number;
+  category: string;
+  minPassingScore: number;
+  school: string;
+  department: string;
+  creditHours: number;
+  level: string;
+  gradeLevel: string;
+  status: string;
+  prerequisites: string;
   createdAt?: string; // If your API returns timestamps
   updatedAt?: string;
 }

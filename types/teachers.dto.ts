@@ -9,6 +9,7 @@ export interface Teacher {
   assignedClasses?: string[];
   phone?: string;
   qualification?: string;
+  department?: string;
   hireDate?: string;
   school?: string;
   status?: Status;

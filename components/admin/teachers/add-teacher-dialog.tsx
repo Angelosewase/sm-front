@@ -34,7 +34,7 @@ const schema = z.object({
   phone: z.string().min(7, "Invalid phone"),
   department: z.string().min(1, "Select department"),
   subject: z.string().min(1, "Enter subject"),
-  experience: z.number().min(0).max(50),
+  experience: z.string(),
   status: z.enum(["Active", "On Leave", "Inactive"]),
   qualifications: z.string().optional(),
   address: z.string().optional(),
@@ -167,8 +167,8 @@ export function AddTeacherDialog() {
                   <SelectContent>
                     {subjectsData?.items?.length ? (
                       subjectsData.items.map((s) => (
-                        <SelectItem key={s.id} value={s.subjectName}>
-                          {s.subjectName}
+                        <SelectItem key={s._id} value={s._id}>
+                          {s.name}
                         </SelectItem>
                       ))
                     ) : (

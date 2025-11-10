@@ -172,8 +172,8 @@ export function AddHeadTeacherDialog() {
                   <SelectContent>
                     {subjectsData?.items?.length ? (
                       subjectsData.items.map((s) => (
-                        <SelectItem key={s.id} value={s.subjectName}>
-                          {s.subjectName}
+                        <SelectItem key={s._id} value={s._id}>
+                          {s.name}
                         </SelectItem>
                       ))
                     ) : (
