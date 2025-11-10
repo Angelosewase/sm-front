@@ -13,14 +13,18 @@ export const axiosInstance = axios.create({
 // Request interceptor to add token from cookie
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Token will be automatically sent via httpOnly cookie
-    // But we can add it to header if needed for backend compatibility
     if (typeof window !== 'undefined') {
       const cookies = document.cookie.split(';');
-      const tokenCookie = cookies.find(c => c.trim().startsWith('accessToken='));
+      const tokenCookie = cookies.find((c) =>
+        c.trim().startsWith('accessToken='),
+      );
       if (tokenCookie) {
-        const token = tokenCookie.split('=')[1];
-        config.headers.Authorization = `Bearer ${token}`;
+        const rawValue = tokenCookie.trim().split('=').slice(1).join('=');
+        const decodedToken = decodeURIComponent(rawValue || '');
+        if (decodedToken) {
+          const normalizedToken = decodedToken.replace(/^Bearer\s+/i, '');
+          config.headers.Authorization = `Bearer ${normalizedToken}`;
+        }
       }
     }
     return config;
@@ -39,6 +43,7 @@ axiosInstance.interceptors.response.use(
       if (typeof window !== 'undefined') {
         document.cookie = 'accessToken=; Max-Age=0; path=/;';
         document.cookie = 'user=; Max-Age=0; path=/;';
+        document.cookie = 'school=; Max-Age=0; path=/;';
         window.location.href = '/login';
       }
     }

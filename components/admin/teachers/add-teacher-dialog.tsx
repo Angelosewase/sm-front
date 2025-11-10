@@ -216,23 +216,18 @@ export function AddTeacherDialog() {
 
             <div className="grid gap-2">
               <Label htmlFor="address">Address</Label>
-              <Input id="address" placeholder="Street address" {...form.register("address")} />
+              <Input id="address" name="address" placeholder="Street address" />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="city">City</Label>
-                <Input id="city" placeholder="City" {...form.register("city")} />
+                <Label htmlFor="province">province</Label>
+                <Input id="province" name="province" placeholder="Province" />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="state">State</Label>
-                <Input id="state" placeholder="State" {...form.register("state")} />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="zip">ZIP Code</Label>
-                <Input id="zip" placeholder="12345" {...form.register("zip")} />
+                <Label htmlFor="district">district</Label>
+                <Input id="district" name="district" placeholder="province" />
               </div>
             </div>
 

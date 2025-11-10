@@ -7,7 +7,7 @@ export async function setAuthCookie(token: string) {
   const cookieStore = await cookies();
   
   cookieStore.set('accessToken', token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 60 * 60 * 24, // 24 hours
@@ -43,6 +43,7 @@ export async function clearAuthCookies() {
   
   cookieStore.delete('accessToken');
   cookieStore.delete('user');
+  cookieStore.delete('school');
 }
 
 export async function logout() {

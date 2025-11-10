@@ -25,7 +25,7 @@ const SignInPage = () => {
       toast.success("Login successful");
     } catch (err: any) {
       const errorMessage =
-        err.response?.data?.message || "Invalid email or password";
+        err?.response?.data?.message ?? err?.message ?? "Invalid email or password";
       setError(errorMessage);
       console.error("Login error:", err);
       toast.error(errorMessage);

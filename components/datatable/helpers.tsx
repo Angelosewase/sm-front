@@ -25,7 +25,7 @@ export function createDragColumn<T extends BaseEntity>(): ColumnDef<T> {
   return {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original.id} />,
+    cell: ({ row }) => <DragHandle id={row.original.id!} />,
   };
 }
 
@@ -77,12 +77,15 @@ export function createSelectColumn<T extends BaseEntity>(): ColumnDef<T> {
  *   ])
  * ]
  */
+type ActionConfig<T> = {
+  label: string | ((item: T) => React.ReactNode);
+  onClick: (item: T) => void;
+  variant?: "default" | "destructive";
+  disabled?: boolean;
+};
+
 export function createActionsColumn<T extends BaseEntity>(
-  actions?: {
-    label: string | ((item: T) => React.ReactNode);
-    onClick: (item: T) => void;
-    variant?: "default" | "destructive";
-  }[]
+  actions?: ActionConfig<T>[] | ((item: T) => ActionConfig<T>[])
 ): ColumnDef<T> {
   return {
     id: "actions",
@@ -99,16 +102,25 @@ export function createActionsColumn<T extends BaseEntity>(
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-32">
-          {actions?.map((action, index) => (
+          {(
+            typeof actions === "function" ? actions(row.original) : actions ?? []
+          ).map((action, index) => (
             <React.Fragment key={index}>
               {index > 0 && action.variant === "destructive" && (
                 <DropdownMenuSeparator />
               )}
               <DropdownMenuItem
                 variant={action.variant}
-                onClick={() => action.onClick(row.original)}
+                onClick={() => {
+                  if (!action.disabled) {
+                    action.onClick(row.original);
+                  }
+                }}
+                disabled={action.disabled}
               >
-                {typeof action.label === "function" ? action.label(row.original) : action.label}
+                {typeof action.label === "function"
+                  ? action.label(row.original)
+                  : action.label}
               </DropdownMenuItem>
             </React.Fragment>
           ))}
