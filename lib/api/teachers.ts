@@ -1,4 +1,4 @@
-import { axiosInstance } from '../axios';
+import { axiosInstance } from "../axios";
 
 // Teacher entity matching API response
 export interface Teacher {
@@ -60,8 +60,12 @@ export const teachersApi = {
   /**
    * Get paginated list of teachers with optional filters
    */
-  getTeachers: async (params?: { page?: number; limit?: number; role?: string }): Promise<TeacherListResponse> => {
-    const { data } = await axiosInstance.get<TeacherListResponse>('/api/teachers', {
+  getTeachers: async (params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+  }): Promise<TeacherListResponse> => {
+    const { data } = await axiosInstance.get<TeacherListResponse>("/teachers", {
       params: {
         ...params,
         // role: 'teacher', // Filter by teacher role
@@ -103,4 +107,3 @@ export const teachersApi = {
     return data;
   },
 };
-

@@ -12,6 +12,7 @@ import {
   ClassLite,
   PaginatedClassesResponse,
 } from "@/types/classes.types";
+import { axiosInstance } from "@/lib/axios";
 
 const API_BASE_URL = "http://localhost:3000/api/classes";
 
@@ -19,7 +20,7 @@ const API_BASE_URL = "http://localhost:3000/api/classes";
 
 const createClass = async (dto: CreateClassDto): Promise<ClassLite> => {
   const token = await getAuthToken();
-  const res = await axios.post<ClassLite>(API_BASE_URL, dto, {
+  const res = await axiosInstance.post<ClassLite>(API_BASE_URL, dto, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -29,7 +30,7 @@ const listClasses = async (
   filter: IQueryClasses = {}
 ): Promise<PaginatedClassesResponse> => {
   const token = await getAuthToken();
-  const res = await axios.get<PaginatedClassesResponse>(API_BASE_URL, {
+  const res = await axiosInstance.get<PaginatedClassesResponse>(API_BASE_URL, {
     params: filter,
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -38,7 +39,7 @@ const listClasses = async (
 
 const getClassById = async (id: string): Promise<ClassLite> => {
   const token = await getAuthToken();
-  const res = await axios.get<ClassLite>(`${API_BASE_URL}/${id}`, {
+  const res = await axiosInstance.get<ClassLite>(`${API_BASE_URL}/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
@@ -49,7 +50,7 @@ const postAssignTeacherToClass = async ({
   teacherId,
 }: AssignTeacherToClassDto): Promise<void> => {
   const token = await getAuthToken();
-  await axios.post(
+  await axiosInstance.post(
     `${API_BASE_URL}/${classId}/teachers`,
     { teacherId },
     { headers: { Authorization: `Bearer ${token}` } }
@@ -63,7 +64,7 @@ const postAssignSubjectToClass = async ({
   teacherId,
 }: AssignSubjectToClassDto): Promise<void> => {
   const token = await getAuthToken();
-  await axios.post(
+  await axiosInstance.post(
     `${API_BASE_URL}/${classId}/subjects`,
     {
       subjectId,
