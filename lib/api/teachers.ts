@@ -1,4 +1,4 @@
-import { axiosInstance } from '../axios';
+import { axiosInstance } from "../axios";
 
 export interface Teacher {
   _id: string;
@@ -19,8 +19,12 @@ export const teachersApi = {
   /**
    * Get list of teachers (for dropdowns, etc.)
    */
-  getTeachers: async (params?: { page?: number; limit?: number; role?: string }): Promise<TeacherListResponse> => {
-    const { data } = await axiosInstance.get<TeacherListResponse>('/api/teachers', {
+  getTeachers: async (params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+  }): Promise<TeacherListResponse> => {
+    const { data } = await axiosInstance.get<TeacherListResponse>("/teachers", {
       params: {
         ...params,
         // role: 'teacher', // Filter by teacher role
@@ -29,4 +33,3 @@ export const teachersApi = {
     return data;
   },
 };
-

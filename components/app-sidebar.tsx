@@ -59,6 +59,12 @@ const getAdminRoutes = (): Route[] => [
     link: `/admin/teachers`,
   },
   {
+    id: "head-teachers",
+    title: "Head Teachers",
+    icon: <GraduationCap className="size-10" />,
+    link: `/admin/head-teachers`,
+  },
+  {
     id: "students",
     title: "Students",
     icon: <Users className="size-10" />,
