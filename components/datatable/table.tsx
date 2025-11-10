@@ -70,6 +70,7 @@ export function DataTable<T extends BaseEntity>({
     enableSelection = true,
     enableColumnVisibility = true,
     enablePagination = true,
+    enableSearch = true,
     pageSize = 10,
     pageSizeOptions = [10, 20, 30, 40, 50],
   } = config;
@@ -299,15 +300,17 @@ export function DataTable<T extends BaseEntity>({
             onValueChange={handleTabChange}
           />
           <div className="flex items-center gap-2">
+            {enableSearch && (
             <div className="relative">
               <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search..."
                 value={globalFilter ?? ""}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="pl-8 w-[200px] lg:w-[300px]"
-              />
-            </div>
+                  className="pl-8 w-[200px] lg:w-[300px]"
+                />
+              </div>
+            )}
             {enableColumnVisibility && (
               <ColumnVisibilityDropdown
                 table={table}

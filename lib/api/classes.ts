@@ -4,6 +4,7 @@ export interface Class {
   _id: string;
   name: string;
   gradeLevel: string;
+  academicYear?: string;
   capacity: number;
   description?: string;
   status: 'active' | 'inactive';
@@ -13,6 +14,8 @@ export interface Class {
     email: string;
   } | null;
   studentCount: number;
+  isTrashed?: boolean;
+  trashedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -31,7 +34,7 @@ export interface CreateClassData {
   capacity: number;
   description?: string;
   status?: 'active' | 'inactive';
-  classTeacher: string;
+  classTeacher?: string;
 }
 
 export interface UpdateClassData {
@@ -48,6 +51,9 @@ export interface ClassQueryParams {
   limit?: number;
   search?: string;
   gradeLevel?: string;
+  academicYear?: string;
+  includeTrashed?: boolean;
+  onlyTrashed?: boolean;
 }
 
 const classesApiUrl = '/api/classes';
@@ -92,6 +98,54 @@ export const classesApi = {
    */
   deleteClass: async (id: string): Promise<void> => {
     await axiosInstance.delete(`${classesApiUrl}/${id}`);
+  },
+
+  /**
+   * Restore a trashed class
+   */
+  restoreClass: async (id: string): Promise<Class> => {
+    const { data } = await axiosInstance.patch<Class>(`${classesApiUrl}/${id}/restore`, {});
+    return data;
+  },
+
+  /**
+   * Permanently delete a trashed class
+   */
+  permanentlyDeleteClass: async (id: string): Promise<void> => {
+    await axiosInstance.delete(`${classesApiUrl}/${id}/permanent`);
+  },
+
+  /**
+   * Bulk move classes to trash
+   */
+  bulkTrashClasses: async (ids: string[]): Promise<{ modifiedCount: number }> => {
+    const { data } = await axiosInstance.post<{ modifiedCount: number }>(
+      `${classesApiUrl}/bulk/trash`,
+      { ids }
+    );
+    return data;
+  },
+
+  /**
+   * Bulk restore trashed classes
+   */
+  bulkRestoreClasses: async (ids: string[]): Promise<{ modifiedCount: number }> => {
+    const { data } = await axiosInstance.post<{ modifiedCount: number }>(
+      `${classesApiUrl}/bulk/restore`,
+      { ids }
+    );
+    return data;
+  },
+
+  /**
+   * Bulk permanently delete trashed classes
+   */
+  bulkPermanentlyDeleteClasses: async (ids: string[]): Promise<{ deletedCount: number }> => {
+    const { data } = await axiosInstance.post<{ deletedCount: number }>(
+      `${classesApiUrl}/bulk/permanent`,
+      { ids }
+    );
+    return data;
   },
 };
 
