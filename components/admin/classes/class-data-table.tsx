@@ -293,10 +293,10 @@ function ClassDetailViewer({ item }: { item: ClassData }) {
                   <SelectValue placeholder={isLoadingTeachers ? "Loading teachers..." : "Select teacher"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {teachersData?.data && teachersData.data.length > 0 ? (
-                    teachersData.data.map((teacher) => (
+                  {teachersData?.items && teachersData.items.length > 0 ? (
+                    teachersData.items.map((teacher) => (
                       <SelectItem key={teacher._id} value={teacher._id}>
-                        {teacher.name}
+                        {teacher.user.name}
                       </SelectItem>
                     ))
                   ) : (
