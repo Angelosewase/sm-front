@@ -5,6 +5,7 @@ import * as RechartsPrimitive from "recharts";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ChartContainer } from "@/components/ui/chart";
+import StatCard, { IStatCardDataItem } from "@/components/stat-card";
 
 // Sample student metrics data over time
 const studentMetricsData = [
@@ -58,7 +59,7 @@ const studentMetricsData = [
   },
 ];
 
-const studentStats = [
+const studentStats: Array<Omit<IStatCardDataItem, "data">> = [
   {
     name: "Total Students",
     value: "20",
@@ -95,98 +96,10 @@ const sanitizeName = (name: string) => {
 export function StudentStats() {
   return (
     <div className="flex items-center justify-center p-4 w-full">
-      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 w-full">
-        {studentStats.map((item) => {
-          const sanitizedName = sanitizeName(item.name);
-          const gradientId = `gradient-${sanitizedName}`;
-
-          const color =
-            item.changeType === "positive"
-              ? "hsl(142.1 76.2% 36.3%)"
-              : "hsl(0 72.2% 50.6%)";
-
-          return (
-            <Card key={item.name} className="p-0">
-              <CardContent className="p-4 pb-0 flex h-32">
-                <div className="w-[60%] h-full flex flex-col justify-evenly">
-                  <dt className="text-sm font-medium text-foreground capitalize">
-                    {item.name}
-                  </dt>
-                  <div className="flex items-baseline justify-between">
-                    <dd
-                      className={cn(
-                        item.changeType === "positive"
-                          ? "text-green-600 dark:text-green-500"
-                          : "text-red-600 dark:text-red-500",
-                        "text-2xl font-semibold"
-                      )}
-                    >
-                      {item.value}
-                    </dd>
-                  </div>
-                  <dd className="flex items-center space-x-1 text-sm">
-                    <span className="font-medium text-foreground">
-                      {item.change}
-                    </span>
-                    <span
-                      className={cn(
-                        item.changeType === "positive"
-                          ? "text-green-600 dark:text-green-500"
-                          : "text-red-600 dark:text-red-500"
-                      )}
-                    >
-                      ({item.percentageChange})
-                    </span>
-                  </dd>
-                </div>
-
-                <div className="overflow-hidden flex-1 h-full">
-                  <ChartContainer
-                    className="w-full h-full"
-                    config={{
-                      [item.dataKey]: {
-                        label: item.name,
-                        color: color,
-                      },
-                    }}
-                  >
-                    <RechartsPrimitive.AreaChart data={studentMetricsData}>
-                      <defs>
-                        <linearGradient
-                          id={gradientId}
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor={color}
-                            stopOpacity={0.3}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor={color}
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <RechartsPrimitive.XAxis dataKey="date" hide={true} />
-                      <RechartsPrimitive.Area
-                        dataKey={item.dataKey}
-                        stroke={color}
-                        fill={`url(#${gradientId})`}
-                        fillOpacity={0.4}
-                        strokeWidth={1.5}
-                        type="monotone"
-                      />
-                    </RechartsPrimitive.AreaChart>
-                  </ChartContainer>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+        {studentStats.map((item, idx) => (
+          <StatCard key={idx} data={studentMetricsData} {...item} />
+        ))}
       </dl>
     </div>
   );

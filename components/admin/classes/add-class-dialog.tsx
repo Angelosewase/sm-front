@@ -23,6 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateClass } from "@/hooks/use-classes";
 import { useTeachers } from "@/hooks/use-teachers";
+import { PlusIcon } from "lucide-react";
 
 export function AddClassDialog() {
   const [open, setOpen] = React.useState(false);
@@ -61,7 +62,7 @@ export function AddClassDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="mr-4">
-          Add Class
+        <PlusIcon className="w-4 h-4 mr-2" /> Add Class
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">

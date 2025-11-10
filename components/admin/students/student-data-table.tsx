@@ -220,6 +220,7 @@ export function StudentDataTable({
         enablePagination: true,
         pageSize: 10,
         pageSizeOptions: [10, 20, 30, 40, 50],
+        enableSearch: false,
       }}
       addButtonLabel="Add Student"
       columnVisibilityLabel="Customize Columns"
@@ -227,7 +228,11 @@ export function StudentDataTable({
   );
 }
 
-function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) {
+function StudentDetailViewer({
+  item,
+}: {
+  item: z.infer<typeof studentSchema>;
+}) {
   const isMobile = useIsMobile();
 
   return (
@@ -237,7 +242,7 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
           {item.name}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="max-w-2xl">
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.name}</DrawerTitle>
           <DrawerDescription>
@@ -249,7 +254,9 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
               <IconUser className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Student ID: {item.studentId}</span>
+              <span className="text-sm font-medium">
+                Student ID: {item.studentId}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <IconMail className="h-4 w-4 text-muted-foreground" />
@@ -261,17 +268,23 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-muted-foreground">Grade Level</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Grade Level
+                </Label>
                 <p className="font-medium">{item.grade}</p>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Current Class</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Current Class
+                </Label>
                 <p className="font-medium">{item.class}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs text-muted-foreground">Date of Birth</Label>
+                <Label className="text-xs text-muted-foreground">
+                  Date of Birth
+                </Label>
                 <div className="flex items-center gap-1">
                   <IconCalendar className="h-3 w-3" />
                   <p className="font-medium">
@@ -287,7 +300,9 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
                 <Label className="text-xs text-muted-foreground">Status</Label>
                 <div className="mt-1">
                   <Badge
-                    variant={item.status === "Active" ? "default" : "destructive"}
+                    variant={
+                      item.status === "Active" ? "default" : "destructive"
+                    }
                   >
                     {item.status}
                   </Badge>
@@ -307,10 +322,14 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
               </div>
             </div>
             <div className="p-4 border rounded-lg bg-muted/30">
-              <Label className="text-xs text-muted-foreground">Academic Score</Label>
+              <Label className="text-xs text-muted-foreground">
+                Academic Score
+              </Label>
               <div className="flex items-center gap-2 mt-1">
                 <IconChartBar className="h-5 w-5 text-primary" />
-                <p className="text-3xl font-bold text-primary">{item.academicScore}%</p>
+                <p className="text-3xl font-bold text-primary">
+                  {item.academicScore}%
+                </p>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 {parseInt(item.academicScore) >= 85
@@ -336,7 +355,9 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
             <div className="p-3 border rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Current Class</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    Current Class
+                  </Label>
                   <p className="font-medium">{item.class}</p>
                 </div>
                 <Badge variant="outline">{item.grade}</Badge>
@@ -459,7 +480,11 @@ function StudentDetailViewer({ item }: { item: z.infer<typeof studentSchema> }) 
 }
 
 // Class Assignment Dialog Component
-function ClassAssignmentDialog({ student }: { student: z.infer<typeof studentSchema> }) {
+function ClassAssignmentDialog({
+  student,
+}: {
+  student: z.infer<typeof studentSchema>;
+}) {
   const [open, setOpen] = React.useState(false);
   const [selectedClass, setSelectedClass] = React.useState(student.class);
   const [selectedGrade, setSelectedGrade] = React.useState(student.grade);
@@ -505,7 +530,8 @@ function ClassAssignmentDialog({ student }: { student: z.infer<typeof studentSch
         <DialogHeader>
           <DialogTitle>Assign Class to {student.name}</DialogTitle>
           <DialogDescription>
-            Change the student's class assignment. Select a grade level and then choose a class.
+            Change the student's class assignment. Select a grade level and then
+            choose a class.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -515,7 +541,9 @@ function ClassAssignmentDialog({ student }: { student: z.infer<typeof studentSch
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">{student.class}</p>
-                  <p className="text-xs text-muted-foreground">{student.grade}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {student.grade}
+                  </p>
                 </div>
                 <Badge variant="outline">Current</Badge>
               </div>
@@ -568,7 +596,8 @@ function ClassAssignmentDialog({ student }: { student: z.infer<typeof studentSch
                 <div>
                   <p className="text-sm font-medium">New Assignment</p>
                   <p className="text-xs text-muted-foreground">
-                    {student.name} will be moved to {selectedClass} ({selectedGrade})
+                    {student.name} will be moved to {selectedClass} (
+                    {selectedGrade})
                   </p>
                 </div>
               </div>
