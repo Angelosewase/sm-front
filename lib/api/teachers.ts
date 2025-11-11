@@ -9,6 +9,8 @@ import {
 } from "@/types/teachers.dto";
 import { axiosInstance } from "../axios";
 
+const baseTeachersPath ="/api/teachers"
+
 export const teachersApi = {
   /**
    * Get paginated list of teachers with optional filters
@@ -18,7 +20,7 @@ export const teachersApi = {
     limit?: number;
     role?: string;
   }): Promise<TeacherListResponse> => {
-    const { data } = await axiosInstance.get<TeacherListResponse>("/teachers", {
+    const { data } = await axiosInstance.get<TeacherListResponse>(baseTeachersPath, {
       params: {
         ...params,
       },
@@ -30,7 +32,7 @@ export const teachersApi = {
    * Get a single teacher by ID
    */
   getTeacherById: async (id: string): Promise<Teacher> => {
-    const { data } = await axiosInstance.get<Teacher>(`/teachers/${id}`);
+    const { data } = await axiosInstance.get<Teacher>(`${baseTeachersPath}/${id}`);
     return data;
   },
 
@@ -40,7 +42,7 @@ export const teachersApi = {
    */
   createTeacher: async (teacherData: CreateTeacherDto): Promise<Teacher> => {
     const { data } = await axiosInstance.post<Teacher>(
-      "/teachers",
+      baseTeachersPath,
       teacherData
     );
     return data;
@@ -54,7 +56,7 @@ export const teachersApi = {
     teacherData: UpdateTeacherDto
   ): Promise<Teacher> => {
     const { data } = await axiosInstance.patch<Teacher>(
-      `/teachers/${id}`,
+      `${baseTeachersPath}/${id}`,
       teacherData
     );
     return data;
@@ -68,7 +70,7 @@ export const teachersApi = {
     payload: AssignClassesDto
   ): Promise<Teacher> => {
     const { data } = await axiosInstance.post<Teacher>(
-      `/teachers/${id}/classes`,
+      `${baseTeachersPath}/${id}/classes`,
       payload
     );
     return data;
@@ -82,7 +84,7 @@ export const teachersApi = {
     payload: UnassignClassesDto
   ): Promise<Teacher> => {
     const { data } = await axiosInstance.delete<Teacher>(
-      `/teachers/${id}/classes`,
+      `${baseTeachersPath}/${id}/classes`,
       { data: payload }
     );
     return data;
@@ -93,7 +95,7 @@ export const teachersApi = {
    */
   deleteTeacher: async (id: string): Promise<DeleteTeacherResponse> => {
     const { data } = await axiosInstance.delete<DeleteTeacherResponse>(
-      `/teachers/${id}`
+      `${baseTeachersPath}/${id}`
     );
     return data;
   },
