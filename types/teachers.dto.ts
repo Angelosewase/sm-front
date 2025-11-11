@@ -92,3 +92,12 @@ export interface TeacherListResponse {
   hasNext: boolean;
   hasPrev: boolean;
 }
+
+
+export interface AssignClassesDto {
+  classIds: string[];
+}
+
+export interface UnassignClassesDto {
+  classIds: string[];
+}
