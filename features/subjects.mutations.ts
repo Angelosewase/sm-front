@@ -199,3 +199,11 @@ export const removeSubjectFromClass = async (body: RemoveFromClassDto) => {
   });
   return response.data;
 };
+
+
+export const fetchTeacherSubjects = async (teacherId: string) => {
+  const response = await axiosInstance.get(
+    `${API_BASE_URL}/teacher/${teacherId}/subjects`,
+  );
+  return response.data;
+};

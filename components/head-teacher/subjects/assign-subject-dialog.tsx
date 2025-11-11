@@ -29,7 +29,8 @@ import {
   useAssignSubjectBulk,
 } from "@/features/subjects.api";
 import { useTerms, useAcademicYears } from "@/features/academic-terms.api";
-import { useTeachers } from "@/hooks/use-teachers";
+import { useAssignSubjectsToTeacher, useTeachers } from "@/hooks/use-teachers";
+import { useAssignSubjectsToClass } from "@/hooks/use-classes";
 
 interface AssignSubjectDialogProps {
   trigger?: React.ReactNode;
@@ -53,8 +54,9 @@ export function AssignSubjectDialog({
   const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   const assignBulkMutation = useAssignSubjectBulk();
-  const assignTeacherMutation = useAssignSubjectToTeacher();
   const assignClassAndTeacherMutation = useAssignSubjectToClassAndTeacher();
+
+  const assignSubjects = useAssignSubjectsToTeacher()
 
   const [selectedClass, setSelectedClass] = React.useState("");
   const [selectedTeacher, setSelectedTeacher] = React.useState("");
@@ -65,17 +67,12 @@ export function AssignSubjectDialog({
     Array<{ id: string; className: string; teacher: string | undefined }>
   >([]);
 
+  const assignSubjectToClass = useAssignSubjectsToClass()
   const { data: teachersData } = useTeachers()
   const { data: availableClassesData } = useClasses();
 
   const availableClasses = availableClassesData?.data ?? [];
   const availableTeachers = teachersData?.items ?? [];
-
-  const { data: academicYearsData } = useAcademicYears();
-  const academicYears = academicYearsData ?? [];
-
-  const { data: termsData } = useTerms();
-  const terms = termsData ?? [];
 
   const handleAddAssignment = () => {
     if (!selectedClass || !selectedTeacher) {
@@ -115,31 +112,27 @@ export function AssignSubjectDialog({
 
 
   const handleSubmit = () => {
- /* ---- teacher mode --------------------------------------------------- */
+    /* ---- teacher mode --------------------------------------------------- */
     if (mode === "teacher") {
       if (!subjectId) {
         toast.error("Missing subjectId");
         return;
       }
-      if (!selectedTeacher || !academicYear) {
-        toast.error("Please select a teacher and academic year");
+      if (!selectedTeacher) {
+        toast.error("Please select a teacher");
         return;
       }
 
-      assignTeacherMutation.mutate(
-        {
-          subjectId: String(subjectId),
-          teacherId: selectedTeacher,
-          academicYear,
-          term: term || undefined,
-        },
+      assignSubjects.mutate(
+        { id: selectedTeacher, payload: { subjectIds: [String(subjectId)] } },
         {
           onSuccess: () => {
-            setOpen(false);
+            toast.success("Subject assigned to teacher");
             setSelectedTeacher("");
-            setAcademicYear("");
-            setTerm("");
+            setOpen(false);
           },
+          onError: (err: any) =>
+            toast.error(err?.response?.data?.message || "Failed to assign subject"),
         }
       );
       return;
@@ -151,25 +144,20 @@ export function AssignSubjectDialog({
         toast.error("Missing subjectId");
         return;
       }
-      if (!selectedClass || !academicYear) {
-        toast.error("Please select a class and academic year");
+      if (!selectedClass) {
+        toast.error("Please select a class");
         return;
       }
 
-      assignClassAndTeacherMutation.mutate(
+      assignSubjectToClass.mutate(
         {
-          subjectId: String(subjectId),
-          classId: selectedClass,
-          teacherId: selectedTeacher,
-          academicYear,
-          term: term || undefined,
+          subjectIds: [String(subjectId)],
+          id: selectedClass,
         },
         {
           onSuccess: () => {
             setOpen(false);
-            setSelectedTeacher("");
-            setAcademicYear("");
-            setTerm("");
+            setSelectedClass("");
           },
         }
       );
@@ -257,7 +245,7 @@ export function AssignSubjectDialog({
           </DialogTitle>
           <DialogDescription className="text-sm">
             {mode === "teacher"
-              ? "Assign this subject to a teacher for an academic year and term."
+              ? "Assign this subject to a teacher."
               : "Assign this subject to classes and designate teachers to teach each class."}
           </DialogDescription>
         </DialogHeader>
@@ -284,8 +272,6 @@ export function AssignSubjectDialog({
               </div>
             )}
 
-            {/* ----- Teacher + Year/Term + Add button ----- */}
-
             {/* Teacher */}
             <div className="flex flex-col gap-2">
               <Label htmlFor="teacher-select">Teacher</Label>
@@ -295,7 +281,7 @@ export function AssignSubjectDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {availableTeachers.map((t) => (
-                    <SelectItem key={t._id} value={t.user._id}>
+                    <SelectItem key={t._id} value={t._id}>
                       {t.user.name ?? t.user.email ?? t._id}
                     </SelectItem>
                   ))}
@@ -305,39 +291,6 @@ export function AssignSubjectDialog({
           </div>
 
           <div className="flex flex-row gap-5 justify-between items-center mb-4">
-            {/* Year + Term (stacked on mobile) */}
-            {/* <div className="flex flex-col gap-4 sm:grid-cols-2 sm:gap-3"> */}
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="academicYear">Academic Year</Label>
-              <Select value={academicYear} onValueChange={setAcademicYear}>
-                <SelectTrigger id="academicYear">
-                  <SelectValue placeholder="Select Academic Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {academicYears.map((a) => (
-                    <SelectItem key={a._id} value={a.label}>
-                      {a.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="term">Term (optional)</Label>
-              <Select value={term} onValueChange={setTerm}>
-                <SelectTrigger id="term">
-                  <SelectValue placeholder="Select term" />
-                </SelectTrigger>
-                <SelectContent>
-                  {terms.map((t) => (
-                    <SelectItem key={t._id} value={t.name}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
           </div>
 

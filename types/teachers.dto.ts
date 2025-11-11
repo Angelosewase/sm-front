@@ -101,3 +101,8 @@ export interface AssignClassesDto {
 export interface UnassignClassesDto {
   classIds: string[];
 }
+
+
+export interface AssignSubjectsDto{
+  subjectIds: string[]
+}

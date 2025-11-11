@@ -1,18 +1,19 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { 
-  classesApi, 
-  CreateClassData, 
-  UpdateClassData, 
-  ClassQueryParams 
-} from '@/lib/api/classes';
-import { toast } from 'react-toastify';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  classesApi,
+  CreateClassData,
+  UpdateClassData,
+  ClassQueryParams,
+} from "@/lib/api/classes";
+import { toast } from "react-toastify";
 
 // Query keys
 export const classesKeys = {
-  all: ['classes'] as const,
-  lists: () => [...classesKeys.all, 'list'] as const,
-  list: (params?: ClassQueryParams) => [...classesKeys.lists(), params] as const,
-  details: () => [...classesKeys.all, 'detail'] as const,
+  all: ["classes"] as const,
+  lists: () => [...classesKeys.all, "list"] as const,
+  list: (params?: ClassQueryParams) =>
+    [...classesKeys.lists(), params] as const,
+  details: () => [...classesKeys.all, "detail"] as const,
   detail: (id: string) => [...classesKeys.details(), id] as const,
 };
 
@@ -47,14 +48,14 @@ export function useCreateClass() {
     mutationFn: (data: CreateClassData) => classesApi.createClass(data),
     onSuccess: () => {
       // Invalidate and refetch all classes queries
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all'
+        refetchType: "all",
       });
-      toast.success('Class created successfully!');
+      toast.success("Class created successfully!");
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to create class';
+      const message = error.response?.data?.message || "Failed to create class";
       toast.error(message);
     },
   });
@@ -67,18 +68,18 @@ export function useUpdateClass() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateClassData }) => 
+    mutationFn: ({ id, data }: { id: string; data: UpdateClassData }) =>
       classesApi.updateClass(id, data),
     onSuccess: () => {
       // Invalidate and refetch all classes queries
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all'
+        refetchType: "all",
       });
-      toast.success('Class updated successfully!');
+      toast.success("Class updated successfully!");
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to update class';
+      const message = error.response?.data?.message || "Failed to update class";
       toast.error(message);
     },
   });
@@ -94,14 +95,15 @@ export function useDeleteClass() {
     mutationFn: (id: string) => classesApi.deleteClass(id),
     onSuccess: () => {
       // Invalidate and refetch all classes queries
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all'
+        refetchType: "all",
       });
-      toast.success('Class moved to trash.');
+      toast.success("Class moved to trash.");
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to move class to trash';
+      const message =
+        error.response?.data?.message || "Failed to move class to trash";
       toast.error(message);
     },
   });
@@ -118,12 +120,13 @@ export function useRestoreClass() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all',
+        refetchType: "all",
       });
-      toast.success('Class restored successfully.');
+      toast.success("Class restored successfully.");
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to restore class';
+      const message =
+        error.response?.data?.message || "Failed to restore class";
       toast.error(message);
     },
   });
@@ -140,12 +143,13 @@ export function usePermanentlyDeleteClass() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all',
+        refetchType: "all",
       });
-      toast.success('Class permanently deleted.');
+      toast.success("Class permanently deleted.");
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to permanently delete class';
+      const message =
+        error.response?.data?.message || "Failed to permanently delete class";
       toast.error(message);
     },
   });
@@ -162,16 +166,19 @@ export function useBulkTrashClasses() {
     onSuccess: ({ modifiedCount }) => {
       queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all',
+        refetchType: "all",
       });
       toast.success(
         modifiedCount
-          ? `${modifiedCount} class${modifiedCount > 1 ? 'es' : ''} moved to trash.`
-          : 'No classes were moved to trash.'
+          ? `${modifiedCount} class${
+              modifiedCount > 1 ? "es" : ""
+            } moved to trash.`
+          : "No classes were moved to trash."
       );
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to move classes to trash';
+      const message =
+        error.response?.data?.message || "Failed to move classes to trash";
       toast.error(message);
     },
   });
@@ -188,16 +195,17 @@ export function useBulkRestoreClasses() {
     onSuccess: ({ modifiedCount }) => {
       queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all',
+        refetchType: "all",
       });
       toast.success(
         modifiedCount
-          ? `${modifiedCount} class${modifiedCount > 1 ? 'es' : ''} restored.`
-          : 'No classes were restored.'
+          ? `${modifiedCount} class${modifiedCount > 1 ? "es" : ""} restored.`
+          : "No classes were restored."
       );
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to restore classes';
+      const message =
+        error.response?.data?.message || "Failed to restore classes";
       toast.error(message);
     },
   });
@@ -214,18 +222,53 @@ export function useBulkPermanentlyDeleteClasses() {
     onSuccess: ({ deletedCount }) => {
       queryClient.invalidateQueries({
         queryKey: classesKeys.all,
-        refetchType: 'all',
+        refetchType: "all",
       });
       toast.success(
         deletedCount
-          ? `${deletedCount} class${deletedCount > 1 ? 'es' : ''} permanently deleted.`
-          : 'No classes were permanently deleted.'
+          ? `${deletedCount} class${
+              deletedCount > 1 ? "es" : ""
+            } permanently deleted.`
+          : "No classes were permanently deleted."
       );
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Failed to permanently delete classes';
+      const message =
+        error.response?.data?.message || "Failed to permanently delete classes";
       toast.error(message);
     },
   });
 }
 
+/**
+ * Hook: assign subjects to a class
+ */
+export function useAssignSubjectsToClass() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, subjectIds }: { id: string; subjectIds: string[] }) =>
+      classesApi.assignSubjectsToClass(id, subjectIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: classesKeys.all,
+        refetchType: "all",
+      });
+      toast.success("Subjects assigned to class");
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to assign subjects to class";
+      toast.error(message);
+    },
+  });
+}
+
+
+export function useClassesForSubjects(subjectId: string) {
+  const queryClient = useQueryClient()
+   return useQuery({
+    queryKey: classesKeys.detail(subjectId),
+    queryFn: () => classesApi.listClassesForSubjects(subjectId),
+    enabled: !!subjectId,
+   })
+}

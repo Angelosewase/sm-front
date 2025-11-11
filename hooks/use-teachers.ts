@@ -7,6 +7,7 @@ import {
   UpdateTeacherDto,
   AssignClassesDto,
   UnassignClassesDto,
+  AssignSubjectsDto,
 } from "@/types/teachers.dto";
 
 // Query keys
@@ -82,6 +83,50 @@ export function useUnassignClassesFromTeacher() {
       toast.error(
         error?.response?.data?.message || "Failed to unassign classes"
       );
+    },
+  });
+}
+
+/**
+ * Hook to assign subjects to a teacher
+ */
+export function useAssignSubjectsToTeacher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: AssignSubjectsDto }) =>
+      teachersApi.assignSubjects(id, payload),
+    onSuccess: (teacher) => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      toast.success("Subjects assigned successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to assign subjects"
+      );
+    },
+  });
+}
+
+/**
+ * Hook to remove a single subject from a teacher
+ */
+export function useRemoveSubjectFromTeacher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, subjectId }: { id: string; subjectId: string }) =>
+      teachersApi.removeSubjectFromTeacher(id, subjectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      toast.success("Subject removed from teacher");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to remove subject");
     },
   });
 }

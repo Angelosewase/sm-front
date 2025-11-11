@@ -89,6 +89,33 @@ export const teachersApi = {
   },
 
   /**
+   * Assign subjects to teacher
+   */
+  assignSubjects: async (
+    id: string,
+    payload: { subjectIds: string[] }
+  ): Promise<Teacher> => {
+    const { data } = await axiosInstance.post<Teacher>(
+      `/teachers/${id}/subjects`,
+      payload
+    );
+    return data;
+  },
+
+  /**
+   * Remove a single subject from a teacher
+   */
+  removeSubjectFromTeacher: async (
+    id: string,
+    subjectId: string
+  ): Promise<Teacher> => {
+    const { data } = await axiosInstance.put<Teacher>(
+      `/teachers/${id}/remove-subject/${subjectId}`
+    );
+    return data;
+  },
+
+  /**
    * Delete a teacher permanently
    */
   deleteTeacher: async (id: string): Promise<DeleteTeacherResponse> => {
