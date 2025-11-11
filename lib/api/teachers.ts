@@ -1,45 +1,35 @@
 import {
   TeacherListResponse,
   Teacher,
-  DeleteTeacherResponse,
   CreateTeacherDto,
   UpdateTeacherDto,
   AssignClassesDto,
   UnassignClassesDto,
+  TeacherQueryParams,
+  BulkTeacherActionResponse,
+  AssignSubjectsDto,
+  RemoveSubjectsDto,
 } from "@/types/teachers.dto";
 import { axiosInstance } from "../axios";
 
-const baseTeachersPath ="/api/teachers"
+const baseTeachersPath = "/api/teachers";
 
 export const teachersApi = {
-  /**
-   * Get paginated list of teachers with optional filters
-   */
-  getTeachers: async (params?: {
-    page?: number;
-    limit?: number;
-    role?: string;
-  }): Promise<TeacherListResponse> => {
-    const { data } = await axiosInstance.get<TeacherListResponse>(baseTeachersPath, {
-      params: {
-        ...params,
-      },
-    });
+  getTeachers: async (params?: TeacherQueryParams): Promise<TeacherListResponse> => {
+    const { data } = await axiosInstance.get<TeacherListResponse>(
+      baseTeachersPath,
+      { params }
+    );
     return data;
   },
 
-  /**
-   * Get a single teacher by ID
-   */
   getTeacherById: async (id: string): Promise<Teacher> => {
-    const { data } = await axiosInstance.get<Teacher>(`${baseTeachersPath}/${id}`);
+    const { data } = await axiosInstance.get<Teacher>(
+      `${baseTeachersPath}/${id}`
+    );
     return data;
   },
 
-  /**
-   * Create a new teacher
-   * Password is generated automatically by the system
-   */
   createTeacher: async (teacherData: CreateTeacherDto): Promise<Teacher> => {
     const { data } = await axiosInstance.post<Teacher>(
       baseTeachersPath,
@@ -48,9 +38,6 @@ export const teachersApi = {
     return data;
   },
 
-  /**
-   * Update an existing teacher
-   */
   updateTeacher: async (
     id: string,
     teacherData: UpdateTeacherDto
@@ -62,9 +49,54 @@ export const teachersApi = {
     return data;
   },
 
-  /**
-   * Assign classes to teacher
-   */
+  trashTeacher: async (id: string): Promise<Teacher> => {
+    const { data } = await axiosInstance.delete<Teacher>(
+      `${baseTeachersPath}/${id}`
+    );
+    return data;
+  },
+
+  restoreTeacher: async (id: string): Promise<Teacher> => {
+    const { data } = await axiosInstance.patch<Teacher>(
+      `${baseTeachersPath}/${id}/restore`,
+      {}
+    );
+    return data;
+  },
+
+  permanentlyDeleteTeacher: async (id: string): Promise<BulkTeacherActionResponse> => {
+    const { data } = await axiosInstance.delete<BulkTeacherActionResponse>(
+      `${baseTeachersPath}/${id}/permanent`
+    );
+    return data;
+  },
+
+  bulkTrashTeachers: async (ids: string[]): Promise<BulkTeacherActionResponse> => {
+    const { data } = await axiosInstance.post<BulkTeacherActionResponse>(
+      `${baseTeachersPath}/bulk/trash`,
+      { ids }
+    );
+    return data;
+  },
+
+  bulkRestoreTeachers: async (ids: string[]): Promise<BulkTeacherActionResponse> => {
+    const { data } = await axiosInstance.post<BulkTeacherActionResponse>(
+      `${baseTeachersPath}/bulk/restore`,
+      { ids }
+    );
+    return data;
+  },
+
+  bulkPermanentlyDeleteTeachers: async (
+    ids: string[]
+  ): Promise<BulkTeacherActionResponse> => {
+    const { data } = await axiosInstance.post<BulkTeacherActionResponse>(
+      `${baseTeachersPath}/bulk/permanent`,
+      { ids }
+    );
+    return data;
+  },
+
   assignClasses: async (
     id: string,
     payload: AssignClassesDto
@@ -76,9 +108,6 @@ export const teachersApi = {
     return data;
   },
 
-  /**
-   * Unassign classes from teacher
-   */
   unassignClasses: async (
     id: string,
     payload: UnassignClassesDto
@@ -90,12 +119,18 @@ export const teachersApi = {
     return data;
   },
 
-  /**
-   * Delete a teacher permanently
-   */
-  deleteTeacher: async (id: string): Promise<DeleteTeacherResponse> => {
-    const { data } = await axiosInstance.delete<DeleteTeacherResponse>(
-      `${baseTeachersPath}/${id}`
+  assignSubjects: async (id: string, payload: AssignSubjectsDto): Promise<Teacher> => {
+    const { data } = await axiosInstance.post<Teacher>(
+      `${baseTeachersPath}/${id}/subjects`,
+      payload
+    );
+    return data;
+  },
+
+  removeSubjects: async (id: string, payload: RemoveSubjectsDto): Promise<Teacher> => {
+    const { data } = await axiosInstance.delete<Teacher>(
+      `${baseTeachersPath}/${id}/subjects`,
+      { data: payload }
     );
     return data;
   },

@@ -2,19 +2,20 @@ import { Status, UserLite } from "./users.dto";
 import type { Subject } from "./subjects.dto";
 import type { Class } from "@/lib/api/classes";
 
-// types/teacher.ts
+export type TeacherStatus = Status;
+
 export interface Teacher {
   _id: string;
   user: UserLite;
   teacherId?: string;
-  // Populated relations
-  subjectsCanTeach?: Subject[]; // populated
-  assignedClasses?: Class[]; // populated
+  subjectsCanTeach?: Subject[];
+  assignedClasses?: Class[];
   phone?: string;
   qualification?: string;
   hireDate?: string;
   school?: string;
-  status?: Status;
+  status?: TeacherStatus;
+  department?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -25,24 +26,24 @@ export interface Teacher {
   updatedAt: string;
   temporaryPassword?: string;
   experience?: string;
+  isTrashed?: boolean;
+  trashedAt?: string | null;
 }
 
 export interface CreateTeacherDto {
-  // User fields
   email: string;
   password: string;
   name: string;
   phone?: string;
   experience?: string;
   school: string;
-
-  // Teacher-specific (IDs expected by backend)
   teacherId?: string;
-  subjectsCanTeach?: string[]; // subject ObjectIds
-  assignedClasses?: string[]; // class ObjectIds
+  subjectsCanTeach?: string[];
+  assignedClasses?: string[];
   qualification?: string;
+  department?: string;
   hireDate?: string;
-  status?: Status;
+  status?: TeacherStatus;
   address?: string;
   city?: string;
   state?: string;
@@ -53,34 +54,46 @@ export interface CreateTeacherDto {
 
 export interface UpdateTeacherDto {
   teacherId?: string;
-  subjectsCanTeach?: string[]; // subject ObjectIds
-  assignedClasses?: string[]; // class ObjectIds
+  subjectsCanTeach?: string[];
+  assignedClasses?: string[];
   phone?: string;
   qualification?: string;
+  department?: string;
   hireDate?: string;
-  status?: Status;
+  status?: TeacherStatus;
   address?: string;
   city?: string;
   state?: string;
   zip?: string;
   emergencyContact?: string;
   notes?: string;
-  experience?: string; // Optional: updates User
+  experience?: string;
 }
 
 export interface DeleteTeacherResponse {
   deleted: boolean;
 }
 
-// Query parameters for listing teachers
+export interface BulkTeacherActionResponse {
+  modifiedCount?: number;
+  deletedCount?: number;
+  message?: string;
+}
+
 export interface TeacherQueryParams {
-  q?: string; // Search across name and email
-  email?: string; // Filter by exact email
-  school?: string; // Filter by school ObjectId
-  page?: number; // Page number (1-based)
-  limit?: number; // Page size (1-100)
-  sortBy?: string; // Field to sort by
-  order?: "asc" | "desc"; // Sort order
+  q?: string;
+  email?: string;
+  school?: string;
+  status?: TeacherStatus;
+  department?: string;
+  subjectId?: string;
+  classId?: string;
+  includeTrashed?: boolean;
+  onlyTrashed?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  order?: "asc" | "desc";
 }
 
 export interface TeacherListResponse {
@@ -93,11 +106,18 @@ export interface TeacherListResponse {
   hasPrev: boolean;
 }
 
-
 export interface AssignClassesDto {
   classIds: string[];
 }
 
 export interface UnassignClassesDto {
   classIds: string[];
+}
+
+export interface AssignSubjectsDto {
+  subjectIds: string[];
+}
+
+export interface RemoveSubjectsDto {
+  subjectIds: string[];
 }

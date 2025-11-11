@@ -2,48 +2,34 @@
 
 import * as React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { z } from "zod";
 import {
   IconCircleCheckFilled,
   IconCircleDashed,
   IconMail,
-  IconPhone,
-  IconPlus,
-  IconX,
-  IconBook,
-  IconSchool,
+  IconTrash,
+  IconUsers,
 } from "@tabler/icons-react";
 
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
+  createActionsColumn,
   createDragColumn,
   createSelectColumn,
-  createActionsColumn,
 } from "@/components/datatable/helpers";
+import { DataTable as GenericDataTable } from "@/components/datatable/table";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -51,159 +37,214 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { DataTable as GenericDataTable } from "@/components/datatable/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 import { Teacher } from "@/types/teachers.dto";
-import AssignedClassesSection from "./assigned-class-section";
-import AssignedSubjectsSection from "./assigned-subjects-section";
+import {
+  useBulkPermanentlyDeleteTeachers,
+  useBulkRestoreTeachers,
+  useBulkTrashTeachers,
+  usePermanentlyDeleteTeacher,
+  useRestoreTeacher,
+  useTeachers,
+  useTrashTeacher,
+} from "@/hooks/use-teachers";
+import { useSubjects } from "@/hooks/use-subjects";
+import { useClasses } from "@/hooks/use-classes";
 import TeacherDetailViewer from "./teacher-detail-viewer";
 
-import {
-  useAssignClassesToTeacher,
-  useDeleteTeacher,
-} from "@/hooks/use-teachers";
-import { useClasses } from "@/hooks/use-classes";
+type TeacherTab = "all" | "Active" | "On Leave" | "Inactive" | "trashed";
+type TeacherActionType = "trash" | "restore" | "permanent";
 
-const columns: ColumnDef<Teacher>[] = [
-  /* columns are defined inside the component to access handlers */
-  createDragColumn<Teacher>(),
-  createSelectColumn<Teacher>(),
-  {
-    accessorKey: "name",
-    header: "Teacher",
-    cell: ({ row }) => {
-      const initials =
-        row.original.user?.name ||
-        ""
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase();
+function useDebouncedValue<T>(value: T, delay = 400) {
+  const [state, setState] = React.useState(value);
 
-      return (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-          </Avatar>
-          <TeacherDetailViewer item={row.original} />
-        </div>
-      );
+  React.useEffect(() => {
+    const handle = window.setTimeout(() => setState(value), delay);
+    return () => window.clearTimeout(handle);
+  }, [value, delay]);
+
+  return state;
+}
+
+interface TeacherDataTableProps {
+  data?: Teacher[];
+}
+
+export function TeacherDataTable({ data = [] }: TeacherDataTableProps) {
+  const [activeTab, setActiveTab] = React.useState<TeacherTab>("all");
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [selectedDepartment, setSelectedDepartment] = React.useState<string>("");
+  const [selectedSubject, setSelectedSubject] = React.useState<string>("");
+  const [selectedClass, setSelectedClass] = React.useState<string>("");
+  const [selectedRows, setSelectedRows] = React.useState<Teacher[]>([]);
+
+  const debouncedSearch = useDebouncedValue(searchTerm);
+
+  const isTrashView = activeTab === "trashed";
+  const statusFilter =
+    activeTab !== "all" && activeTab !== "trashed" ? activeTab : undefined;
+
+  const { data: subjectsResponse } = useSubjects();
+  const { data: classesResponse } = useClasses({ limit: 100 });
+
+  const teacherQuery = useTeachers({
+    q: debouncedSearch || undefined,
+    status: statusFilter,
+    department: selectedDepartment || undefined,
+    subjectId: selectedSubject || undefined,
+    classId: selectedClass || undefined,
+    includeTrashed: isTrashView ? undefined : true,
+    onlyTrashed: isTrashView ? true : undefined,
+    limit: 100,
+    page: 1,
+  });
+
+  const resolvedData =
+    teacherQuery.data?.items ??
+    (isTrashView ? [] : teacherQuery.data?.items ?? data);
+
+  const isLoading = teacherQuery.isLoading;
+
+  const trashTeacherMutation = useTrashTeacher();
+  const restoreTeacherMutation = useRestoreTeacher();
+  const permanentlyDeleteTeacherMutation = usePermanentlyDeleteTeacher();
+  const bulkTrashMutation = useBulkTrashTeachers();
+  const bulkRestoreMutation = useBulkRestoreTeachers();
+  const bulkPermanentDeleteMutation = useBulkPermanentlyDeleteTeachers();
+
+  const [confirmState, setConfirmState] = React.useState<{
+    open: boolean;
+    teacherId: string;
+    teacherName: string;
+    action: TeacherActionType;
+  }>({
+    open: false,
+    teacherId: "",
+    teacherName: "",
+    action: "trash",
+  });
+
+  const openConfirmation = React.useCallback(
+    (action: TeacherActionType, teacher: Teacher) => {
+      setConfirmState({
+        open: true,
+        teacherId: teacher._id,
+        teacherName: teacher.user?.name ?? "this teacher",
+        action,
+      });
     },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <IconMail className="h-4 w-4" />
-        {row.original.user.email}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "department",
-    header: "Department",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-2">
-        {row.original.qualification}
-      </Badge>
-    ),
-  },
-  // {
-  //   accessorKey: "subject",
-  //   header: "Subject",
-  //   cell: ({ row }) => (
-  //     <div className="font-medium">{row.original.subject}</div>
-  //   ),
-  // },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Active" ? (
-          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <IconCircleDashed className="text-orange-500" />
-        )}
-        {row.original.status}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "assignedClasses",
-    header: () => <div className="w-full text-center">Classes</div>,
-    cell: ({ row }) => (
-      <div className="text-center font-semibold">
-        {row.original.assignedClasses?.length}
-      </div>
-    ),
-  },
-  // {
-  //   accessorKey: "students",
-  //   header: () => <div className="w-full text-center">Students</div>,
-  //   cell: ({ row }) => (
-  //     <div className="text-center font-semibold">
-  //       {row.original.students}
-  //     </div>
-  //   ),
-  // },
-  // {
-  //   accessorKey: "experience",
-  //   header: "Experience",
-  //   cell: ({ row }) => (
-  //     <div className="text-sm text-muted-foreground">
-  //       {row.original.experience}
-  //     </div>
-  //   ),
-  // },
-  // placeholder (moved into component)
-];
-
-export function TeacherDataTable({ data }: { data: Teacher[] }) {
-  const [assignOpen, setAssignOpen] = React.useState(false);
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [activeTeacher, setActiveTeacher] = React.useState<Teacher | null>(
-    null
+    []
   );
 
-  const openAssignDialog = (t: Teacher) => {
-    setActiveTeacher(t);
-    setAssignOpen(true);
+  const resetConfirmation = () =>
+    setConfirmState({
+      open: false,
+      teacherId: "",
+      teacherName: "",
+      action: "trash",
+    });
+
+  const handleConfirm = () => {
+    const { teacherId, action } = confirmState;
+    if (!teacherId) return;
+
+    const onSuccess = () => resetConfirmation();
+
+    if (action === "trash") {
+      trashTeacherMutation.mutate(teacherId, { onSuccess });
+    } else if (action === "restore") {
+      restoreTeacherMutation.mutate(teacherId, { onSuccess });
+    } else {
+      permanentlyDeleteTeacherMutation.mutate(teacherId, { onSuccess });
+    }
   };
-  const openConfirmDelete = (t: Teacher) => {
-    setActiveTeacher(t);
-    setConfirmOpen(true);
+
+  const selectedNonTrashedIds = React.useMemo(
+    () =>
+      selectedRows
+        .filter((teacher) => !teacher.isTrashed)
+        .map((teacher) => teacher._id),
+    [selectedRows]
+  );
+
+  const selectedTrashedIds = React.useMemo(
+    () =>
+      selectedRows
+        .filter((teacher) => teacher.isTrashed)
+        .map((teacher) => teacher._id),
+    [selectedRows]
+  );
+
+  const hasNonTrashedSelection = selectedNonTrashedIds.length > 0;
+  const hasTrashedSelection = selectedTrashedIds.length > 0;
+
+  const handleBulkTrash = () => {
+    if (!selectedNonTrashedIds.length) return;
+    bulkTrashMutation.mutate(selectedNonTrashedIds, {
+      onSuccess: () => setSelectedRows([]),
+    });
   };
 
-  const deleteMutation = useDeleteTeacher();
+  const handleBulkRestore = () => {
+    if (!selectedTrashedIds.length) return;
+    bulkRestoreMutation.mutate(selectedTrashedIds, {
+      onSuccess: () => setSelectedRows([]),
+    });
+  };
 
+  const handleBulkPermanentDelete = () => {
+    if (!selectedTrashedIds.length) return;
+    bulkPermanentDeleteMutation.mutate(selectedTrashedIds, {
+      onSuccess: () => setSelectedRows([]),
+    });
+  };
 
-  const columns: ColumnDef<Teacher>[] = React.useMemo(
-    () => [
+  const pendingByAction: Record<TeacherActionType, boolean> = {
+    trash: trashTeacherMutation.isPending,
+    restore: restoreTeacherMutation.isPending,
+    permanent: permanentlyDeleteTeacherMutation.isPending,
+  };
+
+  const departmentOptions = React.useMemo(() => {
+    const departments = new Set<string>();
+    for (const teacher of resolvedData ?? []) {
+      const dept = teacher.department || teacher.qualification;
+      if (dept) {
+        departments.add(dept);
+      }
+    }
+    return Array.from(departments).sort();
+  }, [resolvedData]);
+
+  const subjects = subjectsResponse?.items ?? [];
+  const classes = classesResponse?.data ?? [];
+
+  const columns: ColumnDef<Teacher>[] = React.useMemo(() => {
+    return [
       createDragColumn<Teacher>(),
       createSelectColumn<Teacher>(),
       {
         accessorKey: "name",
         header: "Teacher",
+        enableHiding: false,
         cell: ({ row }) => {
-          const initials = (row.original.user?.name || "")
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase();
+          const teacher = row.original;
+          const initials =
+            (teacher.user?.name || "")
+              .split(" ")
+              .map((char) => char[0])
+              .join("")
+              .toUpperCase() || "T";
+
           return (
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="text-xs">{initials}</AvatarFallback>
               </Avatar>
-              <TeacherDetailViewer item={row.original} />
+              <TeacherDetailViewer item={teacher} />
             </div>
           );
         },
-        enableHiding: false,
       },
       {
         accessorKey: "email",
@@ -219,118 +260,352 @@ export function TeacherDataTable({ data }: { data: Teacher[] }) {
         accessorKey: "department",
         header: "Department",
         cell: ({ row }) => (
-          <Badge variant="outline" className="text-muted-foreground px-2">
-            {row.original.qualification}
+          <Badge variant="outline" className="px-2 text-muted-foreground">
+            {row.original.department || row.original.qualification || "—"}
           </Badge>
         ),
       },
       {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => (
-          <Badge variant="outline" className="text-muted-foreground px-1.5">
-            {row.original.status === "Active" ? (
-              <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-            ) : (
-              <IconCircleDashed className="text-orange-500" />
-            )}
-            {row.original.status}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const teacher = row.original;
+          if (teacher.isTrashed) {
+            return (
+              <Badge
+                variant="outline"
+                className="border-destructive/40 px-1.5 text-destructive"
+              >
+                <IconTrash className="mr-1 h-3 w-3" />
+                Trashed
+              </Badge>
+            );
+          }
+
+          return (
+            <Badge variant="outline" className="px-1.5 text-muted-foreground">
+              {teacher.status === "Active" ? (
+                <IconCircleCheckFilled className="mr-1 h-3 w-3 text-green-500 dark:text-green-400" />
+              ) : (
+                <IconCircleDashed className="mr-1 h-3 w-3 text-orange-500" />
+              )}
+              {teacher.status ?? "Active"}
+            </Badge>
+          );
+        },
       },
       {
         accessorKey: "assignedClasses",
-        header: () => <div className="w-full text-center">Classes</div>,
+        header: () => <div className="w-full text-right">Classes</div>,
         cell: ({ row }) => (
-          <div className="text-center font-semibold">
-            {row.original.assignedClasses?.length || 0}
+          <div className="text-right font-medium">
+            {row.original.assignedClasses?.length ?? 0}
           </div>
         ),
       },
-      createActionsColumn<Teacher>((item) => [
-        { label: "Edit Profile", onClick: () => {} },
-        { label: "View Classes", onClick: () => openAssignDialog(item) },
-        { label: "Assign Classes", onClick: () => openAssignDialog(item) },
-        {
-          label: "Remove",
-          onClick: () => openConfirmDelete(item),
-          variant: "destructive",
-        },
-      ]),
-    ],
-    []
+      {
+        accessorKey: "subjects",
+        header: () => <div className="w-full text-right">Subjects</div>,
+        cell: ({ row }) => (
+          <div className="text-right font-medium">
+            {row.original.subjectsCanTeach?.length ?? 0}
+          </div>
+        ),
+      },
+      createActionsColumn<Teacher>((teacher) => {
+        if (teacher.isTrashed) {
+          return [
+            {
+              label: "Restore",
+              onClick: () => openConfirmation("restore", teacher),
+              disabled: restoreTeacherMutation.isPending,
+            },
+            {
+              label: "Delete Permanently",
+              onClick: () => openConfirmation("permanent", teacher),
+              variant: "destructive",
+              disabled: permanentlyDeleteTeacherMutation.isPending,
+            },
+          ];
+        }
+
+        return [
+          {
+            label: "Move to Trash",
+            onClick: () => openConfirmation("trash", teacher),
+            variant: "destructive",
+            disabled: trashTeacherMutation.isPending,
+          },
+        ];
+      }),
+    ];
+  }, [
+    openConfirmation,
+    permanentlyDeleteTeacherMutation.isPending,
+    restoreTeacherMutation.isPending,
+    trashTeacherMutation.isPending,
+  ]);
+
+  const primaryTabs: { label: string; value: TeacherTab }[] = [
+    { label: "All", value: "all" },
+    { label: "Trash", value: "trashed" },
+  ];
+
+  const statusButtons: { label: string; value: TeacherTab }[] = [
+    { label: "Active", value: "Active" },
+    { label: "On Leave", value: "On Leave" },
+    { label: "Inactive", value: "Inactive" },
+  ];
+
+  const filterControls = (
+    <div className="flex w-full flex-col gap-3 px-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex overflow-hidden rounded-md border">
+            {primaryTabs.map((button, index) => (
+              <Button
+                key={button.value}
+                type="button"
+                variant={activeTab === button.value ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "rounded-none border-0",
+                  index === 0 ? "rounded-l-md" : "",
+                  index === primaryTabs.length - 1 ? "rounded-r-md" : ""
+                )}
+                onClick={() =>
+                  setActiveTab(
+                    button.value === "trashed" && isTrashView ? "all" : button.value
+                  )
+                }
+                disabled={
+                  button.value === "all"
+                    ? isLoading 
+                    : isLoading
+                }
+              >
+                {button.label}
+              </Button>
+            ))}
+          </div>
+          <div className="inline-flex overflow-hidden rounded-md border">
+            {statusButtons.map((button, index) => (
+              <Button
+                key={button.value}
+                type="button"
+                variant={activeTab === button.value ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "rounded-none border-0",
+                  index === 0 ? "rounded-l-md" : "",
+                  index === statusButtons.length - 1 ? "rounded-r-md" : ""
+                )}
+                onClick={() => setActiveTab(button.value)}
+                disabled={isLoading || isTrashView}
+              >
+                {button.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Search name or email"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="w-[180px] sm:w-[220px]"
+          />
+          <Select
+            value={selectedDepartment}
+            onValueChange={setSelectedDepartment}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {departmentOptions.map((dept) => (
+                <SelectItem key={dept} value={dept}>
+                  {dept}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Subject" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {subjects.map((subject) => (
+                <SelectItem key={subject._id} value={subject._id}>
+                  {subject.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Class" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Classes</SelectItem>
+              {classes.map((cls) => (
+                <SelectItem key={cls._id} value={cls._id}>
+                  {cls.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        {/* <div className="flex items-center gap-1">
+          <IconUsers className="h-4 w-4" />
+          {teacherQuery.data?.total ?? resolvedData?.length ?? 0} total teachers
+        </div> */}
+        {selectedRows.length > 0 && (
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <span className="font-medium text-foreground">
+              {selectedRows.length} selected
+            </span>
+            {!isTrashView && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleBulkTrash}
+                disabled={
+                  isLoading ||
+                  !hasNonTrashedSelection ||
+                  bulkTrashMutation.isPending
+                }
+              >
+                {bulkTrashMutation.isPending ? "Moving..." : "Move to Trash"}
+              </Button>
+            )}
+            {isTrashView && (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBulkRestore}
+                  disabled={
+                    isLoading ||
+                    !hasTrashedSelection ||
+                    bulkRestoreMutation.isPending
+                  }
+                >
+                  {bulkRestoreMutation.isPending ? "Restoring..." : "Restore"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleBulkPermanentDelete}
+                  disabled={
+                    isLoading ||
+                    !hasTrashedSelection ||
+                    bulkPermanentDeleteMutation.isPending
+                  }
+                >
+                  {bulkPermanentDeleteMutation.isPending
+                    ? "Deleting..."
+                    : "Delete Permanently"}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
+
+  const confirmationCopy: Record<
+    TeacherActionType,
+    { title: string; description: string; actionLabel: string; destructive?: boolean }
+  > = {
+    trash: {
+      title: "Move Teacher to Trash",
+      description: `Move "${confirmState.teacherName}" to the trash? You can restore them later.`,
+      actionLabel: pendingByAction.trash ? "Moving..." : "Move to Trash",
+      destructive: true,
+    },
+    restore: {
+      title: "Restore Teacher",
+      description: `Restore "${confirmState.teacherName}" so they become active again?`,
+      actionLabel: pendingByAction.restore ? "Restoring..." : "Restore",
+    },
+    permanent: {
+      title: "Permanently Delete Teacher",
+      description: `This will permanently delete "${confirmState.teacherName}" and remove all assignments. This action cannot be undone.`,
+      actionLabel: pendingByAction.permanent
+        ? "Deleting..."
+        : "Delete Permanently",
+      destructive: true,
+    },
+  };
+
+  const dialogContent = confirmationCopy[confirmState.action];
+  const isCurrentActionPending = pendingByAction[confirmState.action];
 
   return (
     <>
       <GenericDataTable<Teacher>
-        data={data}
+        data={resolvedData ?? []}
         columns={columns}
-        defaultTab="all-teachers"
+        defaultTab="all"
+        onTabChange={(tab) => setActiveTab(tab as TeacherTab)}
+        getRowId={(row) => row._id}
+        onSelectionChange={setSelectedRows}
         config={{
           enableDragDrop: true,
           enableSelection: true,
           enableColumnVisibility: true,
           enablePagination: true,
+          enableSearch: false,
           pageSize: 10,
           pageSizeOptions: [10, 20, 30, 40, 50],
         }}
-        addButtonLabel="Add Teacher"
         columnVisibilityLabel="Customize Columns"
+        customToolbarActions={filterControls}
       />
 
-      {/* Assign Classes Dialog */}
-      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Classes 1</DialogTitle>
-            <DialogDescription>
-              {activeTeacher
-                ? `Manage classes for ${activeTeacher.user?.name}`
-                : ""}
-            </DialogDescription>
-          </DialogHeader>
-          {activeTeacher && (
-            <div className="py-2">
-              <AssignedClassesSection teacher={activeTeacher} />
-            </div>
-          )}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm Delete Dialog */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove teacher</DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. Are you sure you want to remove{" "}
-              {activeTeacher?.user?.name}?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (!activeTeacher) return;
-                deleteMutation.mutate(activeTeacher._id, {
-                  onSuccess: () => setConfirmOpen(false),
-                });
-              }}
+      <AlertDialog
+        open={confirmState.open}
+        onOpenChange={(open) => {
+          if (!open) {
+            resetConfirmation();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{dialogContent.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {dialogContent.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCurrentActionPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirm}
+              disabled={isCurrentActionPending}
+              className={
+                dialogContent.destructive
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : undefined
+              }
             >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {dialogContent.actionLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
+
