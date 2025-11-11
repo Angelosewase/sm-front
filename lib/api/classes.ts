@@ -56,7 +56,7 @@ export interface ClassQueryParams {
   onlyTrashed?: boolean;
 }
 
-const classesApiUrl = '/api/classes';
+const classesApiUrl = '/classes';
 
 export const classesApi = {
   /**

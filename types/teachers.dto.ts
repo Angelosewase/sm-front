@@ -1,15 +1,17 @@
 import { Status, UserLite } from "./users.dto";
+import type { Subject } from "./subjects.dto";
+import type { Class } from "@/lib/api/classes";
 
 // types/teacher.ts
 export interface Teacher {
   _id: string;
-  user: UserLite ;
+  user: UserLite;
   teacherId?: string;
-  subjectsCanTeach?: string[];
-  assignedClasses?: string[];
+  // Populated relations
+  subjectsCanTeach?: Subject[]; // populated
+  assignedClasses?: Class[]; // populated
   phone?: string;
   qualification?: string;
-  department?: string;
   hireDate?: string;
   school?: string;
   status?: Status;
@@ -21,7 +23,8 @@ export interface Teacher {
   notes?: string;
   createdAt: string;
   updatedAt: string;
-  temporaryPassword?: string
+  temporaryPassword?: string;
+  experience?: string;
 }
 
 export interface CreateTeacherDto {
@@ -33,10 +36,10 @@ export interface CreateTeacherDto {
   experience?: string;
   school: string;
 
-  // Teacher-specific
+  // Teacher-specific (IDs expected by backend)
   teacherId?: string;
-  subjectsCanTeach?: string[];
-  assignedClasses?: string[];
+  subjectsCanTeach?: string[]; // subject ObjectIds
+  assignedClasses?: string[]; // class ObjectIds
   qualification?: string;
   hireDate?: string;
   status?: Status;
@@ -50,8 +53,8 @@ export interface CreateTeacherDto {
 
 export interface UpdateTeacherDto {
   teacherId?: string;
-  subjectsCanTeach?: string[];
-  assignedClasses?: string[];
+  subjectsCanTeach?: string[]; // subject ObjectIds
+  assignedClasses?: string[]; // class ObjectIds
   phone?: string;
   qualification?: string;
   hireDate?: string;
@@ -65,22 +68,20 @@ export interface UpdateTeacherDto {
   experience?: string; // Optional: updates User
 }
 
-
 export interface DeleteTeacherResponse {
   deleted: boolean;
 }
 
 // Query parameters for listing teachers
 export interface TeacherQueryParams {
-  q?: string;          // Search across name and email
-  email?: string;      // Filter by exact email
-  school?: string;     // Filter by school ObjectId
-  page?: number;       // Page number (1-based)
-  limit?: number;      // Page size (1-100)
-  sortBy?: string;     // Field to sort by
-  order?: 'asc' | 'desc'; // Sort order
+  q?: string; // Search across name and email
+  email?: string; // Filter by exact email
+  school?: string; // Filter by school ObjectId
+  page?: number; // Page number (1-based)
+  limit?: number; // Page size (1-100)
+  sortBy?: string; // Field to sort by
+  order?: "asc" | "desc"; // Sort order
 }
-
 
 export interface TeacherListResponse {
   items: Teacher[];
