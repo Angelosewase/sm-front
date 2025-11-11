@@ -17,6 +17,7 @@ export interface UserLite {
   phone?: string;
   avatar?: string;
   experience?: string;
+  department?:string;
   school?: string;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +30,7 @@ export interface IQueryUser {
   email?: string;
   school?: string;
   page?: number;
+
   limit?: number;
   sortBy?: string;
   order?: 'asc' | 'desc';
