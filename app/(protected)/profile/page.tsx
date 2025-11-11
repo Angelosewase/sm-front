@@ -26,7 +26,7 @@ import {
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const { school } = useBusiness();
+  const { school } = useSchool();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [isEditEmailOpen, setIsEditEmailOpen] = useState(false);

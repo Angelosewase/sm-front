@@ -51,29 +51,31 @@ export interface ApiResponse {
   message: string;
 }
 
+const baseAuthPath='/api/auth';
+
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const { data } = await axiosInstance.post<LoginResponse>('/auth/login', credentials);
+    const { data } = await axiosInstance.post<LoginResponse>(`${baseAuthPath}/login`, credentials);
     return data;
   },
 
   getProfile: async (): Promise<ProfileResponse> => {
-    const { data } = await axiosInstance.get<ProfileResponse>('/auth/profile');
+    const { data } = await axiosInstance.get<ProfileResponse>(`${baseAuthPath}/profile`);
     return data;
   },
 
   requestPasswordReset: async (resetData: RequestResetData): Promise<ApiResponse> => {
-    const { data } = await axiosInstance.post<ApiResponse>('/auth/password-reset/request', resetData);
+    const { data } = await axiosInstance.post<ApiResponse>(`${baseAuthPath}/password-reset/request`, resetData);
     return data;
   },
 
   verifyOtp: async (otpData: VerifyOtpData): Promise<VerifyOtpResponse> => {
-    const { data } = await axiosInstance.post<VerifyOtpResponse>('/auth/password-reset/verify', otpData);
+    const { data } = await axiosInstance.post<VerifyOtpResponse>(`${baseAuthPath}/password-reset/verify`, otpData);
     return data;
   },
 
   resetPassword: async (resetData: ResetPasswordData): Promise<ApiResponse> => {
-    const { data } = await axiosInstance.post<ApiResponse>('/auth/password-reset/reset', resetData);
+    const { data } = await axiosInstance.post<ApiResponse>(`${baseAuthPath}/password-reset/reset`, resetData);
     return data;
   },
 };
