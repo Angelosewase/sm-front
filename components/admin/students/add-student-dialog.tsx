@@ -53,7 +53,8 @@ export function AddStudentDialog() {
         <DialogHeader>
           <DialogTitle>Enroll New Student</DialogTitle>
           <DialogDescription>
-            Add a new student to the school system. Fill in all required information below.
+            Add a new student to the school system. Fill in all required
+            information below.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -144,20 +145,25 @@ export function AddStudentDialog() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="city">City *</Label>
-                  <Input id="city" name="city" placeholder="City" required />
+                  <Label htmlFor="province">Province *</Label>
+                  <Input
+                    id="province"
+                    name="province"
+                    placeholder="Enter province"
+                    required
+                  />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="state">State *</Label>
-                  <Input id="state" name="state" placeholder="State" required />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="zip">ZIP Code *</Label>
-                  <Input id="zip" name="zip" placeholder="12345" required />
+                  <Label htmlFor="district">District *</Label>
+                  <Input
+                    id="district"
+                    name="district"
+                    placeholder="Enter district"
+                    required
+                  />
                 </div>
               </div>
             </div>
@@ -200,7 +206,9 @@ export function AddStudentDialog() {
                       <SelectItem value="Chemistry Basics">
                         Chemistry Basics
                       </SelectItem>
-                      <SelectItem value="World History">World History</SelectItem>
+                      <SelectItem value="World History">
+                        World History
+                      </SelectItem>
                       <SelectItem value="Computer Science">
                         Computer Science
                       </SelectItem>
@@ -238,7 +246,9 @@ export function AddStudentDialog() {
             </div>
 
             <div className="border-t pt-4 space-y-4">
-              <h3 className="font-semibold text-sm">Parent/Guardian Information</h3>
+              <h3 className="font-semibold text-sm">
+                Parent/Guardian Information
+              </h3>
 
               <div className="grid gap-2">
                 <Label htmlFor="parentName">Parent/Guardian Name *</Label>
