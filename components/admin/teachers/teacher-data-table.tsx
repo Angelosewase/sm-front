@@ -59,84 +59,88 @@ import AssignedClassesSection from "./assigned-class-section";
 import AssignedSubjectsSection from "./assigned-subjects-section";
 import TeacherDetailViewer from "./teacher-detail-viewer";
 
-import { useAssignClassesToTeacher, useDeleteTeacher } from "@/hooks/use-teachers";
+import {
+  useAssignClassesToTeacher,
+  useDeleteTeacher,
+} from "@/hooks/use-teachers";
 import { useClasses } from "@/hooks/use-classes";
 
-
 const columns: ColumnDef<Teacher>[] = [
-/* columns are defined inside the component to access handlers */
-createDragColumn<Teacher>(),
+  /* columns are defined inside the component to access handlers */
+  createDragColumn<Teacher>(),
   createSelectColumn<Teacher>(),
-{
-  accessorKey: "name",
-  header: "Teacher",
-  cell: ({ row }) => {
-    const initials = row.original.user?.name || ''
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+  {
+    accessorKey: "name",
+    header: "Teacher",
+    cell: ({ row }) => {
+      const initials =
+        row.original.user?.name ||
+        ""
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase();
 
-    return (
-      <div className="flex items-center gap-3">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-        </Avatar>
-        <TeacherDetailViewer item={row.original} />
-      </div>
-    );
+      return (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          </Avatar>
+          <TeacherDetailViewer item={row.original} />
+        </div>
+      );
+    },
+    enableHiding: false,
   },
-  enableHiding: false,
-},
-{
-  accessorKey: "email",
-  header: "Email",
-  cell: ({ row }) => (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <IconMail className="h-4 w-4" />
-      {row.original.user.email}
-    </div>
-  ),
-},
-{
-  accessorKey: "department",
-  header: "Department",
-  cell: ({ row }) => (
-    <Badge variant="outline" className="text-muted-foreground px-2">
-      {row.original.qualification}
-    </Badge>
-  ),
-},
-// {
-//   accessorKey: "subject",
-//   header: "Subject",
-//   cell: ({ row }) => (
-//     <div className="font-medium">{row.original.subject}</div>
-//   ),
-// },
-{
-  accessorKey: "status",
-  header: "Status",
-  cell: ({ row }) => (
-    <Badge variant="outline" className="text-muted-foreground px-1.5">
-      {row.original.status === "Active" ? (
-        <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-      ) : (
-        <IconCircleDashed className="text-orange-500" />
-      )}
-      {row.original.status}
-    </Badge>
-  ),
-},
-{
-  accessorKey: "assignedClasses",
-  header: () => <div className="w-full text-center">Classes</div>,
-  cell: ({ row }) => (
-    <div className="text-center font-semibold">
-      {row.original.assignedClasses?.length}
-    </div>
-  ),
-},
+  {
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <IconMail className="h-4 w-4" />
+        {row.original.user.email}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "department",
+    header: "Department",
+    cell: ({ row }) => (
+      <Badge variant="outline" className="text-muted-foreground px-2">
+        {row.original.qualification}
+      </Badge>
+    ),
+  },
+  // {
+  //   accessorKey: "subject",
+  //   header: "Subject",
+  //   cell: ({ row }) => (
+  //     <div className="font-medium">{row.original.subject}</div>
+  //   ),
+  // },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => (
+      <Badge variant="outline" className="text-muted-foreground px-1.5">
+        {row.original.status === "Active" ? (
+          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+        ) : (
+          <IconCircleDashed className="text-orange-500" />
+        )}
+        {row.original.status}
+      </Badge>
+    ),
+  },
+  {
+    accessorKey: "assignedClasses",
+    header: () => <div className="w-full text-center">Classes</div>,
+    cell: ({ row }) => (
+      <div className="text-center font-semibold">
+        {row.original.assignedClasses?.length}
+      </div>
+    ),
+  },
   // {
   //   accessorKey: "students",
   //   header: () => <div className="w-full text-center">Students</div>,
@@ -158,14 +162,12 @@ createDragColumn<Teacher>(),
   // placeholder (moved into component)
 ];
 
-export function TeacherDataTable({
-  data,
-}: {
-  data: Teacher[];
-}) {
+export function TeacherDataTable({ data }: { data: Teacher[] }) {
   const [assignOpen, setAssignOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [activeTeacher, setActiveTeacher] = React.useState<Teacher | null>(null);
+  const [activeTeacher, setActiveTeacher] = React.useState<Teacher | null>(
+    null
+  );
 
   const openAssignDialog = (t: Teacher) => {
     setActiveTeacher(t);
@@ -178,92 +180,92 @@ export function TeacherDataTable({
 
   const deleteMutation = useDeleteTeacher();
 
-  const tabs = [
-    { value: "all-teachers", label: "All Teachers" },
-    { value: "science", label: "Science", badge: 3, content: (<div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>) },
-    { value: "mathematics", label: "Mathematics", badge: 1, content: (<div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>) },
-    { value: "languages", label: "Languages", badge: 2, content: (<div className="aspect-video w-full flex-1 rounded-lg border border-dashed"></div>) },
-  ];
 
-  const columns: ColumnDef<Teacher>[] = React.useMemo(() => [
-    createDragColumn<Teacher>(),
-    createSelectColumn<Teacher>(),
-    {
-      accessorKey: "name",
-      header: "Teacher",
-      cell: ({ row }) => {
-        const initials = (row.original.user?.name || "")
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase();
-        return (
-          <div className="flex items-center gap-3">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-            </Avatar>
-            <TeacherDetailViewer item={row.original} />
-          </div>
-        );
+  const columns: ColumnDef<Teacher>[] = React.useMemo(
+    () => [
+      createDragColumn<Teacher>(),
+      createSelectColumn<Teacher>(),
+      {
+        accessorKey: "name",
+        header: "Teacher",
+        cell: ({ row }) => {
+          const initials = (row.original.user?.name || "")
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase();
+          return (
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+              </Avatar>
+              <TeacherDetailViewer item={row.original} />
+            </div>
+          );
+        },
+        enableHiding: false,
       },
-      enableHiding: false,
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <IconMail className="h-4 w-4" />
-          {row.original.user.email}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "department",
-      header: "Department",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="text-muted-foreground px-2">
-          {row.original.qualification}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.status === "Active" ? (
-            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-          ) : (
-            <IconCircleDashed className="text-orange-500" />
-          )}
-          {row.original.status}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "assignedClasses",
-      header: () => <div className="w-full text-center">Classes</div>,
-      cell: ({ row }) => (
-        <div className="text-center font-semibold">
-          {row.original.assignedClasses?.length || 0}
-        </div>
-      ),
-    },
-    createActionsColumn<Teacher>((item) => [
-      { label: "Edit Profile", onClick: () => { } },
-      { label: "View Classes", onClick: () => openAssignDialog(item) },
-      { label: "Assign Classes", onClick: () => openAssignDialog(item) },
-      { label: "Remove", onClick: () => openConfirmDelete(item), variant: "destructive" },
-    ]),
-  ], []);
+      {
+        accessorKey: "email",
+        header: "Email",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <IconMail className="h-4 w-4" />
+            {row.original.user.email}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "department",
+        header: "Department",
+        cell: ({ row }) => (
+          <Badge variant="outline" className="text-muted-foreground px-2">
+            {row.original.qualification}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant="outline" className="text-muted-foreground px-1.5">
+            {row.original.status === "Active" ? (
+              <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+            ) : (
+              <IconCircleDashed className="text-orange-500" />
+            )}
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "assignedClasses",
+        header: () => <div className="w-full text-center">Classes</div>,
+        cell: ({ row }) => (
+          <div className="text-center font-semibold">
+            {row.original.assignedClasses?.length || 0}
+          </div>
+        ),
+      },
+      createActionsColumn<Teacher>((item) => [
+        { label: "Edit Profile", onClick: () => {} },
+        { label: "View Classes", onClick: () => openAssignDialog(item) },
+        { label: "Assign Classes", onClick: () => openAssignDialog(item) },
+        {
+          label: "Remove",
+          onClick: () => openConfirmDelete(item),
+          variant: "destructive",
+        },
+      ]),
+    ],
+    []
+  );
 
   return (
     <>
       <GenericDataTable<Teacher>
         data={data}
         columns={columns}
-        tabs={tabs}
         defaultTab="all-teachers"
         config={{
           enableDragDrop: true,
@@ -283,7 +285,9 @@ export function TeacherDataTable({
           <DialogHeader>
             <DialogTitle>Assign Classes 1</DialogTitle>
             <DialogDescription>
-              {activeTeacher ? `Manage classes for ${activeTeacher.user?.name}` : ""}
+              {activeTeacher
+                ? `Manage classes for ${activeTeacher.user?.name}`
+                : ""}
             </DialogDescription>
           </DialogHeader>
           {activeTeacher && (
@@ -305,7 +309,8 @@ export function TeacherDataTable({
           <DialogHeader>
             <DialogTitle>Remove teacher</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. Are you sure you want to remove {activeTeacher?.user?.name}?
+              This action cannot be undone. Are you sure you want to remove{" "}
+              {activeTeacher?.user?.name}?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
