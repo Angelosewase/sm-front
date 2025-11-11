@@ -62,7 +62,7 @@ import { useTeachers } from "@/hooks/use-teachers";
 import {
   useAcademicYears,
   useActiveAcademicYear,
-} from "@/features/academic-terms.api";
+} from "@/hooks/use-academic-terms";
 import {
   AlertDialog,
   AlertDialogAction,

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { SubjectDataTable, AddSubjectDialog } from "@/components/head-teacher/subjects";
-import { useSubjects } from "@/features/subjects.api";
+import { useSubjects } from "@/hooks/use-subjects";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

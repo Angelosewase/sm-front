@@ -4,7 +4,7 @@ import React, {useMemo, useState} from "react";
 import { ClassDataTable } from "@/components/head-teacher/classes/class-data-table";
 import { ClassStats } from "@/components/head-teacher/classes/class-stats";
 import { AddClassDialog } from "@/components/head-teacher/classes/add-class-dialog";
-import { useClasses } from "@/features/classes.api";
+import { useClasses } from "@/lib/api/classes.api";
 
 export default function HeadTeacherClassesPage() {
    const [q, setQ] = useState<string>("");

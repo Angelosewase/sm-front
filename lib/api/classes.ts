@@ -1,3 +1,4 @@
+import { AssignSubjectToClassDto, AssignTeacherToClassDto, ClassLite, CreateClassDto, IQueryClasses, PaginatedClassesResponse } from '@/types/classes.types';
 import { axiosInstance } from '../axios';
 
 export interface Class {
@@ -145,6 +146,43 @@ export const classesApi = {
       `${classesApiUrl}/bulk/permanent`,
       { ids }
     );
+    return data;
+  },
+
+  //  createClass : async (dto: CreateClassDto): Promise<ClassLite> => {
+  //   const { data } = await axiosInstance.post<ClassLite>(classesApiUrl, dto);
+  //   return data;
+  // },
+  
+  // getClasses : async (
+  //   filter: IQueryClasses = {}
+  // ): Promise<PaginatedClassesResponse> => {
+  //   const { data } = await axiosInstance.get<PaginatedClassesResponse>(classesApiUrl, {
+  //     params: filter,
+  //   });
+  //   return data;
+  // },
+  
+  // getClassById : async (id: string): Promise<ClassLite> => {
+  //   const { data } = await axiosInstance.get<ClassLite>(`${classesApiUrl}/${id}`);
+  //   return data;
+  // },
+  
+   postAssignTeacherToClass : async ({
+    classId,
+    teacherId,
+  }: AssignTeacherToClassDto): Promise<void> => {
+    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/teachers`, { teacherId });
+    return data;
+  },
+  
+  postAssignSubjectToClass : async ({
+    classId,
+    subjectId,
+    academicYear,
+    teacherId,
+  }: AssignSubjectToClassDto): Promise<void> => {
+    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/subjects`, { subjectId, academicYear, teacherId });
     return data;
   },
 };
