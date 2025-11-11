@@ -22,13 +22,13 @@ import {
 import { toast } from "react-toastify";
 import { IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import { useClasses } from "@/features/classes.api";
+import { useClasses } from "@/lib/api/classes.api";
 import {
   useAssignSubjectToTeacher,
   useAssignSubjectToClassAndTeacher,
   useAssignSubjectBulk,
-} from "@/features/subjects.api";
-import { useTerms, useAcademicYears } from "@/features/academic-terms.api";
+} from "@/hooks/use-subjects";
+import { useTerms, useAcademicYears } from "@/lib/api/academic-terms";
 import { useTeachers } from "@/hooks/use-teachers";
 
 interface AssignSubjectDialogProps {

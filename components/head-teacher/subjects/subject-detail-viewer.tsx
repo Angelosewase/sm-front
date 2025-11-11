@@ -44,9 +44,9 @@ import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Textarea } from "@/components/ui/textarea";
 import { AssignSubjectDialog } from "./assign-subject-dialog";
 import type { DataTableConfig } from "@/components/datatable";
-import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment } from "@/features/subjects.api";
+import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment } from "@/hooks/use-subjects";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAcademicYears, useTerms } from "@/features/academic-terms.api";
+import { useAcademicYears, useTerms } from "@/lib/api/academic-terms";
 
 export const subjectSchema = z.object({
     id: z.number(),

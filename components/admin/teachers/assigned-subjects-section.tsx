@@ -7,8 +7,8 @@ import { IconBook, IconPlus } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Teacher } from "@/types/teachers.dto";
-import { useSubjects } from "@/features/subjects.api";
-import { useAssignSubjectToTeacher } from "@/features/subjects.api";
+import { useSubjects } from "@/hooks/use-subjects";
+import { useAssignSubjectToTeacher } from "@/hooks/use-subjects";
 
 export default function AssignedSubjectsSection({ teacher }: { teacher: Teacher }) {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);

@@ -15,8 +15,25 @@ import {
 import { getAuthToken } from "@/lib/actions/auth";
 
 import { toast } from "react-toastify";
-import { createSubject, updateSubject, fetchSubjects, fetchSubjectById, deleteSubject, assignSubjectToTeacher, assignSubjectToClassAndTeacher, fetchSchoolStats, fetchTeacherWorkload, fetchClassesOfSubject, fetchSubjectsOfClass, fetchClassesOfTeacher, fetchSubjectsOfTeacher, fetchTeacherSchedule, assignSubjectBulk, removeSubjectFromClass, deleteAssignment } from "./subjects.mutations";
-
+import {
+  createSubject,
+  updateSubject,
+  fetchSubjects,
+  fetchSubjectById,
+  deleteSubject,
+  assignSubjectToTeacher,
+  assignSubjectToClassAndTeacher,
+  fetchSchoolStats,
+  fetchTeacherWorkload,
+  fetchClassesOfSubject,
+  fetchSubjectsOfClass,
+  fetchClassesOfTeacher,
+  fetchSubjectsOfTeacher,
+  fetchTeacherSchedule,
+  assignSubjectBulk,
+  removeSubjectFromClass,
+  deleteAssignment,
+} from "../lib/api/subjects";
 
 // Mutation hooks
 export const useCreateSubject = () => {
@@ -102,7 +119,7 @@ export const useAssignSubjectToTeacher = () => {
       toast.success("Subject assigned to teacher");
     },
     onError: (err: any) => {
-      console.log("the error is: ",err.response.data.message);
+      console.log("the error is: ", err.response.data.message);
       toast.error(err.response.data.message || "Failed to assign subject");
     },
   });
@@ -118,7 +135,6 @@ export const useAssignSubjectToClassAndTeacher = () => {
     },
     onError: (err) => toast.error(err.message || "Failed to assign subject"),
   });
-
 };
 
 export const useSchoolStats = (schoolId: string, academicYear: string) =>
@@ -163,7 +179,11 @@ export const useSubjectsOfTeacher = (teacherId: string, params = {}) =>
     enabled: !!teacherId,
   });
 
-export const useTeacherSchedule = (teacherId: string, academicYear: string, term?: string) =>
+export const useTeacherSchedule = (
+  teacherId: string,
+  academicYear: string,
+  term?: string
+) =>
   useQuery({
     queryKey: ["teacherSchedule", teacherId, academicYear, term],
     queryFn: () => fetchTeacherSchedule(teacherId, academicYear, term),
@@ -173,7 +193,8 @@ export const useTeacherSchedule = (teacherId: string, academicYear: string, term
 export const useAssignSubjectBulk = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, { subjectId: string; assignments: any }>({
-    mutationFn: ({ subjectId, assignments }) => assignSubjectBulk(subjectId, assignments),
+    mutationFn: ({ subjectId, assignments }) =>
+      assignSubjectBulk(subjectId, assignments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       toast.success("Subjects assigned successfully");
@@ -181,7 +202,6 @@ export const useAssignSubjectBulk = () => {
     onError: (err) => toast.error(err.message || "Failed to assign subjects"),
   });
 };
-
 
 export const useDeleteAssignment = () => {
   const qc = useQueryClient();
@@ -197,7 +217,6 @@ export const useDeleteAssignment = () => {
   });
 };
 
-
 export const useRemoveSubjectFromClass = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, RemoveFromClassDto>({
@@ -210,5 +229,3 @@ export const useRemoveSubjectFromClass = () => {
     onError: (e) => toast.error(e.message ?? "Failed to remove"),
   });
 };
-
-

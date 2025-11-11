@@ -27,7 +27,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/auth-context";
 import { useCreateHeadTeacher } from "@/hooks/use-head-teacher";
-import { useSubjects } from "@/features/subjects.api";
+import { useSubjects } from "@/hooks/use-subjects";
 
 
 const schema = z.object({
