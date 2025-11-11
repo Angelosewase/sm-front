@@ -149,11 +149,6 @@ export default function TeacherDetailViewer({
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3">
-                            <Label htmlFor="subject">Subject/Specialization</Label>
-                            <Input id="subject" defaultValue={item.subjectsCanTeach?.join(", ")} />
-                        </div>
-
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-3">
                                 <Label htmlFor="experience">Experience</Label>

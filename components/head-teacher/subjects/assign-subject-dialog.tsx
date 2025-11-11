@@ -186,7 +186,7 @@ export function AssignSubjectDialog({
 
       const assignmentsPayload = assignedClasses.map((a) => ({
         classId: a.id,
-        teacherId: availableTeachers.find((t) => t.user.name === a.teacher)?._id,
+        teacherId: availableTeachers.find((t) => t.user.name === a.teacher)?.user._id,
         academicYear,
         term: term || undefined,
       }));
@@ -295,7 +295,7 @@ export function AssignSubjectDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {availableTeachers.map((t) => (
-                    <SelectItem key={t._id} value={t._id}>
+                    <SelectItem key={t._id} value={t.user._id}>
                       {t.user.name ?? t.user.email ?? t._id}
                     </SelectItem>
                   ))}
