@@ -99,7 +99,7 @@ export function AssignSubjectDialog({
       {
         id: classObj._id,
         className: classObj.name,
-        teacher: teacherObj.name,
+        teacher: teacherObj.user.name,
       },
     ]);
 
@@ -186,7 +186,7 @@ export function AssignSubjectDialog({
 
       const assignmentsPayload = assignedClasses.map((a) => ({
         classId: a.id,
-        teacherId: availableTeachers.find((t) => t.name === a.teacher)?._id,
+        teacherId: availableTeachers.find((t) => t.user.name === a.teacher)?._id,
         academicYear,
         term: term || undefined,
       }));
@@ -296,7 +296,7 @@ export function AssignSubjectDialog({
                 <SelectContent>
                   {availableTeachers.map((t) => (
                     <SelectItem key={t._id} value={t._id}>
-                      {t.name ?? t.email ?? t._id}
+                      {t.user.name ?? t.user.email ?? t._id}
                     </SelectItem>
                   ))}
                 </SelectContent>
