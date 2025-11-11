@@ -1,101 +1,219 @@
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import React from "react";
-import { toast } from "react-toastify";
-import { IconBook, IconPlus } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { IconBook, IconPlus, IconX } from "@tabler/icons-react";
+
 import { Teacher } from "@/types/teachers.dto";
 import { useSubjects } from "@/hooks/use-subjects";
-import { useAssignSubjectToTeacher } from "@/hooks/use-subjects";
+import {
+  useAssignSubjectsToTeacher,
+  useRemoveSubjectsFromTeacher,
+} from "@/hooks/use-teachers";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export default function AssignedSubjectsSection({ teacher }: { teacher: Teacher }) {
-    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    const [selectedSubject, setSelectedSubject] = React.useState("");
-    const { data: subjectsResp } = useSubjects();
-    const subjects = subjectsResp?.items ?? [];
+interface AssignedSubjectsSectionProps {
+  teacher: Teacher;
+}
 
-    const assignToTeacher = useAssignSubjectToTeacher();
+export default function AssignedSubjectsSection({
+  teacher,
+}: AssignedSubjectsSectionProps) {
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [selectedSubjectId, setSelectedSubjectId] = React.useState("");
 
-    const handleAddSubject = () => {
-        if (!selectedSubject) return;
-        // We don't collect year/term here; if needed, extend dialog.
-        assignToTeacher.mutate(
-            { subjectId: String(selectedSubject), teacherId: teacher._id, academicYear: new Date().getFullYear().toString() },
-            {
-                onSuccess: () => {
-                    toast.success("Subject assigned to teacher");
-                    setSelectedSubject("");
-                    setIsDialogOpen(false);
-                },
-            }
-        );
-    };
+  const { data: subjectsResp, isLoading: subjectsLoading } = useSubjects();
+  const assignSubjectsMutation = useAssignSubjectsToTeacher();
+  const removeSubjectsMutation = useRemoveSubjectsFromTeacher();
 
-    return (
-        <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <IconBook className="h-4 w-4" />
-                    <h3 className="font-semibold">Assigned Subjects</h3>
-                </div>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button type="button" size="sm" variant="outline">
-                            <IconPlus className="h-4 w-4 mr-1" /> Assign Subject
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Assign Subject</DialogTitle>
-                            <DialogDescription>Select a subject to assign to {teacher.user?.name}</DialogDescription>
-                        </DialogHeader>
-                        <div className="flex flex-col gap-4 py-4">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="subject-select">Select Subject</Label>
-                                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                                    <SelectTrigger id="subject-select" className="w-full">
-                                        <SelectValue placeholder="Choose a subject" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {subjects.map((s: any) => (
-                                            <SelectItem key={s._id || s.id} value={(s._id || s.id) as string}>
-                                                {s.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type="button" variant="outline">
-                                    Cancel
-                                </Button>
-                            </DialogClose>
-                            <Button type="button" onClick={handleAddSubject} disabled={!selectedSubject || assignToTeacher.isPending}>
-                                Save
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
+  const isTrashed = teacher.isTrashed;
 
-            <div className="flex flex-col gap-2">
-                {(teacher.subjectsCanTeach?.length || 0) === 0 ? (
-                    <p className="text-sm text-muted-foreground">No subjects assigned yet</p>
-                ) : (
-                    teacher.subjectsCanTeach!.map((subject) => (
-                        <div key={(subject as any)._id || (subject as any).id} className="flex items-center justify-between p-2 border rounded-lg">
-                            <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">{(subject as any).name}</span>
-                                <Badge variant="outline" className="text-xs">{(subject as any).gradeLevel || ""}</Badge>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
+  const subjects = subjectsResp?.items ?? [];
+  const assignedSubjectIds = React.useMemo(
+    () =>
+      new Set(
+        (teacher.subjectsCanTeach ?? []).map((subject: any) =>
+          typeof subject === "string" ? subject : subject._id ?? subject.id
+        )
+      ),
+    [teacher.subjectsCanTeach]
+  );
+
+  const availableSubjects = React.useMemo(() => {
+    return subjects.filter((subject) => !assignedSubjectIds.has(subject._id));
+  }, [subjects, assignedSubjectIds]);
+
+  const handleAssign = () => {
+    if (!selectedSubjectId) return;
+    if (assignedSubjectIds.has(selectedSubjectId)) {
+      setSelectedSubjectId("");
+      setIsDialogOpen(false);
+      return;
+    }
+
+    assignSubjectsMutation.mutate(
+      {
+        id: teacher._id,
+        payload: { subjectIds: [selectedSubjectId] },
+      },
+      {
+        onSuccess: () => {
+          setSelectedSubjectId("");
+          setIsDialogOpen(false);
+        },
+      }
     );
+  };
+
+  const handleRemove = (subjectId: string) => {
+    removeSubjectsMutation.mutate(
+      {
+        id: teacher._id,
+        payload: { subjectIds: [subjectId] },
+      },
+      {
+        onSuccess: () => {
+          if (selectedSubjectId === subjectId) {
+            setSelectedSubjectId("");
+          }
+        },
+      }
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <IconBook className="h-4 w-4" />
+          <h3 className="font-semibold">Assigned Subjects</h3>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={isTrashed}
+            >
+              <IconPlus className="mr-1 h-4 w-4" />
+              Assign Subject
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Subject</DialogTitle>
+              <DialogDescription>
+                Select a subject to assign to {teacher.user?.name}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 py-4">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="subject-select">Select Subject</Label>
+                <Select
+                  value={selectedSubjectId}
+                  onValueChange={setSelectedSubjectId}
+                  disabled={subjectsLoading || !availableSubjects.length}
+                >
+                  <SelectTrigger id="subject-select">
+                    <SelectValue
+                      placeholder={
+                        subjectsLoading
+                          ? "Loading subjects..."
+                          : availableSubjects.length
+                          ? "Choose a subject"
+                          : "No subjects available"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSubjects.map((subject) => (
+                      <SelectItem key={subject._id} value={subject._id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                type="button"
+                onClick={handleAssign}
+                disabled={
+                  !selectedSubjectId ||
+                  assignSubjectsMutation.isPending ||
+                  isTrashed ||
+                  subjectsLoading
+                }
+              >
+                {assignSubjectsMutation.isPending ? "Assigning..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {(teacher.subjectsCanTeach?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No subjects assigned yet.
+          </p>
+        ) : (
+          teacher.subjectsCanTeach!.map((subject: any) => {
+            const id = typeof subject === "string" ? subject : subject._id ?? subject.id;
+            const name = typeof subject === "string" ? subject : subject.name;
+            const gradeLevel =
+              typeof subject === "string" ? undefined : subject.gradeLevel;
+
+            return (
+              <div
+                key={id}
+                className="flex items-center justify-between rounded-lg border p-2"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{name}</span>
+                  {gradeLevel ? (
+                    <Badge variant="outline" className="text-xs">
+                      {gradeLevel}
+                    </Badge>
+                  ) : null}
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={removeSubjectsMutation.isPending || isTrashed}
+                  onClick={() => handleRemove(id as string)}
+                >
+                  <IconX className="h-4 w-4" />
+                </Button>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
 }
