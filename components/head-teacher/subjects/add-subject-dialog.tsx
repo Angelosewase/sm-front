@@ -27,7 +27,6 @@ import { useCreateSubject } from "@/features/subjects.api";
 import { CreateSubjectDto } from "@/types/subjects.dto";
 import { useSchool } from "@/contexts/school-context";
 
-
 export function AddSubjectDialog() {
   const { school } = useSchool();
   const [open, setOpen] = React.useState(false);

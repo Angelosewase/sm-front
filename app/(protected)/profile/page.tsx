@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/contexts/auth-context";
-import { useBusiness } from "@/contexts/school-context";
+import { useSchool } from "@/contexts/school-context";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

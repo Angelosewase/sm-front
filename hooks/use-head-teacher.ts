@@ -94,7 +94,7 @@ export function useUpdateHeadTeacher() {
 /**
  * Hook to delete a teacher
  */
-export function useDeleteTeacher() {
+export function useDeleteHeadTeacher() {
   const queryClient = useQueryClient();
 
   return useMutation({

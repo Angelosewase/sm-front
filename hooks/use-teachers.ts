@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  teachersApi,
-} from "@/lib/api/teachers";
+import { teachersApi } from "@/lib/api/teachers";
 import { toast } from "react-toastify";
-import { CreateTeacherDto, TeacherQueryParams, UpdateTeacherDto } from "@/types/teachers.dto";
+import {
+  CreateTeacherDto,
+  TeacherQueryParams,
+  UpdateTeacherDto,
+  AssignClassesDto,
+  UnassignClassesDto,
+} from "@/types/teachers.dto";
 
 // Query keys
 export const teachersKeys = {
@@ -22,6 +26,63 @@ export function useTeachers(params?: TeacherQueryParams) {
   return useQuery({
     queryKey: teachersKeys.list(params),
     queryFn: () => teachersApi.getTeachers(params),
+  });
+}
+
+/**
+ * Hook to assign classes to a teacher
+ */
+export function useAssignClassesToTeacher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: AssignClassesDto }) =>
+      teachersApi.assignClasses(id, payload),
+    onSuccess: (teacher) => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      if (teacher?.user?.name) {
+        toast.success(
+          `Assigned ${teacher.assignedClasses?.length || 0} classes to ${
+            teacher.user.name
+          }`
+        );
+      } else {
+        toast.success("Classes assigned successfully");
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to assign classes");
+    },
+  });
+}
+
+/**
+ * Hook to unassign classes from a teacher
+ */
+export function useUnassignClassesFromTeacher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UnassignClassesDto;
+    }) => teachersApi.unassignClasses(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      toast.success("Classes unassigned successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to unassign classes"
+      );
+    },
   });
 }
 

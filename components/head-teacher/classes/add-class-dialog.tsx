@@ -28,7 +28,6 @@ import { useCreateClass } from "@/features/classes.api";
 import { useUsers } from "@/features/users.api";
 import { useSchool } from "@/contexts/school-context";
 
-
 const createClassSchema = z.object({
   name: z.string().min(1, 'Required').max(20, 'Max 20 chars'),
   code: z.string().max(30).optional(),

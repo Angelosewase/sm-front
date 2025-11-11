@@ -27,6 +27,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateTeacher } from "@/hooks/use-teachers";
 import { useAuth } from "@/contexts/auth-context";
 import { useSubjects } from "@/features/subjects.api";
+import { useSchool } from "@/contexts/school-context";
 
 const schema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -47,9 +48,9 @@ const schema = z.object({
 
 export function AddTeacherDialog() {
   const [open, setOpen] = React.useState(false);
-  const { userSchool } = useAuth();
+  const { school } = useSchool();
   const { mutateAsync, isPending } = useCreateTeacher();
-  const { data: subjectsData, isLoading: subjectsLoading } = useSubjects({ school: userSchool?.id });
+  const { data: subjectsData, isLoading: subjectsLoading } = useSubjects({ school: school?.id });
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -59,7 +60,7 @@ export function AddTeacherDialog() {
   });
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
-    if (!userSchool?.id) {
+    if (!school?.id) {
       return form.setError("root", { message: "No school selected in session" });
     }
 
@@ -69,7 +70,7 @@ export function AddTeacherDialog() {
       name: values.name,
       phone: values.phone,
       experience: String(values.experience),
-      school: userSchool.id,
+      school: school.id,
       teacherId: undefined,
       subjectsCanTeach: [values.subject],
       assignedClasses: [],
