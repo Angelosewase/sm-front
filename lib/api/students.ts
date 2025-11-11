@@ -1,4 +1,5 @@
 import {
+  BulkStudentActionDto,
   ChangeStudentClassDto,
   CreateStudentDto,
   Student,
@@ -76,6 +77,26 @@ export const studentsApi = {
 
   permanentlyDeleteStudent: async (id: string): Promise<void> => {
     await axiosInstance.delete(`${baseStudentsPath}/${id}`);
+  },
+
+  bulkTrashStudents: async (
+    payload: BulkStudentActionDto
+  ): Promise<void> => {
+    await axiosInstance.patch(`${baseStudentsPath}/bulk/trash`, payload);
+  },
+
+  bulkRestoreStudents: async (
+    payload: BulkStudentActionDto
+  ): Promise<void> => {
+    await axiosInstance.patch(`${baseStudentsPath}/bulk/restore`, payload);
+  },
+
+  bulkPermanentlyDeleteStudents: async (
+    payload: BulkStudentActionDto
+  ): Promise<void> => {
+    await axiosInstance.delete(`${baseStudentsPath}/bulk`, {
+      data: payload,
+    });
   },
 };
 

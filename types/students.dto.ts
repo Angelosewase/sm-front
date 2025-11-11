@@ -96,4 +96,8 @@ export interface ChangeStudentClassDto {
   classId: string | null;
 }
 
+export interface BulkStudentActionDto {
+  ids: string[];
+}
+
 

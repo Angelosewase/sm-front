@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Controller, useForm } from "react-hook-form";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   IconCalendar,
@@ -16,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -25,13 +27,18 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
-import { createActionsColumn } from "@/components/datatable/helpers";
+import {
+  createActionsColumn,
+  createSelectColumn,
+} from "@/components/datatable/helpers";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
@@ -58,15 +65,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  useBulkPermanentlyDeleteStudents,
+  useBulkRestoreStudents,
+  useBulkTrashStudents,
   useChangeStudentClass,
   usePermanentlyDeleteStudent,
   useRestoreStudent,
   useStudents,
   useTrashStudent,
+  useUpdateStudent,
 } from "@/hooks/use-students";
 import { useClasses } from "@/hooks/use-classes";
 import { useSchool } from "@/contexts/school-context";
-import { Student, StudentStatus } from "@/types/students.dto";
+import {
+  GuardianRelationship,
+  Student,
+  StudentStatus,
+  UpdateStudentDto,
+} from "@/types/students.dto";
 import { toast } from "react-toastify";
 
 const GRADE_LEVELS = [
@@ -92,6 +108,27 @@ const STATUS_OPTIONS: { label: string; value: "all" | StudentStatus }[] = [
   { label: "Graduated", value: "graduated" },
 ];
 
+const STUDENT_STATUS_VALUES: StudentStatus[] = [
+  "active",
+  "suspended",
+  "transferred",
+  "graduated",
+];
+
+const GUARDIAN_RELATIONSHIPS: GuardianRelationship[] = [
+  "father",
+  "mother",
+  "guardian",
+  "other",
+];
+
+const GENDER_OPTIONS = [
+  { label: "Male", value: "male" },
+  { label: "Female", value: "female" },
+  { label: "Other", value: "other" },
+  { label: "Prefer not to say", value: "prefer_not_to_say" },
+];
+
 const STATUS_ICON: Record<StudentStatus, React.ReactNode> = {
   active: <IconCircleCheckFilled className="mr-1 h-3 w-3 text-green-500" />,
   suspended: <IconCircleDashed className="mr-1 h-3 w-3 text-orange-500" />,
@@ -104,6 +141,29 @@ const STATUS_BADGE_VARIANT: Record<StudentStatus, "default" | "secondary" | "out
   suspended: "destructive",
   transferred: "secondary",
   graduated: "outline",
+};
+
+type StudentFormValues = {
+  studentId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  dob: string;
+  enrollmentDate: string;
+  gender: string;
+  address: string;
+  province: string;
+  district: string;
+  gradeLevel: string;
+  status: StudentStatus;
+  previousSchool: string;
+  guardianName: string;
+  guardianEmail: string;
+  guardianPhoneNumber: string;
+  guardianRelationShip: GuardianRelationship | "";
+  guardianEmergencyContact: string;
+  medicalInformation: string;
+  additionalNotes: string;
 };
 
 type StudentRow = Student & { id: string };
@@ -133,8 +193,10 @@ export function StudentDataTable() {
   const [selectedStatus, setSelectedStatus] = React.useState<"" | StudentStatus>(
     ""
   );
+  const [selectedRows, setSelectedRows] = React.useState<StudentRow[]>([]);
 
   const debouncedSearch = useDebouncedValue(searchTerm);
+  const isTrashView = activeTab === "trashed";
 
   const queryParams = React.useMemo(
     () => ({
@@ -182,6 +244,9 @@ export function StudentDataTable() {
   const trashStudentMutation = useTrashStudent();
   const restoreStudentMutation = useRestoreStudent();
   const permanentlyDeleteStudentMutation = usePermanentlyDeleteStudent();
+  const bulkTrashStudentsMutation = useBulkTrashStudents();
+  const bulkRestoreStudentsMutation = useBulkRestoreStudents();
+  const bulkPermanentlyDeleteStudentsMutation = useBulkPermanentlyDeleteStudents();
 
   const [confirmState, setConfirmState] = React.useState<{
     open: boolean;
@@ -247,8 +312,62 @@ export function StudentDataTable() {
     permanent: permanentlyDeleteStudentMutation.isPending,
   };
 
+  const selectedNonTrashedIds = React.useMemo(
+    () =>
+      selectedRows
+        .filter((student) => student._id && !student.isTrashed)
+        .map((student) => student._id as string),
+    [selectedRows]
+  );
+
+  const selectedTrashedIds = React.useMemo(
+    () =>
+      selectedRows
+        .filter((student) => student._id && student.isTrashed)
+        .map((student) => student._id as string),
+    [selectedRows]
+  );
+
+  const hasNonTrashedSelection = selectedNonTrashedIds.length > 0;
+  const hasTrashedSelection = selectedTrashedIds.length > 0;
+
+  const handleBulkTrash = React.useCallback(() => {
+    if (!selectedNonTrashedIds.length) return;
+    bulkTrashStudentsMutation.mutate(
+      { ids: selectedNonTrashedIds },
+      {
+        onSuccess: () => setSelectedRows([]),
+      }
+    );
+  }, [bulkTrashStudentsMutation, selectedNonTrashedIds]);
+
+  const handleBulkRestore = React.useCallback(() => {
+    if (!selectedTrashedIds.length) return;
+    bulkRestoreStudentsMutation.mutate(
+      { ids: selectedTrashedIds },
+      {
+        onSuccess: () => setSelectedRows([]),
+      }
+    );
+  }, [bulkRestoreStudentsMutation, selectedTrashedIds]);
+
+  const handleBulkPermanentlyDelete = React.useCallback(() => {
+    if (!selectedTrashedIds.length) return;
+    bulkPermanentlyDeleteStudentsMutation.mutate(
+      { ids: selectedTrashedIds },
+      {
+        onSuccess: () => setSelectedRows([]),
+      }
+    );
+  }, [bulkPermanentlyDeleteStudentsMutation, selectedTrashedIds]);
+
+  React.useEffect(() => {
+    setSelectedRows([]);
+  }, [studentsQuery.data, activeTab]);
+
   const columns = React.useMemo<ColumnDef<StudentRow>[]>(() => {
     return [
+      createSelectColumn<StudentRow>(),
       {
         accessorKey: "name",
         header: "Student",
@@ -448,7 +567,7 @@ export function StudentDataTable() {
               <SelectValue placeholder="Grade" />
             </SelectTrigger>
             <SelectContent>
-              {/* <SelectItem value="">All Grades</SelectItem> */}
+              {/* <SelectItem value="_">All Grades</SelectItem> */}
               {GRADE_LEVELS.map((grade) => (
                 <SelectItem key={grade} value={grade}>
                   {grade}
@@ -469,7 +588,7 @@ export function StudentDataTable() {
               />
             </SelectTrigger>
             <SelectContent>
-              {/* <SelectItem value="">All Classes</SelectItem> */}
+              {/* <SelectItem value="_">All Classes</SelectItem> */}
               {filteredClassOptions.length === 0 && (
                 <SelectItem value="__none__" disabled>
                   {selectedGrade
@@ -502,6 +621,62 @@ export function StudentDataTable() {
             </SelectContent>
           </Select>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        {selectedRows.length > 0 && (
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <span className="font-medium text-foreground">
+              {selectedRows.length} selected
+            </span>
+            {!isTrashView && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleBulkTrash}
+                disabled={
+                  studentsQuery.isFetching ||
+                  !hasNonTrashedSelection ||
+                  bulkTrashStudentsMutation.isPending
+                }
+              >
+                {bulkTrashStudentsMutation.isPending ? "Moving..." : "Move to Trash"}
+              </Button>
+            )}
+            {isTrashView && (
+              <>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleBulkRestore}
+                  disabled={
+                    studentsQuery.isFetching ||
+                    !hasTrashedSelection ||
+                    bulkRestoreStudentsMutation.isPending
+                  }
+                >
+                  {bulkRestoreStudentsMutation.isPending ? "Restoring..." : "Restore"}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleBulkPermanentlyDelete}
+                  disabled={
+                    studentsQuery.isFetching ||
+                    !hasTrashedSelection ||
+                    bulkPermanentlyDeleteStudentsMutation.isPending
+                  }
+                >
+                  {bulkPermanentlyDeleteStudentsMutation.isPending
+                    ? "Deleting..."
+                    : "Delete Permanently"}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -553,7 +728,7 @@ export function StudentDataTable() {
         columns={columns}
         config={{
           enableDragDrop: false,
-          enableSelection: false,
+          enableSelection: true,
           enableColumnVisibility: true,
           enablePagination: true,
           enableSearch: false,
@@ -561,6 +736,7 @@ export function StudentDataTable() {
           pageSizeOptions: [10, 20, 30, 40, 50],
         }}
         getRowId={(row) => row.id}
+        onSelectionChange={setSelectedRows}
         customToolbarActions={filterControls}
         columnVisibilityLabel="Customize Columns"
       />
@@ -607,10 +783,120 @@ export function StudentDataTable() {
 function StudentDetailViewer({ student }: { student: Student }) {
   const isMobile = useIsMobile();
   const hasIdentifier = Boolean(student._id);
+  const isTrashed = Boolean(student.isTrashed);
+  const [isEditing, setIsEditing] = React.useState(false);
+
+  const updateStudent = useUpdateStudent();
+
+  const defaultValues = React.useMemo<StudentFormValues>(
+    () => ({
+      studentId: student.studentId ?? "",
+      name: student.name ?? "",
+      email: student.email ?? "",
+      phoneNumber: student.phoneNumber ?? "",
+      dob: student.dob ?? "",
+      enrollmentDate: student.enrollmentDate ?? "",
+      gender: student.gender ?? "",
+      address: student.address ?? "",
+      province: student.province ?? "",
+      district: student.district ?? "",
+      gradeLevel: student.gradeLevel ?? student.class?.gradeLevel ?? "",
+      status: student.status ?? "active",
+      previousSchool: student.previousSchool ?? "",
+      guardianName: student.guardianName ?? "",
+      guardianEmail: student.guardianEmail ?? "",
+      guardianPhoneNumber: student.guardianPhoneNumber ?? "",
+      guardianRelationShip: student.guardianRelationShip ?? "",
+      guardianEmergencyContact: student.guardianEmergencyContact ?? "",
+      medicalInformation: student.medicalInformation ?? "",
+      additionalNotes: student.additionalNotes ?? "",
+    }),
+    [student]
+  );
+
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    formState: { isDirty },
+  } = useForm<StudentFormValues>({
+    defaultValues,
+  });
+
+  React.useEffect(() => {
+    reset(defaultValues);
+    setIsEditing(false);
+  }, [defaultValues, reset]);
 
   const primaryPhone = student.phoneNumber ?? (student as any).phone ?? "";
-  const guardianPhone =
-    student.guardianPhoneNumber ?? (student as any).parentPhone ?? "";
+  const assignedGrade = student.gradeLevel ?? student.class?.gradeLevel ?? "—";
+
+  const onSubmit = (values: StudentFormValues) => {
+    if (!student._id) {
+      toast.error("Student identifier missing. Cannot update.");
+      return;
+    }
+
+    const normalizedValues: StudentFormValues = {
+      ...values,
+      studentId: values.studentId.trim(),
+      name: values.name.trim(),
+      email: values.email.trim().toLowerCase(),
+      phoneNumber: values.phoneNumber.trim(),
+      address: values.address.trim(),
+      province: values.province.trim(),
+      district: values.district.trim(),
+      previousSchool: values.previousSchool.trim(),
+      guardianName: values.guardianName.trim(),
+      guardianEmail: values.guardianEmail.trim().toLowerCase(),
+      guardianPhoneNumber: values.guardianPhoneNumber.trim(),
+      guardianEmergencyContact: values.guardianEmergencyContact.trim(),
+      medicalInformation: values.medicalInformation.trim(),
+      additionalNotes: values.additionalNotes.trim(),
+    };
+
+    const payload: UpdateStudentDto = {
+      studentId: normalizedValues.studentId || undefined,
+      name: normalizedValues.name,
+      email: normalizedValues.email || undefined,
+      phoneNumber: normalizedValues.phoneNumber || undefined,
+      dob: normalizedValues.dob || undefined,
+      enrollmentDate: normalizedValues.enrollmentDate || undefined,
+      gender: normalizedValues.gender || undefined,
+      address: normalizedValues.address || undefined,
+      province: normalizedValues.province || undefined,
+      district: normalizedValues.district || undefined,
+      gradeLevel: normalizedValues.gradeLevel || undefined,
+      previousSchool: normalizedValues.previousSchool || undefined,
+      guardianName: normalizedValues.guardianName || undefined,
+      guardianEmail: normalizedValues.guardianEmail || undefined,
+      guardianPhoneNumber: normalizedValues.guardianPhoneNumber || undefined,
+      guardianRelationShip: normalizedValues.guardianRelationShip
+        ? (normalizedValues.guardianRelationShip as GuardianRelationship)
+        : undefined,
+      guardianEmergencyContact:
+        normalizedValues.guardianEmergencyContact || undefined,
+      medicalInformation: normalizedValues.medicalInformation || undefined,
+      additionalNotes: normalizedValues.additionalNotes || undefined,
+      status: normalizedValues.status,
+    };
+
+    updateStudent.mutate(
+      { id: student._id, data: payload },
+      {
+        onSuccess: () => {
+          reset(normalizedValues);
+          setIsEditing(false);
+        },
+      }
+    );
+  };
+
+  const handleCancelEdit = () => {
+    reset(defaultValues);
+    setIsEditing(false);
+  };
 
   return (
     <Drawer direction={isMobile ? "bottom" : "right"}>
@@ -621,44 +907,61 @@ function StudentDetailViewer({ student }: { student: Student }) {
       </DrawerTrigger>
       <DrawerContent className="max-w-2xl">
         <DrawerHeader className="gap-1">
-          <DrawerTitle>{student.name}</DrawerTitle>
+          <DrawerTitle className="flex items-center gap-2">
+            {student.name}
+            {isTrashed && (
+              <Badge variant="destructive" className="text-xs">
+                Trashed
+              </Badge>
+            )}
+          </DrawerTitle>
           <DrawerDescription>
             Student profile, academic records, and guardian information.
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-6 text-sm">
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {isTrashed && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-destructive">
+              This student is currently in the trash. Restore them before making
+              updates.
+            </div>
+          )}
+
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <IconUser className="h-4 w-4" />
               <span>Student ID: {student.studentId ?? "—"}</span>
             </div>
             {student.email && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <IconMail className="h-4 w-4" />
                 <span>{student.email}</span>
               </div>
             )}
             {primaryPhone && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <IconPhone className="h-4 w-4" />
                 <span>{primaryPhone}</span>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">
-                  Grade Level
-                </Label>
-                <p className="font-medium">
-                  {student.gradeLevel ?? student.class?.gradeLevel ?? "—"}
-                </p>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">
-                  Current Class
-                </Label>
-                <p className="font-medium">{student.class?.name ?? "Unassigned"}</p>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant={STATUS_BADGE_VARIANT[student.status ?? "active"]}
+                className="px-2 py-0 text-xs"
+              >
+                {STATUS_ICON[student.status ?? "active"]}
+                {formatStatus(student.status ?? "active")}
+              </Badge>
+              {student.class?.name && (
+                <Badge variant="outline" className="px-2 py-0 text-xs">
+                  {student.class.name}
+                </Badge>
+              )}
+              {assignedGrade !== "—" && (
+                <Badge variant="outline" className="px-2 py-0 text-xs">
+                  {assignedGrade}
+                </Badge>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -668,15 +971,10 @@ function StudentDetailViewer({ student }: { student: Student }) {
                 <p className="font-medium">{formatDate(student.dob)}</p>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Status</Label>
-                <div className="mt-1">
-                  <Badge
-                    variant={STATUS_BADGE_VARIANT[student.status ?? "active"]}
-                  >
-                    {STATUS_ICON[student.status ?? "active"]}
-                    {formatStatus(student.status ?? "active")}
-                  </Badge>
-                </div>
+                <Label className="text-xs text-muted-foreground">
+                  Enrollment Date
+                </Label>
+                <p className="font-medium">{formatDate(student.enrollmentDate)}</p>
               </div>
             </div>
           </section>
@@ -689,7 +987,10 @@ function StudentDetailViewer({ student }: { student: Student }) {
                 <IconSchool className="h-4 w-4" />
                 <h3 className="font-semibold">Class Assignment</h3>
               </div>
-              <ClassAssignmentDialog student={student} disabled={!hasIdentifier} />
+              <ClassAssignmentDialog
+                student={student}
+                disabled={!hasIdentifier || isTrashed}
+              />
             </div>
             <div className="rounded-lg border p-3">
               <div className="flex items-center justify-between">
@@ -699,49 +1000,354 @@ function StudentDetailViewer({ student }: { student: Student }) {
                   </Label>
                   <p className="font-medium">{student.class?.name ?? "Unassigned"}</p>
                 </div>
-                <Badge variant="outline">
-                  {student.gradeLevel ?? student.class?.gradeLevel ?? "—"}
-                </Badge>
+                <Badge variant="outline">{assignedGrade}</Badge>
               </div>
             </div>
           </section>
 
           <Separator />
 
-          <section className="flex flex-col gap-3">
-            <h3 className="font-semibold">Guardian Information</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">Name</Label>
-                <p className="font-medium">
-                  {student.guardianName ?? (student as any).parentName ?? "—"}
-                </p>
+          <form
+            className="flex flex-col gap-6"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Student Information</h3>
+                {!isEditing ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                    disabled={isTrashed || !hasIdentifier}
+                  >
+                    Edit
+                  </Button>
+                ) : null}
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Phone</Label>
-                <p className="font-medium">
-                  {guardianPhone || "—"}
-                </p>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="studentId">Student ID</Label>
+                  <Input
+                    id="studentId"
+                    placeholder="e.g., STU2024021"
+                    {...register("studentId")}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g., John Smith"
+                    {...register("name")}
+                    disabled={!isEditing}
+                  />
+                </div>
               </div>
-            </div>
-            {student.guardianRelationShip && (
-              <div>
-                <Label className="text-xs text-muted-foreground">
-                  Relationship
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john.smith@student.edu"
+                    {...register("email")}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    {...register("phoneNumber")}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="dob">Date of Birth</Label>
+                  <Input
+                    id="dob"
+                    type="date"
+                    {...register("dob")}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="enrollmentDate">Enrollment Date</Label>
+                  <Input
+                    id="enrollmentDate"
+                    type="date"
+                    {...register("enrollmentDate")}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <Controller
+                  control={control}
+                  name="gradeLevel"
+                  render={({ field }) => (
+                    <div className="grid gap-2">
+                      <Label htmlFor="gradeLevel">Grade Level</Label>
+                      <Select
+                        value={field.value || "_"}
+                        onValueChange={field.onChange}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger id="gradeLevel">
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_">Unassigned</SelectItem>
+                          {GRADE_LEVELS.map((grade) => (
+                            <SelectItem key={grade} value={grade}>
+                              {grade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <div className="grid gap-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger id="status">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STUDENT_STATUS_VALUES.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {formatStatus(status)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="gender"
+                  render={({ field }) => (
+                    <div className="grid gap-2">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select
+                        value={field.value || "_"}
+                        onValueChange={field.onChange}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger id="gender">
+                          <SelectValue placeholder="Not specified" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_">Not specified</SelectItem>
+                          {GENDER_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    placeholder="Street address"
+                    {...register("address")}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="previousSchool">Previous School</Label>
+                  <Input
+                    id="previousSchool"
+                    placeholder="Name of previous school"
+                    {...register("previousSchool")}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="province">Province</Label>
+                  <Input
+                    id="province"
+                    placeholder="Province"
+                    {...register("province")}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="district">District</Label>
+                  <Input
+                    id="district"
+                    placeholder="District"
+                    {...register("district")}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <Separator />
+
+            <section className="space-y-4">
+              <h3 className="font-semibold">Guardian Information</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="guardianName">Guardian Name</Label>
+                  <Input
+                    id="guardianName"
+                    placeholder="e.g., Jane Smith"
+                    {...register("guardianName")}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="guardianPhoneNumber">Guardian Phone</Label>
+                  <Input
+                    id="guardianPhoneNumber"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    {...register("guardianPhoneNumber")}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="guardianEmail">Guardian Email</Label>
+                  <Input
+                    id="guardianEmail"
+                    type="email"
+                    placeholder="guardian@email.com"
+                    {...register("guardianEmail")}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <Controller
+                  control={control}
+                  name="guardianRelationShip"
+                  render={({ field }) => (
+                    <div className="grid gap-2">
+                      <Label htmlFor="guardianRelationShip">
+                        Relationship to Student
+                      </Label>
+                      <Select
+                        value={field.value || "_"}
+                        onValueChange={field.onChange}
+                        disabled={!isEditing}
+                      >
+                        <SelectTrigger id="guardianRelationShip">
+                          <SelectValue placeholder="Not specified" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_">Not specified</SelectItem>
+                          {GUARDIAN_RELATIONSHIPS.map((relationship) => (
+                            <SelectItem key={relationship} value={relationship}>
+                              {relationship === "guardian"
+                                ? "Legal Guardian"
+                                : relationship.charAt(0).toUpperCase() +
+                                  relationship.slice(1)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="guardianEmergencyContact">
+                  Emergency Contact
                 </Label>
-                <p className="font-medium capitalize">
-                  {student.guardianRelationShip}
-                </p>
+                <Input
+                  id="guardianEmergencyContact"
+                  placeholder="Name and phone number"
+                  {...register("guardianEmergencyContact")}
+                  disabled={!isEditing}
+                />
+              </div>
+            </section>
+
+            <Separator />
+
+            <section className="space-y-4">
+              <h3 className="font-semibold">Additional Information</h3>
+              <div className="grid gap-2">
+                <Label htmlFor="medicalInformation">Medical Information</Label>
+                <Textarea
+                  id="medicalInformation"
+                  rows={3}
+                  placeholder="Any allergies, medical conditions..."
+                  {...register("medicalInformation")}
+                  disabled={!isEditing}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="additionalNotes">Additional Notes</Label>
+                <Textarea
+                  id="additionalNotes"
+                  rows={3}
+                  placeholder="Any additional information..."
+                  {...register("additionalNotes")}
+                  disabled={!isEditing}
+                />
+              </div>
+            </section>
+
+            {isEditing && (
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  disabled={updateStudent.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateStudent.isPending || !isDirty}
+                >
+                  {updateStudent.isPending ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
             )}
-            {student.guardianEmail && (
-              <div>
-                <Label className="text-xs text-muted-foreground">Email</Label>
-                <p className="font-medium">{student.guardianEmail}</p>
-              </div>
-            )}
-          </section>
+          </form>
         </div>
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button variant="outline">Close</Button>
+          </DrawerClose>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
@@ -847,7 +1453,7 @@ function ClassAssignmentDialog({
                 <SelectValue placeholder="Select grade" />
               </SelectTrigger>
               <SelectContent>
-                {/* <SelectItem value="">Select grade</SelectItem> */}
+                {/* <SelectItem value="_">Select grade</SelectItem> */}
                 {GRADE_LEVELS.map((grade) => (
                   <SelectItem key={grade} value={grade}>
                     {grade}

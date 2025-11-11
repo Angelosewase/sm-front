@@ -7,6 +7,7 @@ import {
 import { toast } from "react-toastify";
 import { studentsApi } from "@/lib/api/students";
 import {
+  BulkStudentActionDto,
   ChangeStudentClassDto,
   CreateStudentDto,
   Student,
@@ -167,6 +168,58 @@ export function useChangeStudentClass() {
     onError: (error: any) => {
       const message =
         error?.response?.data?.message ?? "Failed to update class assignment";
+      toast.error(message);
+    },
+  });
+}
+
+export function useBulkTrashStudents() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BulkStudentActionDto) =>
+      studentsApi.bulkTrashStudents(payload),
+    onSuccess: () => {
+      toast.success("Selected students moved to trash.");
+      queryClient.invalidateQueries({ queryKey: studentsKeys.all });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ?? "Failed to move students to trash";
+      toast.error(message);
+    },
+  });
+}
+
+export function useBulkRestoreStudents() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BulkStudentActionDto) =>
+      studentsApi.bulkRestoreStudents(payload),
+    onSuccess: () => {
+      toast.success("Selected students restored.");
+      queryClient.invalidateQueries({ queryKey: studentsKeys.all });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ?? "Failed to restore students";
+      toast.error(message);
+    },
+  });
+}
+
+export function useBulkPermanentlyDeleteStudents() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BulkStudentActionDto) =>
+      studentsApi.bulkPermanentlyDeleteStudents(payload),
+    onSuccess: () => {
+      toast.success("Selected students permanently deleted.");
+      queryClient.invalidateQueries({ queryKey: studentsKeys.all });
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ??
+        "Failed to permanently delete students";
       toast.error(message);
     },
   });
