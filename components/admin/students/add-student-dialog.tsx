@@ -1,6 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { useCreateStudent } from "@/hooks/use-students";
+import { useSchool } from "@/contexts/school-context";
+import { useClasses } from "@/hooks/use-classes";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,35 +28,177 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "react-toastify";
+
+const GRADE_LEVELS = [
+  "Grade 1",
+  "Grade 2",
+  "Grade 3",
+  "Grade 4",
+  "Grade 5",
+  "Grade 6",
+  "Grade 7",
+  "Grade 8",
+  "Grade 9",
+  "Grade 10",
+  "Grade 11",
+  "Grade 12",
+];
+
+const GUARDIAN_RELATIONSHIPS = ["father", "mother", "guardian", "other"] as const;
+
+const STUDENT_STATUS_OPTIONS = [
+  "active",
+  "suspended",
+  "transferred",
+  "graduated",
+] as const;
+
+const GENDER_OPTIONS = [
+  { label: "Male", value: "male" },
+  { label: "Female", value: "female" },
+  { label: "Other", value: "other" },
+  { label: "Prefer not to say", value: "prefer_not_to_say" },
+] as const;
+
+const schema = z.object({
+  studentId: z.string().min(1, "Student ID is required"),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Enter a valid email"),
+  phoneNumber: z
+    .string()
+    .max(20, "Phone number is too long")
+    .optional()
+    .or(z.literal("")),
+  dob: z.string().min(1, "Date of birth is required"),
+  gender: z.string().optional(),
+  address: z.string().min(1, "Address is required"),
+  province: z.string().min(1, "Province is required"),
+  district: z.string().min(1, "District is required"),
+  gradeLevel: z.string().min(1, "Grade level is required"),
+  classId: z.string().min(1, "Class assignment is required"),
+  previousSchool: z.string().optional().or(z.literal("")),
+  enrollmentDate: z.string().min(1, "Enrollment date is required"),
+  guardianName: z.string().min(1, "Guardian name is required"),
+  guardianEmail: z.string().email("Enter a valid email").optional().or(z.literal("")),
+  guardianPhoneNumber: z.string().min(1, "Guardian phone is required"),
+  guardianRelationShip: z.enum(GUARDIAN_RELATIONSHIPS, {
+    message: "Guardian relationship is required",
+  }),
+  guardianEmergencyContact: z.string().optional().or(z.literal("")),
+  medicalInformation: z.string().optional().or(z.literal("")),
+  additionalNotes: z.string().optional().or(z.literal("")),
+  status: z.enum(STUDENT_STATUS_OPTIONS),
+});
+
+type FormValues = z.infer<typeof schema>;
 
 export function AddStudentDialog() {
   const [open, setOpen] = React.useState(false);
+  const { school } = useSchool();
+  const { mutateAsync, isPending } = useCreateStudent();
+  const { data: classesResponse, isLoading: classesLoading } = useClasses({
+    limit: 100,
+  });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const studentName = formData.get("name");
+  const {
+    control,
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    watch,
+    setError,
+    setValue,
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      status: "active",
+      gradeLevel: "",
+      classId: "",
+      guardianRelationShip: "guardian",
+    },
+  });
 
-    toast.promise(new Promise((resolve) => setTimeout(resolve, 1500)), {
-      pending: `Enrolling student: ${studentName}`,
-      success: "Student enrolled successfully!",
-      error: "Failed to enroll student",
-    });
+  const gradeLevel = watch("gradeLevel");
 
-    setTimeout(() => {
-      setOpen(false);
-    }, 1500);
+  const filteredClasses = React.useMemo(() => {
+    if (!gradeLevel) {
+      return [];
+    }
+    return (classesResponse?.data ?? []).filter(
+      (cls) => cls.gradeLevel === gradeLevel
+    );
+  }, [classesResponse?.data, gradeLevel]);
+
+  const closeDialog = () => {
+    setOpen(false);
+    reset();
+  };
+
+  const sanitize = (value?: string | null) =>
+    value && value.trim().length > 0 ? value.trim() : undefined;
+
+  const onSubmit = async (values: FormValues) => {
+    if (!school?.id) {
+      setError("root", {
+        message: "Select a school before enrolling students.",
+      });
+      return;
+    }
+
+    const payload = {
+      studentId: values.studentId.trim(),
+      name: values.name.trim(),
+      email: values.email.trim().toLowerCase(),
+      phoneNumber: sanitize(values.phoneNumber),
+      dob: values.dob,
+      gender: sanitize(values.gender),
+      address: values.address.trim(),
+      province: values.province.trim(),
+      district: values.district.trim(),
+      gradeLevel: values.gradeLevel,
+      classId: values.classId,
+      previousSchool: sanitize(values.previousSchool),
+      enrollmentDate: values.enrollmentDate,
+      guardianName: values.guardianName.trim(),
+      guardianEmail: sanitize(values.guardianEmail),
+      guardianPhoneNumber: values.guardianPhoneNumber.trim(),
+      guardianRelationShip: values.guardianRelationShip,
+      guardianEmergencyContact: sanitize(values.guardianEmergencyContact),
+      medicalInformation: sanitize(values.medicalInformation),
+      additionalNotes: sanitize(values.additionalNotes),
+      status: values.status,
+      schoolId: school.id,
+    } as const;
+
+    try {
+      await mutateAsync(payload);
+      closeDialog();
+    } catch (error: any) {
+      setError("root", {
+        message:
+          error?.response?.data?.message ??
+          "Failed to enroll student. Please try again.",
+      });
+    }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (!value) {
+          reset();
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" className="mr-4">
           Add Student
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Enroll New Student</DialogTitle>
           <DialogDescription>
@@ -57,293 +206,424 @@ export function AddStudentDialog() {
             information below.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            {/* Student Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-sm">Student Information</h3>
-
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-2">
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+              Student Information
+            </h3>
+            <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="studentId">Student ID *</Label>
+                <Label htmlFor="studentId">Student ID</Label>
                 <Input
                   id="studentId"
-                  name="studentId"
                   placeholder="e.g., STU2024021"
-                  required
+                  {...register("studentId")}
                 />
+                {errors.studentId && (
+                  <p className="text-sm text-destructive">
+                    {errors.studentId.message}
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="name">Full Name</Label>
                 <Input
                   id="name"
-                  name="name"
                   placeholder="e.g., John Smith"
-                  required
+                  {...register("name")}
                 />
+                {errors.name && (
+                  <p className="text-sm text-destructive">
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email Address *</Label>
+                  <Label htmlFor="email">Email Address</Label>
                   <Input
                     id="email"
-                    name="email"
                     type="email"
                     placeholder="john.smith@student.edu"
-                    required
+                    {...register("email")}
                   />
+                  {errors.email && (
+                    <p className="text-sm text-destructive">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
                   <Input
-                    id="phone"
-                    name="phone"
+                    id="phoneNumber"
                     type="tel"
                     placeholder="+1 (555) 123-4567"
+                    {...register("phoneNumber")}
                   />
+                  {errors.phoneNumber && (
+                    <p className="text-sm text-destructive">
+                      {errors.phoneNumber.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth *</Label>
-                  <Input
-                    id="dateOfBirth"
-                    name="dateOfBirth"
-                    type="date"
-                    required
-                  />
+                  <Label htmlFor="dob">Date of Birth</Label>
+                  <Input id="dob" type="date" {...register("dob")} />
+                  {errors.dob && (
+                    <p className="text-sm text-destructive">
+                      {errors.dob.message}
+                    </p>
+                  )}
                 </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="gender">Gender</Label>
-                  <Select name="gender">
-                    <SelectTrigger id="gender" className="w-full">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                      <SelectItem value="Prefer not to say">
-                        Prefer not to say
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="grid gap-2">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select
+                        value={field.value || "prefer_not_to_say"}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger id="gender">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GENDER_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="address">Address *</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
                   id="address"
-                  name="address"
                   placeholder="Street address"
-                  required
+                  {...register("address")}
                 />
+                {errors.address && (
+                  <p className="text-sm text-destructive">
+                    {errors.address.message}
+                  </p>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="province">Province *</Label>
+                  <Label htmlFor="province">Province</Label>
                   <Input
                     id="province"
-                    name="province"
                     placeholder="Enter province"
-                    required
+                    {...register("province")}
                   />
+                  {errors.province && (
+                    <p className="text-sm text-destructive">
+                      {errors.province.message}
+                    </p>
+                  )}
                 </div>
-
                 <div className="grid gap-2">
-                  <Label htmlFor="district">District *</Label>
+                  <Label htmlFor="district">District</Label>
                   <Input
                     id="district"
-                    name="district"
                     placeholder="Enter district"
-                    required
+                    {...register("district")}
                   />
+                  {errors.district && (
+                    <p className="text-sm text-destructive">
+                      {errors.district.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
+          </section>
 
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="font-semibold text-sm">Academic Information</h3>
+          <section className="space-y-4 border-t pt-4">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+              Academic Information
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Controller
+                name="gradeLevel"
+                control={control}
+                render={({ field }) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor="gradeLevel">Grade Level</Label>
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setValue("classId", "");
+                      }}
+                    >
+                      <SelectTrigger id="gradeLevel">
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GRADE_LEVELS.map((grade) => (
+                          <SelectItem key={grade} value={grade}>
+                            {grade}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.gradeLevel && (
+                      <p className="text-sm text-destructive">
+                        {errors.gradeLevel.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="grade">Grade Level *</Label>
-                  <Select name="grade" required>
-                    <SelectTrigger id="grade" className="w-full">
-                      <SelectValue placeholder="Select grade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Grade 9">Grade 9</SelectItem>
-                      <SelectItem value="Grade 10">Grade 10</SelectItem>
-                      <SelectItem value="Grade 11">Grade 11</SelectItem>
-                      <SelectItem value="Grade 12">Grade 12</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <Controller
+                name="classId"
+                control={control}
+                render={({ field }) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor="classId">Assign to Class</Label>
+                    <Select
+                      value={field.value || "prefer_not_to_say"}
+                      onValueChange={field.onChange}
+                      disabled={!gradeLevel || classesLoading}
+                    >
+                      <SelectTrigger id="classId">
+                        <SelectValue
+                          placeholder={
+                            !gradeLevel
+                              ? "Select grade first"
+                              : classesLoading
+                              ? "Loading classes..."
+                              : filteredClasses.length
+                              ? "Select class"
+                              : "No classes available"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredClasses.length ? (
+                          filteredClasses.map((cls) => (
+                            <SelectItem key={cls._id} value={cls._id}>
+                              {cls.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__none__" disabled>
+                            {gradeLevel
+                              ? "No classes available for grade"
+                              : "Select grade first"}
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {errors.classId && (
+                      <p className="text-sm text-destructive">
+                        {errors.classId.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+            </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="class">Assign to Class *</Label>
-                  <Select name="class" required>
-                    <SelectTrigger id="class" className="w-full">
-                      <SelectValue placeholder="Select class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Mathematics 101">
-                        Mathematics 101
-                      </SelectItem>
-                      <SelectItem value="English Literature">
-                        English Literature
-                      </SelectItem>
-                      <SelectItem value="Physics Advanced">
-                        Physics Advanced
-                      </SelectItem>
-                      <SelectItem value="Chemistry Basics">
-                        Chemistry Basics
-                      </SelectItem>
-                      <SelectItem value="World History">
-                        World History
-                      </SelectItem>
-                      <SelectItem value="Computer Science">
-                        Computer Science
-                      </SelectItem>
-                      <SelectItem value="Biology Lab">Biology Lab</SelectItem>
-                      <SelectItem value="Art & Design">Art & Design</SelectItem>
-                      <SelectItem value="Spanish Language">
-                        Spanish Language
-                      </SelectItem>
-                      <SelectItem value="Physical Education">
-                        Physical Education
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="previousSchool">Previous School</Label>
                 <Input
                   id="previousSchool"
-                  name="previousSchool"
                   placeholder="Name of previous school (if applicable)"
+                  {...register("previousSchool")}
                 />
               </div>
-
               <div className="grid gap-2">
-                <Label htmlFor="enrollmentDate">Enrollment Date *</Label>
+                <Label htmlFor="enrollmentDate">Enrollment Date</Label>
                 <Input
                   id="enrollmentDate"
-                  name="enrollmentDate"
                   type="date"
-                  required
+                  {...register("enrollmentDate")}
                 />
+                {errors.enrollmentDate && (
+                  <p className="text-sm text-destructive">
+                    {errors.enrollmentDate.message}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="font-semibold text-sm">
-                Parent/Guardian Information
-              </h3>
-
-              <div className="grid gap-2">
-                <Label htmlFor="parentName">Parent/Guardian Name *</Label>
-                <Input
-                  id="parentName"
-                  name="parentName"
-                  placeholder="e.g., Jane Smith"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
                 <div className="grid gap-2">
-                  <Label htmlFor="parentEmail">Parent Email *</Label>
-                  <Input
-                    id="parentEmail"
-                    name="parentEmail"
-                    type="email"
-                    placeholder="jane.smith@email.com"
-                    required
-                  />
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={field.value ?? "active"} onValueChange={field.onChange}>
+                    <SelectTrigger id="status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STUDENT_STATUS_OPTIONS.map((statusOption) => (
+                        <SelectItem key={statusOption} value={statusOption}>
+                          {statusOption.charAt(0).toUpperCase() + statusOption.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              )}
+            />
+          </section>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="parentPhone">Parent Phone *</Label>
-                  <Input
-                    id="parentPhone"
-                    name="parentPhone"
-                    type="tel"
-                    placeholder="+1 (555) 123-4567"
-                    required
-                  />
-                </div>
-              </div>
+          <section className="space-y-4 border-t pt-4">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+              Parent / Guardian Information
+            </h3>
 
+            <div className="grid gap-2">
+              <Label htmlFor="guardianName">Guardian Name</Label>
+              <Input
+                id="guardianName"
+                placeholder="e.g., Jane Smith"
+                {...register("guardianName")}
+              />
+              {errors.guardianName && (
+                <p className="text-sm text-destructive">
+                  {errors.guardianName.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="relationship">Relationship to Student *</Label>
-                <Select name="relationship" required>
-                  <SelectTrigger id="relationship" className="w-full">
-                    <SelectValue placeholder="Select relationship" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mother">Mother</SelectItem>
-                    <SelectItem value="Father">Father</SelectItem>
-                    <SelectItem value="Guardian">Legal Guardian</SelectItem>
-                    <SelectItem value="Grandparent">Grandparent</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                <Label htmlFor="guardianEmail">Guardian Email</Label>
                 <Input
-                  id="emergencyContact"
-                  name="emergencyContact"
-                  placeholder="Name and phone number"
+                  id="guardianEmail"
+                  type="email"
+                  placeholder="jane.smith@email.com"
+                  {...register("guardianEmail")}
                 />
-              </div>
-            </div>
-
-            <div className="border-t pt-4 space-y-4">
-              <h3 className="font-semibold text-sm">Additional Information</h3>
-
-              <div className="grid gap-2">
-                <Label htmlFor="medicalInfo">Medical Information</Label>
-                <Textarea
-                  id="medicalInfo"
-                  name="medicalInfo"
-                  placeholder="Any allergies, medical conditions, or special needs..."
-                  rows={2}
-                />
+                {errors.guardianEmail && (
+                  <p className="text-sm text-destructive">
+                    {errors.guardianEmail.message}
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="notes">Additional Notes</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  placeholder="Any additional information about the student..."
-                  rows={2}
+                <Label htmlFor="guardianPhoneNumber">Guardian Phone</Label>
+                <Input
+                  id="guardianPhoneNumber"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  {...register("guardianPhoneNumber")}
                 />
+                {errors.guardianPhoneNumber && (
+                  <p className="text-sm text-destructive">
+                    {errors.guardianPhoneNumber.message}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
 
-          <DialogFooter>
+            <Controller
+              name="guardianRelationShip"
+              control={control}
+              render={({ field }) => (
+                <div className="grid gap-2">
+                  <Label htmlFor="guardianRelationShip">
+                    Relationship to Student
+                  </Label>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    defaultValue="guardian"
+                  >
+                    <SelectTrigger id="guardianRelationShip">
+                      <SelectValue placeholder="Select relationship" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GUARDIAN_RELATIONSHIPS.map((relationship) => (
+                        <SelectItem key={relationship} value={relationship}>
+                          {relationship === "guardian"
+                            ? "Legal Guardian"
+                            : relationship.charAt(0).toUpperCase() +
+                              relationship.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            />
+
+            <div className="grid gap-2">
+              <Label htmlFor="guardianEmergencyContact">
+                Emergency Contact
+              </Label>
+              <Input
+                id="guardianEmergencyContact"
+                placeholder="Name and phone number"
+                {...register("guardianEmergencyContact")}
+              />
+            </div>
+          </section>
+
+          <section className="space-y-4 border-t pt-4">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">
+              Additional Information
+            </h3>
+            <div className="grid gap-2">
+              <Label htmlFor="medicalInformation">Medical Information</Label>
+              <Textarea
+                id="medicalInformation"
+                rows={2}
+                placeholder="Any allergies, medical conditions, or special needs..."
+                {...register("medicalInformation")}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="additionalNotes">Additional Notes</Label>
+              <Textarea
+                id="additionalNotes"
+                rows={2}
+                placeholder="Any additional information about the student..."
+                {...register("additionalNotes")}
+              />
+            </div>
+          </section>
+
+          {"root" in errors && errors.root?.message && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {errors.root.message}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={closeDialog}
+              disabled={isPending}
             >
               Cancel
             </Button>
-            <Button type="submit">Enroll Student</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Enrolling..." : "Enroll Student"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
