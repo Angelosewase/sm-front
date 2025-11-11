@@ -1,11 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  classesApi,
-  CreateClassData,
-  UpdateClassData,
-  ClassQueryParams,
-} from "@/lib/api/classes";
-import { toast } from "react-toastify";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { 
+  classesApi, 
+  CreateClassData, 
+  UpdateClassData, 
+  ClassQueryParams 
+} from '@/lib/api/classes';
+import { toast } from 'react-toastify';
+import { AssignSubjectToClassDto, AssignTeacherToClassDto, ClassLite, IQueryClasses } from '@/types/classes.types';
 
 // Query keys
 export const classesKeys = {
@@ -272,3 +273,56 @@ export function useClassesForSubjects(subjectId: string) {
     enabled: !!subjectId,
    })
 }
+// export const useCreateClass = () => {
+//   const qc = useQueryClient();
+//   return useMutation<ClassLite, Error, CreateClassDto>({
+//     mutationFn: createClass,
+//     onSuccess: () => {
+//       toast.success("Class created");
+//       qc.invalidateQueries({ queryKey: ["classes"] });
+//     },
+//     onError: (err) => toast.error(err.message || "Failed to create class"),
+//   });
+// };
+
+// export const useClasses = (filter: IQueryClasses = {}) => {
+//   return useQuery<PaginatedClassesResponse, Error>({
+//     queryKey: ["classes", filter],
+//     queryFn: () => classesApi.listClasses(filter),
+//   });
+// };
+
+export const useClassById = (id?: string) => {
+  return useQuery<any, Error>({
+    queryKey: ["class", id],
+    queryFn: () => classesApi.getClassById(id as string) ,
+    enabled: !!id,
+  });
+};
+
+export const useAssignTeacherToClass = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, AssignTeacherToClassDto>({
+    mutationFn: classesApi.postAssignTeacherToClass,
+    onSuccess: () => {
+      toast.success("Teacher assigned to class");
+      qc.invalidateQueries({ queryKey: ["classes"] });
+    },
+    onError: (err) =>
+      toast.error(err.message || "Failed to assign teacher to class"),
+  });
+};
+
+export const useAssignSubjectToClass = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, AssignSubjectToClassDto>({
+    mutationFn: classesApi.postAssignSubjectToClass,
+    onSuccess: () => {
+      toast.success("Subject assigned to class");
+      qc.invalidateQueries({ queryKey: ["classes"] });
+    },
+    onError: (err) =>
+      toast.error(err.message || "Failed to assign subject to class"),
+  });
+};
+

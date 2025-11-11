@@ -46,7 +46,7 @@ import { AssignSubjectDialog } from "./assign-subject-dialog";
 import type { DataTableConfig } from "@/components/datatable";
 import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment } from "@/hooks/use-subjects";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
+import { useAcademicYears, useTerms } from "@/lib/api/academic-terms";
 
 export const subjectSchema = z.object({
     id: z.number(),
@@ -90,6 +90,14 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
         }
     }, [academicYear]);
 
+    const { data: subjectAnalytics } = useClassesOfSubject(
+        item.id?.toString() || "",
+        {
+            academicYear,
+            ...(term == '#' ? {} : { term }),
+        }
+    );
+
     const { mutate: updateSubject } = useUpdateSubject();
     const deleteAssignment = useDeleteAssignment();
 
@@ -122,6 +130,9 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
         }
     };
 
+    const teachers = subjectAnalytics?.teachers ?? [];
+    const classes = subjectAnalytics?.classes ?? [];
+    const assignments = subjectAnalytics?.assignments ?? [];
 
     return (
         <Drawer direction={isMobile ? "bottom" : "right"}>
@@ -132,7 +143,7 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
             </DrawerTrigger>
             <DrawerContent>
                 <DrawerHeader className="gap-1">
-                    <DrawerTitle>{item.subjectName}</DrawerTitle>
+                    <DrawerTitle>{subjectAnalytics?.subject?.name ?? item.subjectName}</DrawerTitle>
                     <DrawerDescription>Subject details, assignments, and analytics</DrawerDescription>
                 </DrawerHeader>
                 <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
@@ -172,7 +183,7 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
                     {!isMobile && (
                         <>
                             <div className="grid grid-cols-4 gap-3">
-                                {/* <div className="flex flex-col gap-2 rounded-lg border p-3">
+                                <div className="flex flex-col gap-2 rounded-lg border p-3">
                                     <div className="flex items-center gap-2 text-muted-foreground text-xs">
                                         <IconUsers className="h-4 w-4" />
                                         <span>Teachers</span>
@@ -199,7 +210,7 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
                                         <span>Status</span>
                                     </div>
                                     <div className="text-2xl font-bold">{(subjectAnalytics?.subject?.status ?? item.status)?.toString()}</div>
-                                </div> */}
+                                </div>
                             </div>
                             <Separator />
                         </>
@@ -297,7 +308,7 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
                                 <Label htmlFor="status">Status</Label>
                                 <Select defaultValue={item.status}>
                                     <SelectTrigger id="status" className="w-full">
-                                        <SelectValue defaultValue={item.status} placeholder="Select status" />
+                                        <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="active">Active</SelectItem>
@@ -327,6 +338,74 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
                             <Separator />
 
                         </form>
+                        <div className="rounded-lg border p-3">
+                            <div className="font-medium mb-2">Teachers</div>
+                            {teachers.length === 0 ? (
+                                <div className="text-muted-foreground">No teachers yet.</div>
+                            ) : (
+                                <ul className="space-y-1">
+                                    {teachers.map((t: any) => (
+                                        <li key={t._id + t.name} className="flex items-center justify-between">
+                                            <span>{t.name}</span>
+                                            <span className="text-xs text-muted-foreground">{t.email}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg border p-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium">Assignments</div>
+                            <AssignSubjectDialog
+                                subjectId={item.id}
+                                subjectName={item.subjectName}
+                                trigger={<Button variant="outline" size="sm">Assign</Button>}
+                            />
+                        </div>
+                        {assignments.length === 0 ? (
+                            <div className="text-muted-foreground">No assignments yet.</div>
+                        ) : (
+                            <div className="space-y-2">
+                                {assignments.map((a: any) => (
+                                    <div key={a._id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 rounded border p-2">
+                                        <div className="flex-1">
+                                            <div className="font-medium">{a.class?.name}</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                Teacher: {a.teacher?.name} • AY: {a.academicYear} • Term: {a.term}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => handleDeleteAssignment(a._id)}
+                                                disabled={deleteAssignment.isPending}
+                                            >
+                                                {deleteAssignment.isPending ? "Removing..." : "Remove"}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="rounded-lg border p-3">
+                        <div className="font-medium mb-2">Classes</div>
+                        {classes.length === 0 ? (
+                            <div className="text-muted-foreground">No classes yet.</div>
+                        ) : (
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {classes.map((c: any) => (
+                                    <li key={c._id} className="rounded border p-2">
+                                        <div className="font-medium">{c.name}</div>
+                                        <div className="text-xs text-muted-foreground">{c.level} • {c.academicYear}</div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
 
                 </div>

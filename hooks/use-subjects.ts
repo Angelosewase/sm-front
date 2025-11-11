@@ -15,32 +15,12 @@ import {
 import { getAuthToken } from "@/lib/actions/auth";
 
 import { toast } from "react-toastify";
-import {
-  createSubject,
-  updateSubject,
-  fetchSubjects,
-  fetchSubjectById,
-  deleteSubject,
-  assignSubjectToTeacher,
-  assignSubjectToClassAndTeacher,
-  fetchSchoolStats,
-  fetchTeacherWorkload,
-  fetchClassesOfSubject,
-  fetchSubjectsOfClass,
-  fetchClassesOfTeacher,
-  fetchSubjectsOfTeacher,
-  fetchTeacherSchedule,
-  assignSubjectBulk,
-  removeSubjectFromClass,
-  deleteAssignment,
-  fetchTeacherSubjects,
-} from "./subjects.mutations";
-
+import { subjectsApi } from "@/lib/api/subjects";
 // Mutation hooks
 export const useCreateSubject = () => {
   const queryClient = useQueryClient();
   return useMutation<Subject, Error, CreateSubjectDto>({
-    mutationFn: createSubject,
+    mutationFn: subjectsApi.createSubject,
     onSuccess: () => {
       // Invalidate all subjects queries
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
@@ -51,7 +31,7 @@ export const useCreateSubject = () => {
 export const useUpdateSubject = () => {
   const queryClient = useQueryClient();
   return useMutation<Subject, Error, { id: string; dto: UpdateSubjectDto }>({
-    mutationFn: ({ id, dto }) => updateSubject(id, dto),
+    mutationFn: ({ id, dto }) => subjectsApi.updateSubject(id, dto),
     onSuccess: (_, variables) => {
       // Invalidate the specific subject and all subjects queries
       queryClient.invalidateQueries({ queryKey: ["subject", variables.id] });
@@ -83,7 +63,7 @@ export const useToggleSubjectStatus = () => {
 export const useSubjects = (filter: ListSubjectsFilter = {}) => {
   return useQuery<PaginatedSubjectsResponse, Error>({
     queryKey: ["subjects", filter],
-    queryFn: () => fetchSubjects(filter),
+    queryFn: () => subjectsApi.fetchSubjects(filter),
     // staleTime: 1 * 30 * 1000,
   });
 };
@@ -91,7 +71,7 @@ export const useSubjects = (filter: ListSubjectsFilter = {}) => {
 export const useSubjectById = (id: string) => {
   return useQuery<Subject, Error>({
     queryKey: ["subject", id],
-    queryFn: () => fetchSubjectById(id),
+    queryFn: () => subjectsApi.fetchSubjectById(id),
     enabled: !!id,
     staleTime: 1 * 30 * 1000,
   });
@@ -100,7 +80,7 @@ export const useSubjectById = (id: string) => {
 export const useDeleteSubject = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: (id) => deleteSubject(id),
+    mutationFn: (id) => subjectsApi.deleteSubject(id),
     onSuccess: (_, id) => {
       toast.success(`Subject deleted successfully.`);
       // Invalidate the specific subject and all subjects queries
@@ -114,7 +94,7 @@ export const useDeleteSubject = () => {
 export const useAssignSubjectToTeacher = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, AssignTeacherDto>({
-    mutationFn: assignSubjectToTeacher,
+    mutationFn: subjectsApi.assignSubjectToTeacher,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       toast.success("Subject assigned to teacher");
@@ -129,7 +109,7 @@ export const useAssignSubjectToTeacher = () => {
 export const useAssignSubjectToClassAndTeacher = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, AssignClassAndTeacherDto>({
-    mutationFn: assignSubjectToClassAndTeacher,
+    mutationFn: subjectsApi.assignSubjectToClassAndTeacher,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       toast.success("Subject assigned to class and teacher");
@@ -141,42 +121,42 @@ export const useAssignSubjectToClassAndTeacher = () => {
 export const useSchoolStats = (schoolId: string, academicYear: string) =>
   useQuery({
     queryKey: ["schoolStats", schoolId, academicYear],
-    queryFn: () => fetchSchoolStats(schoolId, academicYear),
+    queryFn: () => subjectsApi.fetchSchoolStats(schoolId, academicYear),
     enabled: !!schoolId,
   });
 
 export const useTeacherWorkload = (teacherId: string, academicYear: string) =>
   useQuery({
     queryKey: ["teacherWorkload", teacherId, academicYear],
-    queryFn: () => fetchTeacherWorkload(teacherId, academicYear),
+    queryFn: () => subjectsApi.fetchTeacherWorkload(teacherId, academicYear),
     enabled: !!teacherId,
   });
 
 export const useClassesOfSubject = (subjectId: string, params = {}) =>
   useQuery({
     queryKey: ["subjectClasses", subjectId, params],
-    queryFn: () => fetchClassesOfSubject(subjectId, params),
+    queryFn: () => subjectsApi.fetchClassesOfSubject(subjectId, params),
     enabled: !!subjectId,
   });
 
 export const useSubjectsOfClass = (classId: string, params = {}) =>
   useQuery({
     queryKey: ["classSubjects", classId, params],
-    queryFn: () => fetchSubjectsOfClass(classId, params),
+    queryFn: () => subjectsApi.fetchSubjectsOfClass(classId, params),
     enabled: !!classId,
   });
 
 export const useClassesOfTeacher = (teacherId: string, params = {}) =>
   useQuery({
     queryKey: ["teacherClasses", teacherId, params],
-    queryFn: () => fetchClassesOfTeacher(teacherId, params),
+    queryFn: () => subjectsApi.fetchClassesOfTeacher(teacherId, params),
     enabled: !!teacherId,
   });
 
 export const useSubjectsOfTeacher = (teacherId: string, params = {}) =>
   useQuery({
     queryKey: ["teacherSubjects", teacherId, params],
-    queryFn: () => fetchSubjectsOfTeacher(teacherId, params),
+    queryFn: () => subjectsApi.fetchSubjectsOfTeacher(teacherId, params),
     enabled: !!teacherId,
   });
 
@@ -187,7 +167,7 @@ export const useTeacherSchedule = (
 ) =>
   useQuery({
     queryKey: ["teacherSchedule", teacherId, academicYear, term],
-    queryFn: () => fetchTeacherSchedule(teacherId, academicYear, term),
+    queryFn: () => subjectsApi.fetchTeacherSchedule(teacherId, academicYear, term),
     enabled: !!teacherId && !!academicYear,
   });
 
@@ -195,7 +175,7 @@ export const useAssignSubjectBulk = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, { subjectId: string; assignments: any }>({
     mutationFn: ({ subjectId, assignments }) =>
-      assignSubjectBulk(subjectId, assignments),
+      subjectsApi.assignSubjectBulk(subjectId, assignments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       toast.success("Subjects assigned successfully");
@@ -207,7 +187,7 @@ export const useAssignSubjectBulk = () => {
 export const useDeleteAssignment = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: (assignmentId: string) => deleteAssignment(assignmentId),
+    mutationFn: (assignmentId: string) => subjectsApi.deleteAssignment(assignmentId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["subjects"] });
       qc.invalidateQueries({ queryKey: ["classSubjects"] });
@@ -221,7 +201,7 @@ export const useDeleteAssignment = () => {
 export const useRemoveSubjectFromClass = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, RemoveFromClassDto>({
-    mutationFn: removeSubjectFromClass,
+    mutationFn: subjectsApi.removeSubjectFromClass,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["subjects"] });
       qc.invalidateQueries({ queryKey: ["classSubjects"] });
@@ -235,7 +215,7 @@ export const useListSubjectsForTeacher = (teacherId: string) => {
   const qc = useQueryClient();
   useQuery({
     queryKey: ["subjectsForTeacher"],
-    queryFn: () => fetchTeacherSubjects(teacherId),
+    queryFn: () => subjectsApi.fetchTeacherSubjects(teacherId),
     enabled: !!teacherId
   });
 };

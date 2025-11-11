@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-toastify";
-import { useCreateSubject } from "@/features/subjects.api";
+import { useCreateSubject } from "@/hooks/use-subjects";
 import { CreateSubjectDto } from "@/types/subjects.dto";
 import { useSchool } from "@/contexts/school-context";
 
