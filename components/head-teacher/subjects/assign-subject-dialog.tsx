@@ -22,14 +22,14 @@ import {
 import { toast } from "react-toastify";
 import { IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import { useClasses } from "@/lib/api/classes.api";
 import {
   useAssignSubjectToTeacher,
   useAssignSubjectToClassAndTeacher,
   useAssignSubjectBulk,
 } from "@/hooks/use-subjects";
-import { useTerms, useAcademicYears } from "@/lib/api/academic-terms";
 import { useTeachers } from "@/hooks/use-teachers";
+import { useClasses } from "@/hooks/use-classes";
+import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
 
 interface AssignSubjectDialogProps {
   trigger?: React.ReactNode;
