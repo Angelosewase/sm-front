@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { 
   classesApi, 
   CreateClassData, 
@@ -6,7 +6,8 @@ import {
   ClassQueryParams 
 } from '@/lib/api/classes';
 import { toast } from 'react-toastify';
-import { AssignSubjectToClassDto, AssignTeacherToClassDto, ClassLite, IQueryClasses } from '@/types/classes.types';
+import { AssignSubjectToClassDto, AssignTeacherToClassDto, ClassLite, ClassStatsResponse, IQueryClasses } from '@/types/classes.types';
+import { dashbaordApi } from '@/lib/api/dashboard';
 
 // Query keys
 export const classesKeys = {
@@ -303,3 +304,16 @@ export const useAssignSubjectToClass = () => {
   });
 };
 
+
+export function useClassStats(
+  schoolId?: string,
+  options?: UseQueryOptions<ClassStatsResponse>
+) {
+  return useQuery<ClassStatsResponse>({
+    queryKey: ["class-stats", schoolId],
+    queryFn: () => dashbaordApi.fetchClassStats(schoolId),
+    enabled: !!schoolId,
+    staleTime: 60_000,
+    ...options,
+  });
+}

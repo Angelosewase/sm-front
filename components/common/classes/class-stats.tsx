@@ -1,143 +1,30 @@
-"use client";
-
 import * as React from "react";
-import * as RechartsPrimitive from "recharts";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { ChartContainer } from "@/components/ui/chart";
-import { Class } from "@/lib/api/classes";
-import StatCard, { IStatCardDataItem } from "@/components/stat-card";
+import StatCard from "@/components/stat-card";
+import { useClassStats } from "@/hooks/use-classes";
 
-interface ClassStatsProps {
-  data: Class[];
-}
+export function ClassStats({ schoolId }: { schoolId?: string }) {
+  const { data, isLoading } = useClassStats(schoolId);
 
-const sanitizeName = (name: string) => {
-  return name
-    .replace(/\s+/g, "-")
-    .replace(/[^a-zA-Z0-9-]/g, "_")
-    .toLowerCase();
-};
-
-export function ClassStats({ data }: ClassStatsProps) {
-  // Calculate statistics from real data
-  const stats = React.useMemo(() => {
-    const totalEnrollment = 0;
-    const activeClasses = 0;
-    const totalCapacity = 0;
-    const averageCapacity = 0;
-    const utilizationRate = 0;
-
-    return {
-      totalEnrollment,
-      activeClasses,
-      averageCapacity,
-      utilizationRate,
-    };
-  }, [data]);
-
-  // Sample performance data for charts (in a real app, this would come from API)
-  const performanceData = React.useMemo(() => {
-    return [
-      {
-        date: "Week 1",
-        "Total Enrollment": Math.max(0, stats.totalEnrollment - 22),
-        "Active Classes": Math.max(0, stats.activeClasses - 1),
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": Math.max(0, stats.utilizationRate - 7),
-      },
-      {
-        date: "Week 2",
-        "Total Enrollment": Math.max(0, stats.totalEnrollment - 19),
-        "Active Classes": Math.max(0, stats.activeClasses - 1),
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": Math.max(0, stats.utilizationRate - 6),
-      },
-      {
-        date: "Week 3",
-        "Total Enrollment": Math.max(0, stats.totalEnrollment - 15),
-        "Active Classes": stats.activeClasses,
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": Math.max(0, stats.utilizationRate - 5),
-      },
-      {
-        date: "Week 4",
-        "Total Enrollment": Math.max(0, stats.totalEnrollment - 12),
-        "Active Classes": stats.activeClasses,
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": Math.max(0, stats.utilizationRate - 4),
-      },
-      {
-        date: "Week 5",
-        "Total Enrollment": Math.max(0, stats.totalEnrollment - 9),
-        "Active Classes": stats.activeClasses,
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": Math.max(0, stats.utilizationRate - 3),
-      },
-      {
-        date: "Week 6",
-        "Total Enrollment": Math.max(0, stats.totalEnrollment - 5),
-        "Active Classes": stats.activeClasses,
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": Math.max(0, stats.utilizationRate - 2),
-      },
-      {
-        date: "Week 7",
-        "Total Enrollment": Math.max(0, stats.totalEnrollment - 2),
-        "Active Classes": stats.activeClasses,
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": Math.max(0, stats.utilizationRate - 1),
-      },
-      {
-        date: "Week 8",
-        "Total Enrollment": stats.totalEnrollment,
-        "Active Classes": stats.activeClasses,
-        "Average Capacity": stats.averageCapacity,
-        "Utilization Rate": stats.utilizationRate,
-      },
-    ];
-  }, [stats]);
-
-  const classStats: Array<Omit<IStatCardDataItem, "data">> = [
-    {
-      name: "Total Enrollment",
-      value: stats.totalEnrollment.toString(),
-      change: "+22",
-      percentageChange: "+9.0%",
-      changeType: "positive",
-      dataKey: "Total Enrollment",
-    },
-    {
-      name: "Active Classes",
-      value: stats.activeClasses.toString(),
-      change: "+1",
-      percentageChange: "+11.1%",
-      changeType: "positive",
-      dataKey: "Active Classes",
-    },
-    {
-      name: "Average Capacity",
-      value: stats.averageCapacity.toString(),
-      change: "+2",
-      percentageChange: "+5.0%",
-      changeType: "positive",
-      dataKey: "Average Capacity",
-    },
-    {
-      name: "Utilization Rate",
-      value: `${stats.utilizationRate}%`,
-      change: "+7%",
-      percentageChange: "+8.0%",
-      changeType: stats.utilizationRate >= 80 ? "positive" : "negative",
-      dataKey: "Utilization Rate",
-    },
-  ];
   return (
     <div className="flex items-center justify-center p-4 w-full">
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-        {classStats.map((item, idx) => (
-          <StatCard key={idx} data={performanceData} {...item} />
-        ))}
+        {(isLoading
+          ? Array.from({ length: 4 }).map((_, idx) => (
+              <StatCard
+                key={idx}
+                name="..."
+                value="…"
+                change="…"
+                percentageChange="…"
+                changeType="neutral"
+                dataKey="..."
+                data={[]}
+              />
+            ))
+          : data?.cards?.map((item, idx) => (
+              <StatCard key={idx} {...item} />
+            )))
+        }
       </dl>
     </div>
   );

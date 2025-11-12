@@ -96,7 +96,7 @@ export default function StatCard(item: IStatCardDataItem) {
 
             {/* Value Section */}
             <dd className="text-2xl font-bold text-foreground tracking-tight mb-1">
-              {hoveredValue !== null ? hoveredValue.toLocaleString() : item.value}
+              {hoveredValue ? hoveredValue.toLocaleString() : item.value}
             </dd>
 
             {/* Change Indicator */}
