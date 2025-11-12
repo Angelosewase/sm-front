@@ -47,3 +47,22 @@ export interface PaginatedClassesResponse {
   page?: number;            
   limit?: number;            
 }
+
+
+export interface StatTrendPoint {
+  date: string;
+  value: number;
+}
+export interface StatCardDataItem {
+  name: string;
+  value: number | string;
+  change: string;
+  percentageChange: string;
+  changeType: "positive" | "neutral" | "negative";
+  dataKey: string;
+  data: StatTrendPoint[];
+}
+
+export interface ClassStatsResponse {
+  cards: StatCardDataItem[];
+}

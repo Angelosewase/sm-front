@@ -5,6 +5,7 @@ import {
   Student,
   StudentListResponse,
   StudentQueryParams,
+  StudentStatsResponse,
   UpdateStudentDto,
 } from "@/types/students.dto";
 import { axiosInstance } from "../axios";
@@ -79,15 +80,11 @@ export const studentsApi = {
     await axiosInstance.delete(`${baseStudentsPath}/${id}`);
   },
 
-  bulkTrashStudents: async (
-    payload: BulkStudentActionDto
-  ): Promise<void> => {
+  bulkTrashStudents: async (payload: BulkStudentActionDto): Promise<void> => {
     await axiosInstance.patch(`${baseStudentsPath}/bulk/trash`, payload);
   },
 
-  bulkRestoreStudents: async (
-    payload: BulkStudentActionDto
-  ): Promise<void> => {
+  bulkRestoreStudents: async (payload: BulkStudentActionDto): Promise<void> => {
     await axiosInstance.patch(`${baseStudentsPath}/bulk/restore`, payload);
   },
 
@@ -98,6 +95,5 @@ export const studentsApi = {
       data: payload,
     });
   },
+
 };
-
-

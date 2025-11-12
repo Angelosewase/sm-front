@@ -13,8 +13,10 @@ import {
   Student,
   StudentListResponse,
   StudentQueryParams,
+  StudentStatsResponse,
   UpdateStudentDto,
 } from "@/types/students.dto";
+import { dashbaordApi } from "@/lib/api/dashboard";
 
 export const studentsKeys = {
   all: ["students"] as const,
@@ -222,6 +224,19 @@ export function useBulkPermanentlyDeleteStudents() {
         "Failed to permanently delete students";
       toast.error(message);
     },
+  });
+}
+
+export function useStudentStats(
+  schoolId?: string,
+  options?: UseQueryOptions<StudentStatsResponse>
+) {
+  return useQuery<StudentStatsResponse>({
+    queryKey: ['student-stats', schoolId],
+    queryFn: () => dashbaordApi.fetchStudentStats(schoolId),
+    enabled: !!schoolId,
+    staleTime: 60_000,
+    ...options,
   });
 }
 

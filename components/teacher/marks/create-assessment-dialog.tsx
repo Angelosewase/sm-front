@@ -1,68 +1,93 @@
 "use client"
 
-import { useState } from "react"
+import {useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "lucide-react"
+import { useCreateAssessment } from "@/hooks/use-subjects"
+import { useAcademicYears, useActiveAcademicYear, useTerms } from "@/hooks/use-academic-terms"
 
 interface CreateAssessmentDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAssessmentCreated: (assessment: NewAssessment) => void
+  // Context ids; academicYearId can be provided or typed in
+  subjectId: string
+  classId: string
+  termId?: string
+  academicYearId?: string
+  onAssessmentCreated?: (id: string) => void
 }
 
-interface NewAssessment {
+interface NewAssessmentForm {
   title: string
   category: string
   date: string
   weight: number
   maxScore: number
+  description?: string
+  academicYear: string
+  term: string
 }
 
 const assessmentCategories = [
-  { value: 'quiz', label: 'Quiz' },
-  { value: 'homework', label: 'Homework' },
-  { value: 'classwork', label: 'Classwork' },
-  { value: 'test', label: 'Test' },
-  { value: 'exam', label: 'Exam' }
+  { value: 'Quiz', label: 'Quiz' },
+  { value: 'Homework', label: 'Homework' },
+  { value: 'Classwork', label: 'Classwork' },
+  { value: 'Test', label: 'Test' },
+  { value: 'Exam', label: 'Exam' }
 ]
 
-export function CreateAssessmentDialog({ open, onOpenChange, onAssessmentCreated }: CreateAssessmentDialogProps) {
-  const [formData, setFormData] = useState<NewAssessment>({
+export function CreateAssessmentDialog({ open, onOpenChange, subjectId, classId, termId, academicYearId, onAssessmentCreated }: CreateAssessmentDialogProps) {
+  const [formData, setFormData] = useState<NewAssessmentForm>({
     title: '',
     category: '',
     date: new Date().toISOString().split('T')[0],
     weight: 10,
-    maxScore: 20
+    maxScore: 20,
+    description: '',
+    academicYear: academicYearId ?? '',
+    term: termId ?? ''
   })
-  const [errors, setErrors] = useState<Partial<NewAssessment>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Partial<NewAssessmentForm>>({})
+
+  const createMutation = useCreateAssessment()
+
+  // Load AY and Terms
+  const { data: academicYears, isLoading: ayLoading } = useAcademicYears()
+  const { data: activeAcademicYear } = useActiveAcademicYear()
+  const { data: terms, isLoading: termsLoading } = useTerms()
+
+  // Default academic year to active one if none set
+  useEffect(() => {
+    if (!formData.academicYear && activeAcademicYear?._id) {
+      setFormData((prev) => ({ ...prev, academicYear: activeAcademicYear._id }))
+    }
+  }, [activeAcademicYear?._id])
+
+  // Default term to provided prop or first available
+  useEffect(() => {
+    if (!formData.term) {
+      if (termId) {
+        setFormData((prev) => ({ ...prev, term: termId }))
+      } else if (terms && terms.length > 0) {
+        setFormData((prev) => ({ ...prev, term: terms[0]._id }))
+      }
+    }
+  }, [termId, terms])
 
   const validateForm = (): boolean => {
     const newErrors: any = {}
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Title is required'
-    }
-
-    if (!formData.category) {
-      newErrors.category = 'Category is required'
-    }
-
-    if (!formData.date) {
-      newErrors.date = 'Date is required'
-    }
-
-    if (formData.weight <= 0 || formData.weight > 100) {
-      newErrors.weight = 'Weight must be between 1 and 100'
-    }
-
-    if (formData.maxScore <= 0) {
-      newErrors.maxScore = 'Max score must be greater than 0'
-    }
+    if (!formData.title.trim()) newErrors.title = 'Title is required'
+    if (!formData.category) newErrors.category = 'Category is required'
+    if (!formData.date) newErrors.date = 'Date is required'
+    if (formData.weight <= 0 || formData.weight > 100) newErrors.weight = 'Weight must be between 1 and 100'
+    if (formData.maxScore <= 0) newErrors.maxScore = 'Max score must be greater than 0'
+    if (!formData.academicYear) newErrors.academicYear = 'Academic Year ID is required'
+    if (!formData.term) newErrors.term = 'Term ID is required'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -70,41 +95,43 @@ export function CreateAssessmentDialog({ open, onOpenChange, onAssessmentCreated
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!validateForm()) {
-      return
-    }
+    if (!validateForm()) return
 
-    setIsSubmitting(true)
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      onAssessmentCreated(formData)
-      
-      // Reset form
-      setFormData({
-        title: '',
-        category: '',
-        date: new Date().toISOString().split('T')[0],
-        weight: 10,
-        maxScore: 20
-      })
-      setErrors({})
-    } catch (error) {
-      console.error('Error creating assessment:', error)
-    } finally {
-      setIsSubmitting(false)
-    }
+    createMutation.mutate(
+      {
+        academicYear: formData.academicYear,
+        term: formData.term,
+        subject: subjectId,
+        class: classId,
+        title: formData.title,
+        description: formData.description || undefined,
+        weight: formData.weight,
+        AssessmentType: formData.category, // enum string expected by backend
+        deadline: new Date(formData.date).toISOString(),
+        maxScore: formData.maxScore,
+      },
+      {
+        onSuccess: (res: any) => {
+          onAssessmentCreated?.(res._id)
+          // Reset minimal fields but keep AY/term
+          setFormData((prev) => ({
+            ...prev,
+            title: '',
+            category: '',
+            date: new Date().toISOString().split('T')[0],
+            weight: 10,
+            maxScore: 20,
+            description: ''
+          }))
+          onOpenChange(false)
+        },
+      }
+    )
   }
 
-  const handleInputChange = (field: keyof NewAssessment, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }))
-    }
+  const handleInputChange = (field: keyof NewAssessmentForm, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value as any }))
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
   return (
@@ -113,7 +140,7 @@ export function CreateAssessmentDialog({ open, onOpenChange, onAssessmentCreated
         <DialogHeader>
           <DialogTitle>Create New Assessment</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Assessment Title *</Label>
@@ -127,11 +154,21 @@ export function CreateAssessmentDialog({ open, onOpenChange, onAssessmentCreated
             {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Optional description"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">Category *</Label>
-              <Select 
-                value={formData.category} 
+              <Select
+                value={formData.category}
                 onValueChange={(value) => handleInputChange('category', value)}
               >
                 <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
@@ -149,7 +186,7 @@ export function CreateAssessmentDialog({ open, onOpenChange, onAssessmentCreated
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date">Date *</Label>
+              <Label htmlFor="date">Deadline *</Label>
               <div className="relative">
                 <Input
                   id="date"
@@ -193,30 +230,73 @@ export function CreateAssessmentDialog({ open, onOpenChange, onAssessmentCreated
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="academicYear">Academic Year *</Label>
+              <Select
+                value={formData.academicYear}
+                onValueChange={(value) => handleInputChange('academicYear', value)}
+                disabled={ayLoading}
+              >
+                <SelectTrigger className={errors.academicYear ? 'border-red-500' : ''}>
+                  <SelectValue placeholder={ayLoading ? 'Loading...' : 'Select Academic Year'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(academicYears ?? []).map((ay: any) => (
+                    <SelectItem key={ay._id} value={ay._id}>
+                      {ay.name || ay.label || ay.year || ay._id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.academicYear && <p className="text-sm text-red-500">{errors.academicYear}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="term">Term *</Label>
+              <Select
+                value={formData.term}
+                onValueChange={(value) => handleInputChange('term', value)}
+                disabled={termsLoading}
+              >
+                <SelectTrigger className={errors.term ? 'border-red-500' : ''}>
+                  <SelectValue placeholder={termsLoading ? 'Loading...' : 'Select Term'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(terms ?? []).map((t: any) => (
+                    <SelectItem key={t._id} value={t._id}>
+                      {t.name || t.label || t.title || t._id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.term && <p className="text-sm text-red-500">{errors.term}</p>}
+            </div>
+          </div>
+
           <div className="bg-muted/50 p-3 rounded-md text-sm">
             <p className="font-medium mb-1">Assessment Preview:</p>
             <p className="text-muted-foreground">
-              {formData.title || 'Assessment Title'} • {formData.category || 'Category'} • 
+              {formData.title || 'Assessment Title'} • {formData.category || 'Category'} •
               Weight: {formData.weight}% • Max Score: {formData.maxScore}
             </p>
           </div>
         </form>
 
         <DialogFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
+            disabled={createMutation.isPending}
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={createMutation.isPending}
           >
-            {isSubmitting ? 'Creating...' : 'Create Assessment'}
+            {createMutation.isPending ? 'Creating...' : 'Create Assessment'}
           </Button>
         </DialogFooter>
       </DialogContent>

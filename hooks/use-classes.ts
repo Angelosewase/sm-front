@@ -1,12 +1,25 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { 
-  classesApi, 
-  CreateClassData, 
-  UpdateClassData, 
-  ClassQueryParams 
-} from '@/lib/api/classes';
-import { toast } from 'react-toastify';
-import { AssignSubjectToClassDto, AssignTeacherToClassDto, ClassLite, IQueryClasses } from '@/types/classes.types';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryOptions,
+} from "@tanstack/react-query";
+import {
+  classesApi,
+  CreateClassData,
+  UpdateClassData,
+  ClassQueryParams,
+  SubjectSummary,
+} from "@/lib/api/classes";
+import { toast } from "react-toastify";
+import {
+  AssignSubjectToClassDto,
+  AssignTeacherToClassDto,
+  ClassLite,
+  ClassStatsResponse,
+  IQueryClasses,
+} from "@/types/classes.types";
+import { dashbaordApi } from "@/lib/api/dashboard";
 
 // Query keys
 export const classesKeys = {
@@ -36,6 +49,17 @@ export function useClass(id: string) {
     queryKey: classesKeys.detail(id),
     queryFn: () => classesApi.getClassById(id),
     enabled: !!id,
+  });
+}
+
+/**
+ * Hook to list subjects assigned to a class
+ */
+export function useClassSubjects(classId: string) {
+  return useQuery<SubjectSummary[]>({
+    queryKey: [...classesKeys.detail(classId), "subjects"],
+    queryFn: () => classesApi.listClassSubjects(classId),
+    enabled: !!classId,
   });
 }
 
@@ -242,12 +266,12 @@ export function useBulkPermanentlyDeleteClasses() {
 }
 
 export function useClassesForSubjects(subjectId: string) {
-  const queryClient = useQueryClient()
-   return useQuery({
+  const queryClient = useQueryClient();
+  return useQuery({
     queryKey: classesKeys.detail(subjectId),
     queryFn: () => classesApi.listClassesForSubjects(subjectId),
     enabled: !!subjectId,
-   })
+  });
 }
 // export const useCreateClass = () => {
 //   const qc = useQueryClient();
@@ -271,11 +295,10 @@ export function useClassesForSubjects(subjectId: string) {
 export const useClassById = (id?: string) => {
   return useQuery<any, Error>({
     queryKey: ["class", id],
-    queryFn: () => classesApi.getClassById(id as string) ,
+    queryFn: () => classesApi.getClassById(id as string),
     enabled: !!id,
   });
 };
-
 
 export const useAssignTeacherToClass = () => {
   const qc = useQueryClient();
@@ -303,3 +326,15 @@ export const useAssignSubjectToClass = () => {
   });
 };
 
+export function useClassStats(
+  schoolId?: string,
+  options?: UseQueryOptions<ClassStatsResponse>
+) {
+  return useQuery<ClassStatsResponse>({
+    queryKey: ["class-stats", schoolId],
+    queryFn: () => dashbaordApi.fetchClassStats(schoolId),
+    enabled: !!schoolId,
+    staleTime: 60_000,
+    ...options,
+  });
+}

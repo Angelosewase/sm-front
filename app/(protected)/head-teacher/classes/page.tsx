@@ -8,6 +8,7 @@ import {
 } from "@/components/common/classes";
 import { useClasses } from "@/hooks/use-classes";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSchool } from "@/contexts/school-context";
 
 export default function HeadTeacherClassesPage() {
   const [page, setPage] = React.useState(1);
@@ -24,6 +25,8 @@ export default function HeadTeacherClassesPage() {
     search: search || undefined,
     gradeLevel,
   });
+
+  const {school} = useSchool();
 
   if (error) {
     return (
@@ -64,7 +67,7 @@ export default function HeadTeacherClassesPage() {
         </>
       ) : (
         <>
-          <ClassStats data={[]} />
+          <ClassStats schoolId={school?.id} />
           <ClassDataTable
             data={classesData?.data || []}
             isLoading={isLoading}

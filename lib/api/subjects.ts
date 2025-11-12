@@ -1,8 +1,49 @@
 import { getAuthToken } from "@/lib/actions/auth";
-import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassDto, RemoveFromClassDto } from "@/types/subjects.dto";
+import {
+  CreateSubjectDto,
+  Subject,
+  UpdateSubjectDto,
+  ListSubjectsFilter,
+  PaginatedSubjectsResponse,
+  AssignTeacherDto,
+  AssignClassDto,
+  RemoveFromClassDto,
+} from "@/types/subjects.dto";
 import { axiosInstance } from "@/lib/axios";
+import {
+  AssessmentDetail,
+  AssessmentFilterDto,
+  AssessmentListResponse,
+  AssessmentPerformance,
+  CreateAssessmentDto,
+  UpdateAssessmentDto,
+} from "@/types/subjects.dto";
 
 const API_BASE_URL = "/api/subjects"; // Adjust based on your API base URL
+
+export interface SubjectStats {
+  totalAssessments: number;
+  completedAssessments: number;
+  totalWeight: number;
+  averageScore: number;
+  completionRate: number;
+  latestMarkDate: string | null;
+}
+
+export interface SubjectAssessmentSummary {
+  assessmentId: string;
+  title: string;
+  assessmentType: string;
+  weight: number;
+  createdAt: string;
+  maxScore: number;
+  class: string;
+  completedCount: number;
+  totalCount: number;
+  completionRate: number;
+  averageScore: number;
+  status: string;
+}
 
 // Create a new subject
 export const subjectsApi = {
@@ -15,21 +56,51 @@ export const subjectsApi = {
     id: string,
     dto: UpdateSubjectDto
   ): Promise<Subject> => {
-    const { data } = await axiosInstance.patch<Subject>(`${API_BASE_URL}/${id}`, dto);
+    const { data } = await axiosInstance.patch<Subject>(
+      `${API_BASE_URL}/${id}`,
+      dto
+    );
     return data;
   },
 
   fetchSubjects: async (
     filter: ListSubjectsFilter = {}
   ): Promise<PaginatedSubjectsResponse> => {
-    const { data } = await axiosInstance.get<PaginatedSubjectsResponse>(API_BASE_URL, {
-      params: filter,
-    });
+    const { data } = await axiosInstance.get<PaginatedSubjectsResponse>(
+      API_BASE_URL,
+      {
+        params: filter,
+      }
+    );
     return data;
   },
 
   fetchSubjectById: async (id: string): Promise<Subject> => {
     const { data } = await axiosInstance.get<Subject>(`${API_BASE_URL}/${id}`);
+    return data;
+  },
+
+  // Subject dashboard stats
+  fetchSubjectStats: async (
+    subjectId: string,
+    params?: { classId?: string; term?: string }
+  ): Promise<SubjectStats> => {
+    const { data } = await axiosInstance.get<SubjectStats>(
+      `${API_BASE_URL}/${subjectId}/stats`,
+      { params }
+    );
+    return data;
+  },
+
+  // Subject assessments
+  fetchSubjectAssessments: async (
+    subjectId: string,
+    params?: { classId?: string; term?: string }
+  ): Promise<SubjectAssessmentSummary[]> => {
+    const { data } = await axiosInstance.get<SubjectAssessmentSummary[]>(
+      `${API_BASE_URL}/${subjectId}/assessments`,
+      { params }
+    );
     return data;
   },
 
@@ -117,7 +188,11 @@ export const subjectsApi = {
   },
 
   // Teacher schedule
-  fetchTeacherSchedule: async (teacherId: string, academicYear: string, term?: string) => {
+  fetchTeacherSchedule: async (
+    teacherId: string,
+    academicYear: string,
+    term?: string
+  ) => {
     const { data } = await axiosInstance.get<any>(
       `${API_BASE_URL}/teacher/${teacherId}/schedule`,
       {
@@ -156,9 +231,94 @@ export const subjectsApi = {
   /*  4. Remove subject from class (DELETE /remove-from-class)                 */
   /* -------------------------------------------------------------------------- */
   removeSubjectFromClass: async (body: RemoveFromClassDto) => {
-    const { data } = await axiosInstance.delete<void>(`${API_BASE_URL}/remove-from-class`, {
-      data: body,
-    });
+    const { data } = await axiosInstance.delete<void>(
+      `${API_BASE_URL}/remove-from-class`,
+      {
+        data: body,
+      }
+    );
     return data;
-  }
+  },
+
+  // ---------------- Assessments API ----------------
+  createAssessment: async (
+    payload: CreateAssessmentDto
+  ): Promise<AssessmentDetail> => {
+    const { data } = await axiosInstance.post<AssessmentDetail>(
+      `/api/assessments`,
+      payload
+    );
+    return data;
+  },
+
+  updateAssessment: async (
+    id: string,
+    payload: UpdateAssessmentDto
+  ): Promise<AssessmentDetail> => {
+    const { data } = await axiosInstance.put<AssessmentDetail>(
+      `/api/assessments/${id}`,
+      payload
+    );
+    return data;
+  },
+
+  // list assessments with filters
+  fetchAssessments: async (
+    params?: AssessmentFilterDto
+  ): Promise<AssessmentListResponse> => {
+    const { data } = await axiosInstance.get<AssessmentListResponse>(
+      `/api/assessments`,
+      { params }
+    );
+    return data;
+  },
+
+  getAssessmentById: async (id: string): Promise<AssessmentDetail> => {
+    const { data } = await axiosInstance.get<AssessmentDetail>(
+      `/api/assessments/${id}`
+    );
+    return data;
+  },
+
+  softDeleteAssessment: async (id: string): Promise<AssessmentDetail> => {
+    const { data } = await axiosInstance.put<AssessmentDetail>(
+      `/api/assessments/${id}/soft-delete`
+    );
+    return data;
+  },
+
+  permanentlyDeleteAssessment: async (id: string): Promise<void> => {
+    await axiosInstance.delete(`/api/assessments/${id}`);
+  },
+
+  getAssessmentPerformance: async (
+    id: string
+  ): Promise<AssessmentPerformance> => {
+    const { data } = await axiosInstance.get<AssessmentPerformance>(
+      `/api/assessments/${id}/performance`
+    );
+    return data;
+  },
+
+  getSubjectAssessmentsPerformance: async (
+    subjectId: string,
+    params?: { academicYear?: string; term?: string; classId?: string }
+  ): Promise<AssessmentPerformance> => {
+    const { data } = await axiosInstance.get<AssessmentPerformance>(
+      `/api/assessments/subject/${subjectId}/performance`,
+      { params }
+    );
+    return data;
+  },
+
+  getClassAssessmentsPerformance: async (
+    classId: string,
+    params?: { academicYear?: string; term?: string }
+  ): Promise<AssessmentPerformance> => {
+    const { data } = await axiosInstance.get<AssessmentPerformance>(
+      `/api/assessments/class/${classId}/performance`,
+      { params }
+    );
+    return data;
+  },
 };
