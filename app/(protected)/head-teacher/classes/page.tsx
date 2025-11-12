@@ -1,38 +1,47 @@
 "use client";
 
-import React, {useMemo, useState} from "react";
-import { ClassDataTable } from "@/components/head-teacher/classes/class-data-table";
-import { ClassStats } from "@/components/head-teacher/classes/class-stats";
-import { AddClassDialog } from "@/components/head-teacher/classes/add-class-dialog";
-import { useClasses } from "@/lib/api/classes.api";
+import React from "react";
+import {
+  ClassDataTable,
+  ClassStats,
+  AddClassDialog,
+} from "@/components/common/classes";
+import { useClasses } from "@/hooks/use-classes";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HeadTeacherClassesPage() {
-   const [q, setQ] = useState<string>("");
-    const [page, setPage] = useState<number>(1); // 1-based
-    const [limit, setLimit] = useState<number>(10);
-    const sortBy = "createdAt";
-    const order: "asc" | "desc" = "desc";
-  
-  const { data, isLoading, isError, refetch, isFetching } = useClasses({ q, page, limit, sortBy, order });
+  const [page, setPage] = React.useState(1);
+  const [search, setSearch] = React.useState("");
+  const [gradeLevel, setGradeLevel] = React.useState<string | undefined>();
 
-  console.log("data is: ", data )
+  const {
+    data: classesData,
+    isLoading,
+    error,
+  } = useClasses({
+    page,
+    limit: 100,
+    search: search || undefined,
+    gradeLevel,
+  });
 
-  const classData = useMemo(() => {
-    const items = data?.items || [];
-    return items.map((s, idx) => ({
-      id: (s as any)._id || idx + 1,
-      className: (s as any).name ?? "",
-      gradeLevel: (s as any).level ?? "",
-      teacher: (s as any).formTeacher ?? "",
-      status: (s as any).status ?? "Active",
-      enrolled: (s as any).enrolled ?? "0",
-      capacity: (s as any).capacity ?? "0",
-      schedule: (s as any).schedule ?? "",
-    }));
-  }, [data]);
-
-  const total = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
+  if (error) {
+    return (
+      <div className="py-4">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-destructive">
+              Error loading classes
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              {(error as any)?.response?.data?.message ||
+                "Failed to fetch classes. Please try again later."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-4">
@@ -40,8 +49,28 @@ export default function HeadTeacherClassesPage() {
         <h2 className="text-3xl font-semibold text-primary">Manage Classes</h2>
         <AddClassDialog />
       </div>
-      <ClassStats />
-      <ClassDataTable data={classData} />
+      {isLoading ? (
+        <>
+          <div className="flex items-center justify-center p-4 w-full">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          </div>
+          <div className="px-4">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        </>
+      ) : (
+        <>
+          <ClassStats data={[]} />
+          <ClassDataTable
+            data={classesData?.data || []}
+            isLoading={isLoading}
+          />
+        </>
+      )}
     </div>
   );
 }

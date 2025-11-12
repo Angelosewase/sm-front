@@ -1,5 +1,12 @@
-import { AssignSubjectToClassDto, AssignTeacherToClassDto, ClassLite, CreateClassDto, IQueryClasses, PaginatedClassesResponse } from '@/types/classes.types';
-import { axiosInstance } from '../axios';
+import {
+  AssignSubjectToClassDto,
+  AssignTeacherToClassDto,
+  ClassLite,
+  CreateClassDto,
+  IQueryClasses,
+  PaginatedClassesResponse,
+} from "@/types/classes.types";
+import { axiosInstance } from "../axios";
 
 export interface Class {
   _id: string;
@@ -14,6 +21,21 @@ export interface Class {
     name: string;
     email: string;
   } | null;
+  // When includeTeacherProfile=true, backend returns teacherProfile
+  teacherProfile?: {
+    _id: string;
+    user: {
+      _id: string;
+      name: string;
+      email: string;
+    };
+  } | null;
+  // When subjects are assigned, backend may return assignedSubjects
+  assignedSubjects?: {
+    _id: string;
+    name: string;
+    code: string;
+  }[];
   studentCount: number;
   isTrashed?: boolean;
   trashedAt?: string | null;
@@ -57,7 +79,7 @@ export interface ClassQueryParams {
   onlyTrashed?: boolean;
 }
 
-const classesApiUrl = '/api/classes';
+const classesApiUrl = "/api/classes";
 
 export const classesApi = {
   /**
@@ -163,26 +185,31 @@ export const classesApi = {
     );
     return data;
   },
-  
-   postAssignTeacherToClass : async ({
+
+  postAssignTeacherToClass: async ({
     classId,
     teacherId,
   }: AssignTeacherToClassDto): Promise<void> => {
-    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/teachers`, { teacherId });
+    const { data } = await axiosInstance.post<void>(
+      `${classesApiUrl}/${classId}/teachers`,
+      { teacherId }
+    );
     return data;
   },
-  
-  assignSubjectToClass : async ({
+
+  assignSubjectToClass: async ({
     classId,
     subjectIds,
   }: AssignSubjectToClassDto): Promise<void> => {
-    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/assign-subjects`, { subjectIds });
+    const { data } = await axiosInstance.post<void>(
+      `${classesApiUrl}/${classId}/assign-subjects`,
+      { subjectIds }
+    );
     return data;
   },
 
-
   listClassesForSubjects: async (subjectId: string): Promise<Class[]> => {
-    const {data} = await axiosInstance.get<Class[]>(
+    const { data } = await axiosInstance.get<Class[]>(
       `${classesApiUrl}/subject/${subjectId}/classes`
     );
     return data;

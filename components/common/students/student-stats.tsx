@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import StatCard from "@/components/stat-card";
+import StatCard, { IChangeType } from "@/components/stat-card";
 import { useStudents } from "@/hooks/use-students";
 
 interface StudentStatsProps {
@@ -85,7 +85,7 @@ export function StudentStats({ schoolId }: StudentStatsProps) {
       value: isLoading ? "…" : trashed.toLocaleString(),
       change: "—",
       percentageChange: "—",
-      changeType: trashed > 0 ? "negative" : "neutral",
+      changeType: trashed > 0 ? "negative" : "neutral" as IChangeType,
       dataKey: "Trashed",
       data: buildTrend(trashed, "Trashed"),
     },

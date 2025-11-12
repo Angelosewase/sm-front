@@ -5,7 +5,7 @@ import {
   ClassDataTable,
   ClassStats,
   AddClassDialog,
-} from "@/components/admin/classes";
+} from "@/components/common/classes";
 import { useClasses } from "@/hooks/use-classes";
 import { Skeleton } from "@/components/ui/skeleton";
 

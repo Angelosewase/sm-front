@@ -123,7 +123,7 @@ export function AddTeacherDialog() {
       status: values.status,
       emergencyContact: values.emergencyContact?.trim() || undefined,
       notes: values.notes?.trim() || undefined,
-    } as const;
+    };
 
     try {
       await mutateAsync(payload);
@@ -283,8 +283,8 @@ export function AddTeacherDialog() {
                           subjectsLoading
                             ? "Loading subjects..."
                             : subjectItems.length
-                            ? "Select subject"
-                            : "No subjects available"
+                              ? "Select subject"
+                              : "No subjects available"
                         }
                       />
                     </SelectTrigger>
