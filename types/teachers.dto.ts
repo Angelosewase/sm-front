@@ -121,3 +121,124 @@ export interface AssignSubjectsDto {
 export interface RemoveSubjectsDto {
   subjectIds: string[];
 }
+
+// ===== Teacher Analytics & Relations DTOs =====
+
+export interface TeacherDashboardStats {
+  totalClasses: number;
+  totalSubjects: number;
+  totalStudents: number;
+  assessments: {
+    total: number;
+    active: number;
+    pending: number;
+    completed: number;
+    trashed?: number;
+  };
+}
+
+export interface TeacherClassAssigned {
+  id: string;
+  name: string;
+  gradeLevel?: string;
+  studentCount: number;
+  subjectCount: number;
+  pendingAssessments?: number;
+}
+
+export interface TeacherClassesAssignedResponse {
+  items: TeacherClassAssigned[];
+}
+
+export interface TeacherSubjectsResponse {
+  items: Subject[];
+}
+
+export interface TeacherStudentsQuery {
+  classId?: string;
+  status?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface StudentListItem {
+  _id: string;
+  name: string;
+  email?: string;
+  studentId?: string;
+  status?: string;
+  classId?: string;
+  className?: string;
+}
+
+export interface TeacherStudentsResponse {
+  items: StudentListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export type AssessmentStatus = "active" | "pending" | "completed" | "trashed";
+
+export interface TeacherAssessmentsQuery {
+  subjectId?: string;
+  classId?: string;
+  status?: AssessmentStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface AssessmentListItem {
+  _id: string;
+  title: string;
+  classId: string;
+  className?: string;
+  subjectId: string;
+  subjectName?: string;
+  status: AssessmentStatus;
+  dueDate?: string;
+  createdAt?: string;
+}
+
+export interface TeacherAssessmentsResponse {
+  items: AssessmentListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  summary?: Record<AssessmentStatus, number> & { total: number };
+}
+
+export interface TeacherAssignmentsQuery {
+  subjectId?: string;
+  classId?: string;
+  academicYear?: string;
+  term?: string;
+  page?: number;
+  limit?: number;
+}
+
+export type AssignmentStatus = "pending" | "submitted" | "graded" | "late";
+
+export interface AssignmentListItem {
+  _id: string;
+  title: string;
+  classId: string;
+  className?: string;
+  subjectId: string;
+  subjectName?: string;
+  status?: AssignmentStatus;
+  dueDate?: string;
+  createdAt?: string;
+}
+
+export interface TeacherAssignmentsResponse {
+  items: AssignmentListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  summary?: Record<AssignmentStatus, number> & { total: number };
+}

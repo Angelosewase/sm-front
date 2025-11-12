@@ -22,13 +22,11 @@ import {
 import { toast } from "react-toastify";
 import { IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import {
-  useAssignSubjectToTeacher,
-  useAssignSubjectBulk,
-} from "@/hooks/use-subjects";
-import { useTeachers } from "@/hooks/use-teachers";
+import { useAssignSubjectBulk } from "@/hooks/use-subjects";
+import { useTeachers, useAssignSubjectsToTeacher } from "@/hooks/use-teachers";
 import { useAssignSubjectToClass, useClasses } from "@/hooks/use-classes";
 import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
+import { useSubjects } from "@/hooks/use-subjects";
 
 interface AssignSubjectDialogProps {
   trigger?: React.ReactNode;
@@ -37,6 +35,8 @@ interface AssignSubjectDialogProps {
   mode?: "class" | "teacher";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  teacherId?: string;
+
 }
 
 export function AssignSubjectDialog({
@@ -46,16 +46,18 @@ export function AssignSubjectDialog({
   mode,
   open: controlledOpen,
   onOpenChange,
+  teacherId,
 }: AssignSubjectDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
   const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   const assignBulkMutation = useAssignSubjectBulk();
-  const assignSubjects = useAssignSubjectToTeacher()
+  const assignSubjects = useAssignSubjectsToTeacher();
 
   const [selectedClass, setSelectedClass] = React.useState("");
-  const [selectedTeacher, setSelectedTeacher] = React.useState("");
+  const [selectedTeacher, setSelectedTeacher] = React.useState(teacherId ?? "");
+  const [selectedSubject, setSelectedSubject] = React.useState<string>("");
   const [academicYear, setAcademicYear] = React.useState("");
   const [term, setTerm] = React.useState("");
 
@@ -63,12 +65,14 @@ export function AssignSubjectDialog({
     Array<{ id: string; className: string; teacher: string | undefined }>
   >([]);
 
-  const assignSubjectToClass = useAssignSubjectToClass()
-  const { data: teachersData } = useTeachers()
+  const assignSubjectToClass = useAssignSubjectToClass();
+  const { data: teachersData } = useTeachers();
   const { data: availableClassesData } = useClasses();
+  const { data: subjectsData } = useSubjects();
 
   const availableClasses = availableClassesData?.data ?? [];
   const availableTeachers = teachersData?.items ?? [];
+  const availableSubjects = subjectsData?.items ?? [];
 
   const handleAddAssignment = () => {
     if (!selectedClass || !selectedTeacher) {
@@ -106,25 +110,26 @@ export function AssignSubjectDialog({
     toast.success("Assignment removed");
   };
 
-
   const handleSubmit = () => {
     /* ---- teacher mode --------------------------------------------------- */
     if (mode === "teacher") {
-      if (!subjectId) {
-        toast.error("Missing subjectId");
+      const finalSubjectId = subjectId ?? selectedSubject;
+      if (!finalSubjectId) {
+        toast.error("Please select a subject");
         return;
       }
-      if (!selectedTeacher) {
+      if (!selectedTeacher && !teacherId) {
         toast.error("Please select a teacher");
         return;
       }
 
       assignSubjects.mutate(
-        { teacherId: selectedTeacher, subjectIds: [String(subjectId)] },
+        { id: teacherId ? teacherId : selectedTeacher, payload: { subjectIds: [String(finalSubjectId)] } },
         {
           onSuccess: () => {
             toast.success("Subject assigned to teacher");
-            setSelectedTeacher("");
+            if (!teacherId) setSelectedTeacher("");
+            if (!subjectId) setSelectedSubject("");
             setOpen(false);
           },
           onError: (err: any) =>
@@ -159,7 +164,6 @@ export function AssignSubjectDialog({
       );
       return;
     }
-
 
     /* ---- bulk (multiple) mode ------------------------------------------ */
     if (assignedClasses.length > 0) {
@@ -198,7 +202,6 @@ export function AssignSubjectDialog({
 
       return;
     }
-
 
     /* ---- bulk (multiple) mode ------------------------------------------ */
     if (assignedClasses.length === 0) {
@@ -271,7 +274,11 @@ export function AssignSubjectDialog({
             {/* Teacher */}
             <div className="flex flex-col gap-2">
               <Label htmlFor="teacher-select">Teacher</Label>
-              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+              <Select
+                value={selectedTeacher}
+                onValueChange={setSelectedTeacher}
+                disabled={!!teacherId}
+              >
                 <SelectTrigger id="teacher-select">
                   <SelectValue placeholder="Choose a teacher" />
                 </SelectTrigger>
@@ -286,9 +293,24 @@ export function AssignSubjectDialog({
             </div>
           </div>
 
-          <div className="flex flex-row gap-5 justify-between items-center mb-4">
-
-          </div>
+          {/* Subject (only for teacher mode when no subjectId provided) */}
+          {mode === "teacher" && !subjectId && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="subject-select">Subject</Label>
+              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger id="subject-select">
+                  <SelectValue placeholder="Choose a subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSubjects.map((s: any) => (
+                    <SelectItem key={s._id} value={s._id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Add Assignment button – full width on mobile */}
           <Button

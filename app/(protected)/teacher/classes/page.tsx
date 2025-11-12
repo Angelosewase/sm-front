@@ -4,53 +4,46 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { ClassesGrid } from '@/components/teacher/classes/classes-grid'
 import { ClassesOverview } from '@/components/teacher/classes/classes-overview'
-
-// Mock data - replace with actual API calls
-const mockClasses = [
-  {
-    id: 'primary-5a',
-    name: 'Primary 5A',
-    subjectCount: 4,
-    studentCount: 28,
-    pendingAssessments: 2
-  },
-  {
-    id: 'primary-5b',
-    name: 'Primary 5B',
-    subjectCount: 3,
-    studentCount: 26,
-    pendingAssessments: 4
-  },
-  {
-    id: 'primary-4a',
-    name: 'Primary 4A',
-    subjectCount: 5,
-    studentCount: 30,
-    pendingAssessments: 6
-  },
-  {
-    id: 'primary-6c',
-    name: 'Primary 6C',
-    subjectCount: 3,
-    studentCount: 24,
-    pendingAssessments: 1
-  }
-]
-
-const mockStats = {
-  totalClasses: 4,
-  totalSubjects: 15,
-  totalStudents: 108,
-  completedAssessments: 24,
-  pendingAssessments: 13
-}
+import { useAuth } from '@/contexts/auth-context'
+import { useTeacherClassesAssigned, useTeacherDashboardStats } from '@/hooks/use-teachers'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ClassesPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const teacherId = user?.id || ''
+
+  const { data: classesRes, isLoading: classesLoading, error: classesError } =
+    useTeacherClassesAssigned(teacherId)
+  const { data: statsRes, isLoading: statsLoading, error: statsError } =
+    useTeacherDashboardStats(teacherId)
 
   const handleClassClick = (classId: string) => {
     router.push(`/teacher/classes/${classId}`)
   }
+
+  console.log("the classes", classesRes)
+
+  console.log("statsRes ",statsRes )
+
+  const isLoading = classesLoading || statsLoading
+  const isError = classesError || statsError
+
+  const overviewStats = {
+    totalClasses: statsRes?.totalClasses ?? 0,
+    totalSubjects: statsRes?.totalSubjects ?? 0,
+    totalStudents: statsRes?.totalStudents ?? 0,
+    completedAssessments: statsRes?.assessments?.completed ?? 0,
+    pendingAssessments: statsRes?.assessments?.pending ?? 0,
+  }
+
+  const classItems = (classesRes?.items || []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    subjectCount: c.subjectCount ?? 0,
+    studentCount: c.studentCount ?? 0,
+    pendingAssessments: c.pendingAssessments ?? 0,
+  }))
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -61,11 +54,29 @@ export default function ClassesPage() {
         </p>
       </div>
 
-      <ClassesOverview stats={mockStats} />
-      
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {[1, 2, 3].map((k) => (
+            <Skeleton key={k} className="h-28 w-full" />
+          ))}
+        </div>
+      ) : (
+        <ClassesOverview stats={overviewStats} />
+      )}
+
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">All Classes</h2>
-        <ClassesGrid classes={mockClasses} onClassClick={handleClassClick} />
+        {isError ? (
+          <div className="text-sm text-destructive">Failed to load classes.</div>
+        ) : classesLoading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        ) : (
+          <ClassesGrid classes={classItems} onClassClick={handleClassClick} />
+        )}
       </div>
     </div>
   )
