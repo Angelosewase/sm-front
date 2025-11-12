@@ -1,6 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { useCreateTeacher } from "@/hooks/use-teachers";
+import { useSubjects } from "@/hooks/use-subjects";
+import { useSchool } from "@/contexts/school-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,237 +28,328 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateTeacher } from "@/hooks/use-teachers";
-import { useAuth } from "@/contexts/auth-context";
-import { useSubjects } from "@/hooks/use-subjects";
-import { useSchool } from "@/contexts/school-context";
+
+const departments = [
+  "Mathematics",
+  "Science",
+  "English",
+  "Social Studies",
+  "Languages",
+  "Technology",
+  "Arts",
+  "Physical Education",
+];
 
 const schema = z.object({
   name: z.string().min(2, "Name is too short"),
   email: z.string().email("Invalid email"),
-  phone: z.string().min(7, "Invalid phone"),
+  phone: z
+    .string()
+    .min(7, "Invalid phone")
+    .max(20, "Phone number is too long")
+    .optional()
+    .or(z.literal("")),
   department: z.string().min(1, "Select department"),
-  subject: z.string().min(1, "Enter subject"),
-  experience: z.string(),
   status: z.enum(["Active", "On Leave", "Inactive"]),
-  qualifications: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zip: z.string().optional(),
-  emergencyContact: z.string().optional(),
-  notes: z.string().optional(),
+  subjectId: z.string().optional(),
+  experience: z
+    .string()
+    .optional()
+    .or(z.literal("")),
+  emergencyContact: z
+    .string()
+    .optional()
+    .or(z.literal("")),
+  notes: z
+    .string()
+    .optional()
+    .or(z.literal("")),
 });
+
+type FormValues = z.infer<typeof schema>;
 
 export function AddTeacherDialog() {
   const [open, setOpen] = React.useState(false);
   const { school } = useSchool();
   const { mutateAsync, isPending } = useCreateTeacher();
-  const { data: subjectsData, isLoading: subjectsLoading } = useSubjects({ school: school?.id });
+  const { data: subjectsData, isLoading: subjectsLoading } = useSubjects(
+    school?.id ? { school: school.id } : {}
+  );
 
-  const form = useForm<z.infer<typeof schema>>({
+  const {
+    handleSubmit,
+    control,
+    reset,
+    register,
+    formState: { errors },
+    setError,
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       status: "Active",
+      department: "",
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  const closeDialog = () => {
+    setOpen(false);
+    reset();
+  };
+
+  const onSubmit = async (values: FormValues) => {
     if (!school?.id) {
-      return form.setError("root", { message: "No school selected in session" });
+      setError("root", {
+        message: "No school selected in session",
+      });
+      return;
     }
 
+    const generatedPassword =
+      (typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+        : Math.random().toString(36).slice(-10)) || "TempPass123";
+
     const payload = {
-      email: values.email,
-      password: crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
-      name: values.name,
-      phone: values.phone,
-      experience: String(values.experience),
+      email: values.email.trim(),
+      password: generatedPassword,
+      name: values.name.trim(),
+      phone: values.phone?.trim() || undefined,
+      experience: values.experience?.trim() || undefined,
       school: school.id,
-      teacherId: undefined,
-      subjectsCanTeach: [values.subject],
+      subjectsCanTeach: values.subjectId ? [values.subjectId] : [],
       assignedClasses: [],
       qualification: values.department,
-      hireDate: undefined,
-      status: values.status as any,
-      address: values.address,
-      city: values.city,
-      state: values.state,
-      zip: values.zip,
-      emergencyContact: values.emergencyContact,
-      notes: values.notes,
+      department: values.department,
+      status: values.status,
+      emergencyContact: values.emergencyContact?.trim() || undefined,
+      notes: values.notes?.trim() || undefined,
     } as const;
 
     try {
-      await mutateAsync(payload as any);
-      setOpen(false);
-      form.reset();
-    } catch (e: any) {
-      form.setError("root", { message: e?.response?.data?.message ?? "Failed to add teacher" });
+      await mutateAsync(payload);
+      closeDialog();
+    } catch (error: any) {
+      setError("root", {
+        message:
+          error?.response?.data?.message ?? "Failed to add teacher. Try again.",
+      });
     }
   };
 
+  const subjectItems = subjectsData?.items ?? [];
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) form.reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        setOpen(value);
+        if (!value) {
+          reset();
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" className="mr-4">
           Add Teacher
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>Add New Teacher</DialogTitle>
           <DialogDescription>
-            Add a new teacher to the system by filling in their details below.
+            Provide the teacher&apos;s core information. You can assign classes
+            and additional details later.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" {...form.register("name")} placeholder="e.g., John Smith" />
-              {form.formState.errors.name && (
-                <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+              <Input
+                id="name"
+                placeholder="e.g., John Smith"
+                {...register("name")}
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="john.smith@school.edu" {...form.register("email")} />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john.smith@school.edu"
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive">
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" type="tel" placeholder="+1 (555) 123-4567" {...form.register("phone")} />
-                {form.formState.errors.phone && (
-                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  {...register("phone")}
+                />
+                {errors.phone && (
+                  <p className="text-sm text-destructive">
+                    {errors.phone.message}
+                  </p>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="department">Department</Label>
-                <Select onValueChange={(v) => form.setValue("department", v)}>
-                  <SelectTrigger id="department" className="w-full">
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mathematics">Mathematics</SelectItem>
-                    <SelectItem value="Science">Science</SelectItem>
-                    <SelectItem value="English">English</SelectItem>
-                    <SelectItem value="Social Studies">Social Studies</SelectItem>
-                    <SelectItem value="Languages">Languages</SelectItem>
-                    <SelectItem value="Technology">Technology</SelectItem>
-                    <SelectItem value="Arts">Arts</SelectItem>
-                    <SelectItem value="Physical Education">Physical Education</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.department && (
-                  <p className="text-sm text-destructive">{form.formState.errors.department.message}</p>
-                )}
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="subject">Subject/Specialization</Label>
-                <Select onValueChange={(v) => form.setValue("subject", v)}>
-                  <SelectTrigger id="subject" className="w-full">
-                    <SelectValue placeholder={subjectsLoading ? "Loading subjects..." : "Select subject"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjectsData?.items?.length ? (
-                      subjectsData.items.map((s) => (
-                        <SelectItem key={s._id} value={s._id}>
-                          {s.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem disabled value="__no_subjects__">No subjects available</SelectItem>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Controller
+                name="department"
+                control={control}
+                render={({ field }) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger id="department">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept} value={dept}>
+                            {dept}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.department && (
+                      <p className="text-sm text-destructive">
+                        {errors.department.message}
+                      </p>
                     )}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.subject && (
-                  <p className="text-sm text-destructive">{form.formState.errors.subject.message}</p>
+                  </div>
                 )}
-              </div>
-            </div>
+              />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="experience">Years of Experience</Label>
-                <Input id="experience" type="number" placeholder="5" min={0} max={50} {...form.register("experience")} />
-                {form.formState.errors.experience && (
-                  <p className="text-sm text-destructive">{form.formState.errors.experience.message}</p>
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="status">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="On Leave">On Leave</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {errors.status && (
+                      <p className="text-sm text-destructive">
+                        {errors.status.message}
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
+              />
+            </div>
 
+            <Controller
+              name="subjectId"
+              control={control}
+              render={({ field }) => (
+                <div className="grid gap-2">
+                  <Label htmlFor="subject">
+                    Primary Subject (optional)
+                  </Label>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={subjectsLoading}
+                  >
+                    <SelectTrigger id="subject">
+                      <SelectValue
+                        placeholder={
+                          subjectsLoading
+                            ? "Loading subjects..."
+                            : subjectItems.length
+                            ? "Select subject"
+                            : "No subjects available"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectItems.length ? (
+                        subjectItems.map((subject) => (
+                          <SelectItem key={subject._id} value={subject._id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem disabled value="__none__">
+                          No subjects available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue="Active" onValueChange={(v) => form.setValue("status", v as any)}>
-                  <SelectTrigger id="status" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="On Leave">On Leave</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.status && (
-                  <p className="text-sm text-destructive">{form.formState.errors.status.message}</p>
-                )}
+                <Label htmlFor="experience">Experience (years)</Label>
+                <Input
+                  id="experience"
+                  inputMode="numeric"
+                  placeholder="e.g., 5"
+                  {...register("experience")}
+                />
               </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="qualifications">Qualifications</Label>
-              <Input id="qualifications" placeholder="e.g., M.Ed. in Mathematics Education" {...form.register("qualifications")} />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="address">Address</Label>
-              <Input id="address" name="address" placeholder="Street address" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="province">province</Label>
-                <Input id="province" name="province" placeholder="Province" />
+                <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                <Input
+                  id="emergencyContact"
+                  placeholder="Name and phone number"
+                  {...register("emergencyContact")}
+                />
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="district">district</Label>
-                <Input id="district" name="district" placeholder="province" />
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="emergencyContact">Emergency Contact</Label>
-              <Input id="emergencyContact" placeholder="Name and phone number" {...form.register("emergencyContact")} />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea id="notes" rows={3} placeholder="Any additional information..." {...form.register("notes")} />
+              <Textarea
+                id="notes"
+                rows={3}
+                placeholder="Any additional information..."
+                {...register("notes")}
+              />
             </div>
           </div>
 
-          {form.formState.errors.root?.message && (
-            <div className="text-sm text-destructive">{form.formState.errors.root.message}</div>
+          {"root" in errors && errors.root?.message && (
+            <div className="text-sm text-destructive">
+              {errors.root.message}
+            </div>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={closeDialog}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>{isPending ? "Adding..." : "Add Teacher"}</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Adding..." : "Add Teacher"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -1,16 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { teachersApi } from "@/lib/api/teachers";
 import { toast } from "react-toastify";
+import { teachersApi } from "@/lib/api/teachers";
 import {
+  AssignClassesDto,
+  AssignSubjectsDto,
+  BulkTeacherActionResponse,
   CreateTeacherDto,
+  RemoveSubjectsDto,
   TeacherQueryParams,
   UpdateTeacherDto,
-  AssignClassesDto,
   UnassignClassesDto,
   AssignSubjectsDto,
 } from "@/types/teachers.dto";
 
-// Query keys
 export const teachersKeys = {
   all: ["teachers"] as const,
   lists: () => [...teachersKeys.all, "list"] as const,
@@ -20,9 +22,6 @@ export const teachersKeys = {
   detail: (id: string) => [...teachersKeys.details(), id] as const,
 };
 
-/**
- * Hook to fetch paginated list of teachers
- */
 export function useTeachers(params?: TeacherQueryParams) {
   return useQuery({
     queryKey: teachersKeys.list(params),
@@ -30,9 +29,6 @@ export function useTeachers(params?: TeacherQueryParams) {
   });
 }
 
-/**
- * Hook to assign classes to a teacher
- */
 export function useAssignClassesToTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -59,9 +55,6 @@ export function useAssignClassesToTeacher() {
   });
 }
 
-/**
- * Hook to unassign classes from a teacher
- */
 export function useUnassignClassesFromTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -87,20 +80,26 @@ export function useUnassignClassesFromTeacher() {
   });
 }
 
-/**
- * Hook to assign subjects to a teacher
- */
 export function useAssignSubjectsToTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: AssignSubjectsDto }) =>
-      teachersApi.assignSubjects(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: AssignSubjectsDto;
+    }) => teachersApi.assignSubjects(id, payload),
     onSuccess: (teacher) => {
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,
         refetchType: "all",
       });
-      toast.success("Subjects assigned successfully");
+      toast.success(
+        teacher?.user?.name
+          ? `Subjects updated for ${teacher.user.name}`
+          : "Subjects assigned successfully"
+      );
     },
     onError: (error: any) => {
       toast.error(
@@ -126,14 +125,13 @@ export function useRemoveSubjectFromTeacher() {
       toast.success("Subject removed from teacher");
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to remove subject");
+      toast.error(
+        error?.response?.data?.message || "Failed to remove subject"
+      );
     },
   });
 }
 
-/**
- * Hook to fetch a single teacher by ID
- */
 export function useTeacher(id: string) {
   return useQuery({
     queryKey: teachersKeys.detail(id),
@@ -142,23 +140,17 @@ export function useTeacher(id: string) {
   });
 }
 
-/**
- * Hook to create a new teacher
- * Password is generated automatically by the system and sent via email
- */
 export function useCreateTeacher() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateTeacherDto) => teachersApi.createTeacher(data),
     onSuccess: (teacher) => {
-      // Invalidate and refetch all teachers queries
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,
         refetchType: "all",
       });
 
-      // Show success message with temporary password info
       if (teacher.temporaryPassword) {
         toast.success(
           `Teacher created successfully! Temporary password: ${teacher.temporaryPassword}. A welcome email has been sent.`,
@@ -178,9 +170,6 @@ export function useCreateTeacher() {
   });
 }
 
-/**
- * Hook to update an existing teacher
- */
 export function useUpdateTeacher() {
   const queryClient = useQueryClient();
 
@@ -188,7 +177,6 @@ export function useUpdateTeacher() {
     mutationFn: ({ id, data }: { id: string; data: UpdateTeacherDto }) =>
       teachersApi.updateTeacher(id, data),
     onSuccess: () => {
-      // Invalidate and refetch all teachers queries
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,
         refetchType: "all",
@@ -203,26 +191,148 @@ export function useUpdateTeacher() {
   });
 }
 
-/**
- * Hook to delete a teacher
- */
-export function useDeleteTeacher() {
+export function useTrashTeacher() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => teachersApi.deleteTeacher(id),
-    onSuccess: () => {
-      // Invalidate and refetch all teachers queries
+    mutationFn: (id: string) => teachersApi.trashTeacher(id),
+    onSuccess: (teacher) => {
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,
         refetchType: "all",
       });
-      toast.success("Teacher deleted successfully!");
+      const name = teacher?.user?.name ?? "Teacher";
+      toast.success(`${name} moved to trash.`);
     },
     onError: (error: any) => {
       const message =
-        error.response?.data?.message || "Failed to delete teacher";
+        error.response?.data?.message || "Failed to move teacher to trash";
       toast.error(message);
     },
   });
 }
+
+export function useRestoreTeacher() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => teachersApi.restoreTeacher(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      toast.success("Teacher restored successfully.");
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to restore teacher";
+      toast.error(message);
+    },
+  });
+}
+
+export function usePermanentlyDeleteTeacher() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => teachersApi.permanentlyDeleteTeacher(id),
+    onSuccess: (response: BulkTeacherActionResponse) => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      const deletedCount = response?.deletedCount ?? 1;
+      toast.success(
+        deletedCount > 1
+          ? `${deletedCount} teachers permanently deleted.`
+          : "Teacher permanently deleted."
+      );
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to permanently delete teacher";
+      toast.error(message);
+    },
+  });
+}
+
+export function useBulkTrashTeachers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => teachersApi.bulkTrashTeachers(ids),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      const count = response?.modifiedCount ?? 0;
+      toast.success(
+        count
+          ? `${count} teacher${count > 1 ? "s" : ""} moved to trash.`
+          : "No teachers moved to trash."
+      );
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to move teachers to trash";
+      toast.error(message);
+    },
+  });
+}
+
+export function useBulkRestoreTeachers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) => teachersApi.bulkRestoreTeachers(ids),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      const count = response?.modifiedCount ?? 0;
+      toast.success(
+        count
+          ? `${count} teacher${count > 1 ? "s" : ""} restored.`
+          : "No teachers restored."
+      );
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to restore teachers";
+      toast.error(message);
+    },
+  });
+}
+
+export function useBulkPermanentlyDeleteTeachers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: string[]) =>
+      teachersApi.bulkPermanentlyDeleteTeachers(ids),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({
+        queryKey: teachersKeys.all,
+        refetchType: "all",
+      });
+      const count = response?.deletedCount ?? 0;
+      toast.success(
+        count
+          ? `${count} teacher${count > 1 ? "s" : ""} permanently deleted.`
+          : "No teachers permanently deleted."
+      );
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message ||
+        "Failed to permanently delete teachers";
+      toast.error(message);
+    },
+  });
+}
+
+// Backwards compatibility export
+export const useDeleteTeacher = useTrashTeacher;

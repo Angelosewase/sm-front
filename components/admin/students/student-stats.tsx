@@ -1,104 +1,101 @@
 "use client";
 
 import * as React from "react";
-import * as RechartsPrimitive from "recharts";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { ChartContainer } from "@/components/ui/chart";
-import StatCard, { IStatCardDataItem } from "@/components/stat-card";
+import StatCard from "@/components/stat-card";
+import { useStudents } from "@/hooks/use-students";
 
-// Sample student metrics data over time
-const studentMetricsData = [
-  {
-    date: "Week 1",
-    "Total Students": 18,
-    "Active Students": 17,
-    "Average Score": 72,
-  },
-  {
-    date: "Week 2",
-    "Total Students": 19,
-    "Active Students": 18,
-    "Average Score": 74,
-  },
-  {
-    date: "Week 3",
-    "Total Students": 19,
-    "Active Students": 18,
-    "Average Score": 76,
-  },
-  {
-    date: "Week 4",
-    "Total Students": 20,
-    "Active Students": 19,
-    "Average Score": 78,
-  },
-  {
-    date: "Week 5",
-    "Total Students": 20,
-    "Active Students": 19,
-    "Average Score": 79,
-  },
-  {
-    date: "Week 6",
-    "Total Students": 20,
-    "Active Students": 19,
-    "Average Score": 80,
-  },
-  {
-    date: "Week 7",
-    "Total Students": 20,
-    "Active Students": 19,
-    "Average Score": 79,
-  },
-  {
-    date: "Week 8",
-    "Total Students": 20,
-    "Active Students": 19,
-    "Average Score": 80,
-  },
-];
+interface StudentStatsProps {
+  schoolId?: string;
+}
 
-const studentStats: Array<Omit<IStatCardDataItem, "data">> = [
-  {
-    name: "Total Students",
-    value: "20",
-    change: "+2",
-    percentageChange: "+11.1%",
-    changeType: "positive",
-    dataKey: "Total Students",
-  },
-  {
-    name: "Active Students",
-    value: "19",
-    change: "+2",
-    percentageChange: "+11.8%",
-    changeType: "positive",
-    dataKey: "Active Students",
-  },
-  {
-    name: "Average Score",
-    value: "80%",
-    change: "+8%",
-    percentageChange: "+11.1%",
-    changeType: "positive",
-    dataKey: "Average Score",
-  },
-];
+const buildTrend = (value: number, key: string) =>
+  Array.from({ length: 6 }, (_, index) => ({
+    date: `W${index + 1}`,
+    [key]: Math.max(value - (5 - index), 0),
+  }));
 
-const sanitizeName = (name: string) => {
-  return name
-    .replace(/\s+/g, "-")
-    .replace(/[^a-zA-Z0-9-]/g, "_")
-    .toLowerCase();
-};
+export function StudentStats({ schoolId }: StudentStatsProps) {
+  const enabled = Boolean(schoolId);
+  const baseOptions = React.useMemo(
+    () => ({
+      enabled,
+      staleTime: 60_000,
+    }),
+    [enabled]
+  );
 
-export function StudentStats() {
+  const totalQuery = useStudents(
+    { schoolId: schoolId ?? undefined, limit: 1, includeTrashed: true },
+    baseOptions
+  );
+  const activeQuery = useStudents(
+    { schoolId: schoolId ?? undefined, status: "active", limit: 1 },
+    baseOptions
+  );
+  const suspendedQuery = useStudents(
+    { schoolId: schoolId ?? undefined, status: "suspended", limit: 1 },
+    baseOptions
+  );
+  const trashedQuery = useStudents(
+    { schoolId: schoolId ?? undefined, onlyTrashed: true, limit: 1 },
+    baseOptions
+  );
+
+  const total = totalQuery.data?.meta.total ?? 0;
+  const active = activeQuery.data?.meta.total ?? 0;
+  const suspended = suspendedQuery.data?.meta.total ?? 0;
+  const trashed = trashedQuery.data?.meta.total ?? 0;
+
+  const isLoading =
+    totalQuery.isLoading ||
+    activeQuery.isLoading ||
+    suspendedQuery.isLoading ||
+    trashedQuery.isLoading;
+
+  const cards = [
+    {
+      name: "Total Students",
+      value: isLoading ? "…" : total.toLocaleString(),
+      change: "—",
+      percentageChange: "—",
+      changeType: "neutral" as const,
+      dataKey: "Total",
+      data: buildTrend(total, "Total"),
+    },
+    {
+      name: "Active Students",
+      value: isLoading ? "…" : active.toLocaleString(),
+      change: "—",
+      percentageChange: "—",
+      changeType: "neutral" as const,
+      dataKey: "Active",
+      data: buildTrend(active, "Active"),
+    },
+    {
+      name: "Suspended",
+      value: isLoading ? "…" : suspended.toLocaleString(),
+      change: "—",
+      percentageChange: "—",
+      changeType: "neutral" as const,
+      dataKey: "Suspended",
+      data: buildTrend(suspended, "Suspended"),
+    },
+    {
+      name: "In Trash",
+      value: isLoading ? "…" : trashed.toLocaleString(),
+      change: "—",
+      percentageChange: "—",
+      changeType: trashed > 0 ? "negative" : "neutral",
+      dataKey: "Trashed",
+      data: buildTrend(trashed, "Trashed"),
+    },
+  ];
+
   return (
-    <div className="flex items-center justify-center p-4 w-full">
-      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-        {studentStats.map((item, idx) => (
-          <StatCard key={idx} data={studentMetricsData} {...item} />
+    <div className="flex w-full items-center justify-center p-4">
+      <dl className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((card) => (
+          <StatCard key={card.name} {...card} />
         ))}
       </dl>
     </div>
