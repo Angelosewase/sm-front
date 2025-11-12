@@ -241,30 +241,6 @@ export function useBulkPermanentlyDeleteClasses() {
   });
 }
 
-/**
- * Hook: assign subjects to a class
- */
-export function useAssignSubjectsToClass() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, subjectIds }: { id: string; subjectIds: string[] }) =>
-      classesApi.assignSubjectsToClass(id, subjectIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: classesKeys.all,
-        refetchType: "all",
-      });
-      toast.success("Subjects assigned to class");
-    },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message || "Failed to assign subjects to class";
-      toast.error(message);
-    },
-  });
-}
-
-
 export function useClassesForSubjects(subjectId: string) {
   const queryClient = useQueryClient()
    return useQuery({
@@ -300,6 +276,7 @@ export const useClassById = (id?: string) => {
   });
 };
 
+
 export const useAssignTeacherToClass = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, AssignTeacherToClassDto>({
@@ -316,7 +293,7 @@ export const useAssignTeacherToClass = () => {
 export const useAssignSubjectToClass = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, AssignSubjectToClassDto>({
-    mutationFn: classesApi.postAssignSubjectToClass,
+    mutationFn: classesApi.assignSubjectToClass,
     onSuccess: () => {
       toast.success("Subject assigned to class");
       qc.invalidateQueries({ queryKey: ["classes"] });

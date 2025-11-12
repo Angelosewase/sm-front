@@ -1,6 +1,6 @@
 
 import { getAuthToken } from "@/lib/actions/auth";
-import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassAndTeacherDto, RemoveFromClassDto } from "@/types/subjects.dto";
+import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassDto, RemoveFromClassDto } from "@/types/subjects.dto";
 import { axiosInstance } from "@/lib/axios";
 
 
@@ -51,44 +51,20 @@ export const deleteSubject = async (id: string): Promise<void> => {
 
 // Assign subject to teacher
 export const assignSubjectToTeacher = async (dto: AssignTeacherDto): Promise<void> => {
-  const token = await getAuthToken();
   await axiosInstance.post(
-    `${API_BASE_URL}/${dto.subjectId}/assign-to-teacher`,
+    `${API_BASE_URL}/${dto.teacherId}/subjects`,
     {
-      teacherId: dto.teacherId,
-      academicYear: dto.academicYear,
-      term: dto.term
+      subjectIds: dto.subjectIds,
     },
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
   );
 };
 
-export const assignSubjectToClassAndTeacher = async (
-  dto: AssignClassAndTeacherDto
-): Promise<void> => {
-  const token = await getAuthToken();
-  await axiosInstance.post(
-    `${API_BASE_URL}/${dto.subjectId}/assign-to-class-with-teacher`,
-    {
-      classId: dto.classId,
-      teacherId: dto.teacherId,
-      academicYear: dto.academicYear,
-      term: dto.term,
-    },
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-};
 
 export const fetchSchoolStats = async (schoolId: string, academicYear?: string) => {
   const response = await axiosInstance.get(
     `${API_BASE_URL}/analytics/school/${schoolId}`,
     {
       params: academicYear ? { academicYear } : undefined,
-      headers: { Authorization: `Bearer ${await getAuthToken()}` },
     }
   );
   return response.data;

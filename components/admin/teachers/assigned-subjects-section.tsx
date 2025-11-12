@@ -8,29 +8,24 @@ import { IconBook, IconPlus, IconSchool, IconTag, IconUserCheck } from "@tabler/
 import React from "react";
 import { toast } from "react-toastify";
 import { Teacher } from "@/types/teachers.dto";
-<<<<<<< HEAD
-import { useSubjects } from "@/features/subjects.api";
-import { useAssignSubjectsToTeacher } from "@/hooks/use-teachers";
-import { cn } from "@/lib/utils";
-=======
 import { useSubjects } from "@/hooks/use-subjects";
 import { useAssignSubjectToTeacher } from "@/hooks/use-subjects";
->>>>>>> e672aeee41c9839b952c272a3fb6e6b391785b16
+import { cn } from "@/lib/utils";
 
 export default function AssignedSubjectsSection({ teacher }: { teacher: Teacher }) {
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [selectedSubject, setSelectedSubject] = React.useState("");
     const { data: subjectsResp } = useSubjects();
     const subjects = subjectsResp?.items ?? [];
-    const assignToTeacher = useAssignSubjectsToTeacher();
+    const assignToTeacher = useAssignSubjectToTeacher();
 
     const handleAddSubject = () => {
         if (!selectedSubject) return;
 
         assignToTeacher.mutate(
             {
-                id: teacher._id,
-                payload: { subjectIds: [selectedSubject] },
+                teacherId: teacher._id,
+                subjectIds: [selectedSubject],
             },
             {
                 onSuccess: () => {

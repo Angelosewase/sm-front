@@ -24,11 +24,10 @@ import { IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import {
   useAssignSubjectToTeacher,
-  useAssignSubjectToClassAndTeacher,
   useAssignSubjectBulk,
 } from "@/hooks/use-subjects";
 import { useTeachers } from "@/hooks/use-teachers";
-import { useClasses } from "@/hooks/use-classes";
+import { useAssignSubjectToClass, useClasses } from "@/hooks/use-classes";
 import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
 
 interface AssignSubjectDialogProps {
@@ -53,9 +52,7 @@ export function AssignSubjectDialog({
   const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   const assignBulkMutation = useAssignSubjectBulk();
-  const assignClassAndTeacherMutation = useAssignSubjectToClassAndTeacher();
-
-  const assignSubjects = useAssignSubjectsToTeacher()
+  const assignSubjects = useAssignSubjectToTeacher()
 
   const [selectedClass, setSelectedClass] = React.useState("");
   const [selectedTeacher, setSelectedTeacher] = React.useState("");
@@ -66,7 +63,7 @@ export function AssignSubjectDialog({
     Array<{ id: string; className: string; teacher: string | undefined }>
   >([]);
 
-  const assignSubjectToClass = useAssignSubjectsToClass()
+  const assignSubjectToClass = useAssignSubjectToClass()
   const { data: teachersData } = useTeachers()
   const { data: availableClassesData } = useClasses();
 
@@ -123,7 +120,7 @@ export function AssignSubjectDialog({
       }
 
       assignSubjects.mutate(
-        { id: selectedTeacher, payload: { subjectIds: [String(subjectId)] } },
+        { teacherId: selectedTeacher, subjectIds: [String(subjectId)] },
         {
           onSuccess: () => {
             toast.success("Subject assigned to teacher");
@@ -151,7 +148,7 @@ export function AssignSubjectDialog({
       assignSubjectToClass.mutate(
         {
           subjectIds: [String(subjectId)],
-          id: selectedClass,
+          classId: selectedClass,
         },
         {
           onSuccess: () => {

@@ -57,7 +57,7 @@ export interface ClassQueryParams {
   onlyTrashed?: boolean;
 }
 
-const classesApiUrl = "/classes";
+const classesApiUrl = "/api/classes";
 
 export const classesApi = {
   /**
@@ -163,25 +163,6 @@ export const classesApi = {
     );
     return data;
   },
-
-  //  createClass : async (dto: CreateClassDto): Promise<ClassLite> => {
-  //   const { data } = await axiosInstance.post<ClassLite>(classesApiUrl, dto);
-  //   return data;
-  // },
-  
-  // getClasses : async (
-  //   filter: IQueryClasses = {}
-  // ): Promise<PaginatedClassesResponse> => {
-  //   const { data } = await axiosInstance.get<PaginatedClassesResponse>(classesApiUrl, {
-  //     params: filter,
-  //   });
-  //   return data;
-  // },
-  
-  // getClassById : async (id: string): Promise<ClassLite> => {
-  //   const { data } = await axiosInstance.get<ClassLite>(`${classesApiUrl}/${id}`);
-  //   return data;
-  // },
   
    postAssignTeacherToClass : async ({
     classId,
@@ -191,31 +172,14 @@ export const classesApi = {
     return data;
   },
   
-  postAssignSubjectToClass : async ({
+  assignSubjectToClass : async ({
     classId,
-    subjectId,
-    academicYear,
-    teacherId,
+    subjectIds,
   }: AssignSubjectToClassDto): Promise<void> => {
-    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/subjects`, { subjectId, academicYear, teacherId });
+    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/assign-subjects`, { subjectIds });
     return data;
   },
 
-
-  /**
-   * Assign subjects to a class
-   * PUT /classes/:id/assign-subjects
-   */
-  assignSubjectsToClass: async (
-    id: string,
-    subjectIds: string[]
-  ): Promise<Class> => {
-    const { data } = await axiosInstance.put<Class>(
-      `${classesApiUrl}/${id}/assign-subjects`,
-      { subjectIds }
-    );
-    return data;
-  },
 
   listClassesForSubjects: async (subjectId: string): Promise<Class[]> => {
     const {data} = await axiosInstance.get<Class[]>(

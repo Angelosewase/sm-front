@@ -9,7 +9,7 @@ import {
   ListSubjectsFilter,
   PaginatedSubjectsResponse,
   AssignTeacherDto,
-  AssignClassAndTeacherDto,
+  AssignClassDto,
   RemoveFromClassDto,
 } from "@/types/subjects.dto";
 import { getAuthToken } from "@/lib/actions/auth";
@@ -106,17 +106,7 @@ export const useAssignSubjectToTeacher = () => {
   });
 };
 
-export const useAssignSubjectToClassAndTeacher = () => {
-  const queryClient = useQueryClient();
-  return useMutation<void, Error, AssignClassAndTeacherDto>({
-    mutationFn: subjectsApi.assignSubjectToClassAndTeacher,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subjects"] });
-      toast.success("Subject assigned to class and teacher");
-    },
-    onError: (err) => toast.error(err.message || "Failed to assign subject"),
-  });
-};
+
 
 export const useSchoolStats = (schoolId: string, academicYear: string) =>
   useQuery({

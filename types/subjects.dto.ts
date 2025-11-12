@@ -76,18 +76,13 @@ export interface ListSubjectsFilter {
 }
 
 export type AssignTeacherDto = {
-  subjectId: string;
+  subjectIds: string[];
   teacherId: string;
-  academicYear: string;
-  term?: string;
 };
 
-export type AssignClassAndTeacherDto = {
-  subjectId: string;
+export type AssignClassDto = {
   classId: string;
-  teacherId: string;
-  academicYear: string;
-  term?: string;
+  subjectIds: string[];
 };
 
 

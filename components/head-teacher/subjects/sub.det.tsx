@@ -46,7 +46,7 @@ import { AssignSubjectDialog } from "./assign-subject-dialog";
 import type { DataTableConfig } from "@/components/datatable";
 import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment } from "@/hooks/use-subjects";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAcademicYears, useTerms } from "@/lib/api/academic-terms";
+import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
 
 export const subjectSchema = z.object({
     id: z.number(),
