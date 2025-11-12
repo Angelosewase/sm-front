@@ -119,52 +119,18 @@ export const teachersApi = {
     return data;
   },
 
-<<<<<<< HEAD
-  /**
-   * Assign subjects to teacher
-   */
-  assignSubjects: async (
-    id: string,
-    payload: { subjectIds: string[] }
-  ): Promise<Teacher> => {
-    const { data } = await axiosInstance.post<Teacher>(
-      `/teachers/${id}/subjects`,
-=======
   assignSubjects: async (id: string, payload: AssignSubjectsDto): Promise<Teacher> => {
     const { data } = await axiosInstance.post<Teacher>(
       `${baseTeachersPath}/${id}/subjects`,
->>>>>>> 56c928b1846942e9de67e480e24e1006c74d3a55
       payload
     );
     return data;
   },
 
-<<<<<<< HEAD
-  /**
-   * Remove a single subject from a teacher
-   */
-  removeSubjectFromTeacher: async (
-    id: string,
-    subjectId: string
-  ): Promise<Teacher> => {
-    const { data } = await axiosInstance.put<Teacher>(
-      `/teachers/${id}/remove-subject/${subjectId}`
-    );
-    return data;
-  },
-
-  /**
-   * Delete a teacher permanently
-   */
-  deleteTeacher: async (id: string): Promise<DeleteTeacherResponse> => {
-    const { data } = await axiosInstance.delete<DeleteTeacherResponse>(
-      `${baseTeachersPath}/${id}`
-=======
   removeSubjects: async (id: string, payload: RemoveSubjectsDto): Promise<Teacher> => {
     const { data } = await axiosInstance.delete<Teacher>(
       `${baseTeachersPath}/${id}/subjects`,
       { data: payload }
->>>>>>> 56c928b1846942e9de67e480e24e1006c74d3a55
     );
     return data;
   },

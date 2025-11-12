@@ -10,7 +10,6 @@ import {
   TeacherQueryParams,
   UpdateTeacherDto,
   UnassignClassesDto,
-  AssignSubjectsDto,
 } from "@/types/teachers.dto";
 
 export const teachersKeys = {
@@ -116,7 +115,7 @@ export function useRemoveSubjectFromTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, subjectId }: { id: string; subjectId: string }) =>
-      teachersApi.removeSubjectFromTeacher(id, subjectId),
+      teachersApi.removeSubjects(id, { subjectIds: [subjectId] }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,
