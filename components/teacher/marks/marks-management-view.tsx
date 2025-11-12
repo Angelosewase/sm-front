@@ -44,15 +44,17 @@ interface MarksManagementViewProps {
   onAssessmentClick: (assessmentId: string) => void
   onBackClick: () => void
   onTermChange: (termId: string) => void
+  context?: { subjectId: string; classId: string; termId?: string; academicYearId?: string }
 }
 
 const ITEMS_PER_PAGE = 8
 
-export function MarksManagementView({ 
-  subjectData, 
-  onAssessmentClick, 
-  onBackClick, 
-  onTermChange 
+export function MarksManagementView({
+  subjectData,
+  onAssessmentClick,
+  onBackClick,
+  onTermChange,
+  context,
 }: MarksManagementViewProps) {
   const [selectedTerm, setSelectedTerm] = useState(subjectData.currentTerm)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -116,8 +118,8 @@ export function MarksManagementView({
 
   const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0)
   const completedAssessments = assessments.filter(a => a.status === 'completed').length
-  const averageScore = assessments.length > 0 
-    ? assessments.reduce((sum, a) => sum + (a.averageScore / a.maxScore) * 100, 0) / assessments.length 
+  const averageScore = assessments.length > 0
+    ? assessments.reduce((sum, a) => sum + (a.averageScore / a.maxScore) * 100, 0) / assessments.length
     : 0
 
   return (
@@ -241,75 +243,77 @@ export function MarksManagementView({
 
         {/* Assessments List */}
         {filteredAssessments.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <div className="text-muted-foreground text-lg mb-2">No assessments yet</div>
-                <div className="text-muted-foreground text-sm mb-4">
-                  Create your first assessment to start recording marks.
-                </div>
-                <Button onClick={() => setIsCreateDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Assessment
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="bg-card rounded-lg border">
-              {assessments.map((assessment, index) => {
-                const statusBadge = getStatusBadge(assessment.status)
-                const categoryColor = getCategoryColor(assessment.category)
-                
-                return (
-                  <div
-                    key={assessment.id}
-                    className={`flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
-                      index !== assessments.length - 1 ? 'border-b' : ''
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="text-muted-foreground text-lg mb-2">No assessments yet</div>
+              <div className="text-muted-foreground text-sm mb-4">
+                Create your first assessment to start recording marks.
+              </div>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Assessment
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="bg-card rounded-lg border">
+            {assessments.map((assessment, index) => {
+              const statusBadge = getStatusBadge(assessment.status)
+              const categoryColor = getCategoryColor(assessment.category)
+
+              return (
+                <div
+                  key={assessment.id}
+                  className={`flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors ${index !== assessments.length - 1 ? 'border-b' : ''
                     }`}
-                    onClick={() => onAssessmentClick(assessment.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                        <Target className="h-5 w-5 text-orange-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-foreground">{assessment.title}</div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{formatDate(assessment.date)}</span>
-                          <span>{assessment.weight}% weight</span>
-                          <span>Max: {assessment.maxScore}</span>
-                          <span>
-                            {assessment.studentsCompleted}/{studentCount} completed
-                          </span>
-                          {assessment.averageScore > 0 && (
-                            <span>
-                              Avg: {assessment.averageScore}/{assessment.maxScore}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                  onClick={() => onAssessmentClick(assessment.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                      <Target className="h-5 w-5 text-orange-600" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={categoryColor}>
-                        {assessment.category}
-                      </Badge>
-                      <Badge className={statusBadge.color}>
-                        {statusBadge.text}
-                      </Badge>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium text-foreground">{assessment.title}</div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{formatDate(assessment.date)}</span>
+                        <span>{assessment.weight}% weight</span>
+                        <span>Max: {assessment.maxScore}</span>
+                        <span>
+                          {assessment.studentsCompleted}/{studentCount} completed
+                        </span>
+                        {assessment.averageScore > 0 && (
+                          <span>
+                            Avg: {assessment.averageScore}/{assessment.maxScore}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={categoryColor}>
+                      {assessment.category}
+                    </Badge>
+                    <Badge className={statusBadge.color}>
+                      {statusBadge.text}
+                    </Badge>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
-      <CreateAssessmentDialog 
+      <CreateAssessmentDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onAssessmentCreated={(assessment) => {
-          // In a real app, this would add the assessment to the list
-          console.log('Assessment created:', assessment)
+        subjectId={context?.subjectId ?? subjectData.id}
+        classId={context?.classId ?? ''}
+        termId={context?.termId ?? subjectData.currentTerm}
+        academicYearId={context?.academicYearId}
+        onAssessmentCreated={() => {
+          // dialog will close itself on success; list will refetch via invalidation
           setIsCreateDialogOpen(false)
         }}
       />

@@ -1,5 +1,35 @@
-import { AssignSubjectToClassDto, AssignTeacherToClassDto, ClassLite, CreateClassDto, IQueryClasses, PaginatedClassesResponse } from '@/types/classes.types';
-import { axiosInstance } from '../axios';
+import {
+  AssignSubjectToClassDto,
+  AssignTeacherToClassDto,
+  ClassLite,
+  CreateClassDto,
+  IQueryClasses,
+  PaginatedClassesResponse,
+} from "@/types/classes.types";
+
+export interface SubjectSummary {
+  _id: string;
+  code?: string;
+  name: string;
+  shortName?: string;
+  description?: string;
+  department?: string;
+  subjectType?: string;
+  maxScore?: number;
+  minPassingScore?: number;
+  creditHours?: number;
+  level?: string;
+  gradeLevels?: string[];
+  prerequisites?: string;
+  status?: string;
+  school?: string;
+  assessments?: string[];
+  assessmentsDone: number;
+  totalAssessments: number;
+  averageMark: number | null;
+  latestMarkDate: string | null;
+}
+import { axiosInstance } from "../axios";
 
 export interface Class {
   _id: string;
@@ -8,12 +38,27 @@ export interface Class {
   academicYear?: string;
   capacity: number;
   description?: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   classTeacher?: {
     _id: string;
     name: string;
     email: string;
   } | null;
+  // When includeTeacherProfile=true, backend returns teacherProfile
+  teacherProfile?: {
+    _id: string;
+    user: {
+      _id: string;
+      name: string;
+      email: string;
+    };
+  } | null;
+  // When subjects are assigned, backend may return assignedSubjects
+  assignedSubjects?: {
+    _id: string;
+    name: string;
+    code: string;
+  }[];
   studentCount: number;
   isTrashed?: boolean;
   trashedAt?: string | null;
@@ -34,7 +79,7 @@ export interface CreateClassData {
   gradeLevel: string;
   capacity: number;
   description?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
   classTeacher?: string;
 }
 
@@ -43,7 +88,7 @@ export interface UpdateClassData {
   gradeLevel?: string;
   capacity?: number;
   description?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
   classTeacher?: string;
 }
 
@@ -57,7 +102,7 @@ export interface ClassQueryParams {
   onlyTrashed?: boolean;
 }
 
-const classesApiUrl = '/api/classes';
+const classesApiUrl = "/api/classes";
 
 export const classesApi = {
   /**
@@ -89,8 +134,14 @@ export const classesApi = {
   /**
    * Update an existing class
    */
-  updateClass: async (id: string, classData: UpdateClassData): Promise<Class> => {
-    const { data } = await axiosInstance.patch<Class>(`${classesApiUrl}/${id}`, classData);
+  updateClass: async (
+    id: string,
+    classData: UpdateClassData
+  ): Promise<Class> => {
+    const { data } = await axiosInstance.patch<Class>(
+      `${classesApiUrl}/${id}`,
+      classData
+    );
     return data;
   },
 
@@ -105,7 +156,10 @@ export const classesApi = {
    * Restore a trashed class
    */
   restoreClass: async (id: string): Promise<Class> => {
-    const { data } = await axiosInstance.patch<Class>(`${classesApiUrl}/${id}/restore`, {});
+    const { data } = await axiosInstance.patch<Class>(
+      `${classesApiUrl}/${id}/restore`,
+      {}
+    );
     return data;
   },
 
@@ -119,7 +173,9 @@ export const classesApi = {
   /**
    * Bulk move classes to trash
    */
-  bulkTrashClasses: async (ids: string[]): Promise<{ modifiedCount: number }> => {
+  bulkTrashClasses: async (
+    ids: string[]
+  ): Promise<{ modifiedCount: number }> => {
     const { data } = await axiosInstance.post<{ modifiedCount: number }>(
       `${classesApiUrl}/bulk/trash`,
       { ids }
@@ -130,7 +186,9 @@ export const classesApi = {
   /**
    * Bulk restore trashed classes
    */
-  bulkRestoreClasses: async (ids: string[]): Promise<{ modifiedCount: number }> => {
+  bulkRestoreClasses: async (
+    ids: string[]
+  ): Promise<{ modifiedCount: number }> => {
     const { data } = await axiosInstance.post<{ modifiedCount: number }>(
       `${classesApiUrl}/bulk/restore`,
       { ids }
@@ -141,7 +199,9 @@ export const classesApi = {
   /**
    * Bulk permanently delete trashed classes
    */
-  bulkPermanentlyDeleteClasses: async (ids: string[]): Promise<{ deletedCount: number }> => {
+  bulkPermanentlyDeleteClasses: async (
+    ids: string[]
+  ): Promise<{ deletedCount: number }> => {
     const { data } = await axiosInstance.post<{ deletedCount: number }>(
       `${classesApiUrl}/bulk/permanent`,
       { ids }
@@ -149,41 +209,42 @@ export const classesApi = {
     return data;
   },
 
-  //  createClass : async (dto: CreateClassDto): Promise<ClassLite> => {
-  //   const { data } = await axiosInstance.post<ClassLite>(classesApiUrl, dto);
-  //   return data;
-  // },
-  
-  // getClasses : async (
-  //   filter: IQueryClasses = {}
-  // ): Promise<PaginatedClassesResponse> => {
-  //   const { data } = await axiosInstance.get<PaginatedClassesResponse>(classesApiUrl, {
-  //     params: filter,
-  //   });
-  //   return data;
-  // },
-  
-  // getClassById : async (id: string): Promise<ClassLite> => {
-  //   const { data } = await axiosInstance.get<ClassLite>(`${classesApiUrl}/${id}`);
-  //   return data;
-  // },
-  
-   postAssignTeacherToClass : async ({
+  postAssignTeacherToClass: async ({
     classId,
     teacherId,
   }: AssignTeacherToClassDto): Promise<void> => {
-    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/teachers`, { teacherId });
+    const { data } = await axiosInstance.post<void>(
+      `${classesApiUrl}/${classId}/teachers`,
+      { teacherId }
+    );
     return data;
   },
-  
-  postAssignSubjectToClass : async ({
+
+  assignSubjectToClass: async ({
     classId,
-    subjectId,
-    academicYear,
-    teacherId,
+    subjectIds,
   }: AssignSubjectToClassDto): Promise<void> => {
-    const { data } = await axiosInstance.post<void>(`${classesApiUrl}/${classId}/subjects`, { subjectId, academicYear, teacherId });
+    const { data } = await axiosInstance.post<void>(
+      `${classesApiUrl}/${classId}/assign-subjects`,
+      { subjectIds }
+    );
+    return data;
+  },
+
+  listClassesForSubjects: async (subjectId: string): Promise<Class[]> => {
+    const { data } = await axiosInstance.get<Class[]>(
+      `${classesApiUrl}/subject/${subjectId}/classes`
+    );
+    return data;
+  },
+
+  /**
+   * List subjects assigned to a class
+   */
+  listClassSubjects: async (classId: string): Promise<SubjectSummary[]> => {
+    const { data } = await axiosInstance.get<SubjectSummary[]>(
+      `${classesApiUrl}/${classId}/subjects`
+    );
     return data;
   },
 };
-

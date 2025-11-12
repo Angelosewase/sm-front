@@ -10,6 +10,16 @@ import {
   TeacherQueryParams,
   UpdateTeacherDto,
   UnassignClassesDto,
+  TeacherDashboardStats,
+  TeacherClassesAssignedResponse,
+  TeacherSubjectsResponse,
+  TeacherStudentsQuery,
+  TeacherStudentsResponse,
+  TeacherAssessmentsQuery,
+  TeacherAssessmentsResponse,
+  TeacherAssignmentsQuery,
+  TeacherAssignmentsResponse,
+  TeacherClassesResponse,
 } from "@/types/teachers.dto";
 
 export const teachersKeys = {
@@ -19,12 +29,79 @@ export const teachersKeys = {
     [...teachersKeys.lists(), params] as const,
   details: () => [...teachersKeys.all, "detail"] as const,
   detail: (id: string) => [...teachersKeys.details(), id] as const,
+  teacher: (id: string) => [...teachersKeys.all, "teacher", id] as const,
+  teacherStudents: (id: string, params?: TeacherStudentsQuery) =>
+    [...teachersKeys.teacher(id), "students", params] as const,
+  teacherSubjects: (id: string) =>
+    [...teachersKeys.teacher(id), "subjects"] as const,
+  teacherClasses: (id: string) =>
+    [...teachersKeys.teacher(id), "classes"] as const,
+  teacherAssessments: (id: string, params?: TeacherAssessmentsQuery) =>
+    [...teachersKeys.teacher(id), "assessments", params] as const,
+  teacherAssignments: (id: string, params?: TeacherAssignmentsQuery) =>
+    [...teachersKeys.teacher(id), "assignments", params] as const,
+  teacherDashboard: (id: string) =>
+    [...teachersKeys.teacher(id), "dashboard"] as const,
 };
 
 export function useTeachers(params?: TeacherQueryParams) {
   return useQuery({
     queryKey: teachersKeys.list(params),
     queryFn: () => teachersApi.getTeachers(params),
+  });
+}
+
+export function useTeacherDashboardStats(id: string) {
+  return useQuery<TeacherDashboardStats>({
+    queryKey: teachersKeys.teacherDashboard(id),
+    queryFn: () => teachersApi.getDashboardStats(id),
+    enabled: !!id,
+  });
+}
+
+export function useTeacherClassesAssigned(id: string) {
+  return useQuery<TeacherClassesResponse>({
+    queryKey: teachersKeys.teacherClasses(id),
+    queryFn: () => teachersApi.getTeacherClasses(id),
+    enabled: !!id,
+  });
+}
+
+export function useTeacherSubjectsTaught(id: string) {
+  return useQuery<TeacherSubjectsResponse>({
+    queryKey: teachersKeys.teacherSubjects(id),
+    queryFn: () => teachersApi.getTeacherSubjects(id),
+    enabled: !!id,
+  });
+}
+
+export function useTeacherStudents(id: string, params?: TeacherStudentsQuery) {
+  return useQuery<TeacherStudentsResponse>({
+    queryKey: teachersKeys.teacherStudents(id, params),
+    queryFn: () => teachersApi.getTeacherStudents(id, params),
+    enabled: !!id,
+  });
+}
+
+export function useTeacherAssessments(
+  id: string,
+  params?: TeacherAssessmentsQuery
+) {
+  return useQuery<TeacherAssessmentsResponse>({
+    queryKey: teachersKeys.teacherAssessments(id, params),
+    queryFn: () => teachersApi.getTeacherAssessments(id, params),
+    enabled: !!id,
+  });
+}
+
+export function useTeacherAssignments(
+  id: string,
+  params?: TeacherAssignmentsQuery
+) {
+  return useQuery<TeacherAssignmentsResponse>({
+    queryKey: teachersKeys.teacherAssignments(id, params),
+    queryFn: () => teachersApi.getTeacherAssignments(id, params),
+    enabled: !!id,
   });
 }
 
@@ -82,13 +159,8 @@ export function useUnassignClassesFromTeacher() {
 export function useAssignSubjectsToTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: AssignSubjectsDto;
-    }) => teachersApi.assignSubjects(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: AssignSubjectsDto }) =>
+      teachersApi.assignSubjects(id, payload),
     onSuccess: (teacher) => {
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,
@@ -100,6 +172,7 @@ export function useAssignSubjectsToTeacher() {
           : "Subjects assigned successfully"
       );
     },
+   
     onError: (error: any) => {
       toast.error(
         error?.response?.data?.message || "Failed to assign subjects"
@@ -108,16 +181,14 @@ export function useAssignSubjectsToTeacher() {
   });
 }
 
-export function useRemoveSubjectsFromTeacher() {
+/**
+ * Hook to remove a single subject from a teacher
+ */
+export function useRemoveSubjectFromTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: RemoveSubjectsDto;
-    }) => teachersApi.removeSubjects(id, payload),
+    mutationFn: ({ id, subjectId }: { id: string; subjectId: string }) =>
+      teachersApi.removeSubjects(id, { subjectIds: [subjectId] }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,
@@ -126,9 +197,7 @@ export function useRemoveSubjectsFromTeacher() {
       toast.success("Subject removed from teacher");
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message || "Failed to remove subject"
-      );
+      toast.error(error?.response?.data?.message || "Failed to remove subject");
     },
   });
 }

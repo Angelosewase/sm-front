@@ -26,7 +26,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,10 +50,12 @@ import {
   useRestoreTeacher,
   useTeachers,
   useTrashTeacher,
+  useAssignClassesToTeacher,
 } from "@/hooks/use-teachers";
 import { useSubjects } from "@/hooks/use-subjects";
 import { useClasses } from "@/hooks/use-classes";
 import TeacherDetailViewer from "./teacher-detail-viewer";
+import { AssignSubjectDialog } from "@/components/head-teacher/subjects/assign-subject-dialog";
 
 type TeacherTab = "all" | "Active" | "On Leave" | "Inactive" | "trashed";
 type TeacherActionType = "trash" | "restore" | "permanent";
@@ -77,6 +82,11 @@ export function TeacherDataTable({ data = [] }: TeacherDataTableProps) {
   const [selectedSubject, setSelectedSubject] = React.useState<string>("");
   const [selectedClass, setSelectedClass] = React.useState<string>("");
   const [selectedRows, setSelectedRows] = React.useState<Teacher[]>([]);
+  const [assignDialogOpen, setAssignDialogOpen] = React.useState(false);
+  const [activeTeacherId, setActiveTeacherId] = React.useState<string | undefined>(undefined);
+  const [assignClassOpen, setAssignClassOpen] = React.useState(false);
+  const [activeTeacherForClass, setActiveTeacherForClass] = React.useState<string | undefined>(undefined);
+  const [selectedClassIdForAssign, setSelectedClassIdForAssign] = React.useState<string>("");
 
   const debouncedSearch = useDebouncedValue(searchTerm);
 
@@ -219,6 +229,19 @@ export function TeacherDataTable({ data = [] }: TeacherDataTableProps) {
   const subjects = subjectsResponse?.items ?? [];
   const classes = classesResponse?.data ?? [];
 
+  const assignClassMutation = useAssignClassesToTeacher();
+  const activeTeacherForClassObj = React.useMemo(
+    () => resolvedData?.find((t) => t._id === activeTeacherForClass),
+    [resolvedData, activeTeacherForClass]
+  );
+  const availableClassesForActiveTeacher = React.useMemo(() => {
+    if (!activeTeacherForClassObj) return classes;
+    const assignedIds = new Set(
+      (activeTeacherForClassObj.assignedClasses ?? []).map((c: any) => c._id)
+    );
+    return classes.filter((c: any) => !assignedIds.has(c._id));
+  }, [classes, activeTeacherForClassObj]);
+
   const columns: ColumnDef<Teacher>[] = React.useMemo(() => {
     return [
       createDragColumn<Teacher>(),
@@ -331,6 +354,21 @@ export function TeacherDataTable({ data = [] }: TeacherDataTableProps) {
 
         return [
           {
+            label: "Assign Subject",
+            onClick: () => {
+              setActiveTeacherId(teacher._id);
+              setAssignDialogOpen(true);
+            },
+          },
+          {
+            label: "Assign Class",
+            onClick: () => {
+              setActiveTeacherForClass(teacher._id);
+              setSelectedClassIdForAssign("");
+              setAssignClassOpen(true);
+            },
+          },
+          {
             label: "Move to Trash",
             onClick: () => openConfirmation("trash", teacher),
             variant: "destructive",
@@ -380,7 +418,7 @@ export function TeacherDataTable({ data = [] }: TeacherDataTableProps) {
                 }
                 disabled={
                   button.value === "all"
-                    ? isLoading 
+                    ? isLoading
                     : isLoading
                 }
               >
@@ -571,6 +609,96 @@ export function TeacherDataTable({ data = [] }: TeacherDataTableProps) {
         columnVisibilityLabel="Customize Columns"
         customToolbarActions={filterControls}
       />
+
+      <AssignSubjectDialog
+        open={assignDialogOpen}
+        onOpenChange={(open) => {
+          setAssignDialogOpen(open);
+          if (!open) setActiveTeacherId(undefined);
+        }}
+        mode="teacher"
+        teacherId={activeTeacherId}
+      />
+
+      <Dialog
+        open={assignClassOpen}
+        onOpenChange={(open) => {
+          setAssignClassOpen(open);
+          if (!open) {
+            setActiveTeacherForClass(undefined);
+            setSelectedClassIdForAssign("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Class</DialogTitle>
+            <DialogDescription>
+              Choose a class to assign to this teacher.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="assign-class-select">Class</Label>
+              <Select
+                value={selectedClassIdForAssign}
+                onValueChange={setSelectedClassIdForAssign}
+                disabled={!availableClassesForActiveTeacher.length}
+              >
+                <SelectTrigger id="assign-class-select">
+                  <SelectValue
+                    placeholder={
+                      availableClassesForActiveTeacher.length
+                        ? "Choose a class"
+                        : "No classes available"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableClassesForActiveTeacher.map((cls: any) => (
+                    <SelectItem key={cls._id} value={cls._id}>
+                      {cls.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setAssignClassOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={
+                !selectedClassIdForAssign || assignClassMutation.isPending
+              }
+              onClick={() => {
+                if (!activeTeacherForClass || !selectedClassIdForAssign) return;
+                assignClassMutation.mutate(
+                  {
+                    id: activeTeacherForClass,
+                    payload: { classIds: [selectedClassIdForAssign] },
+                  },
+                  {
+                    onSuccess: () => {
+                      setAssignClassOpen(false);
+                      setSelectedClassIdForAssign("");
+                      setActiveTeacherForClass(undefined);
+                    },
+                  }
+                );
+              }}
+            >
+              {assignClassMutation.isPending ? "Assigning..." : "Assign"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={confirmState.open}

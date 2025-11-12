@@ -14,10 +14,13 @@ const sanitizeName = (name: string) => {
     .toLowerCase();
 };
 
+export type IChangeType = "positive" | "negative" | "neutral";
+
+
 export interface IStatCardDataItem {
   name: string;
   icon?: React.ReactNode;
-  changeType: "positive" | "negative" | "neutral";
+  changeType: IChangeType;
   value: number | string;
   change: number | string;
   percentageChange: number | string;
@@ -93,7 +96,7 @@ export default function StatCard(item: IStatCardDataItem) {
 
             {/* Value Section */}
             <dd className="text-2xl font-bold text-foreground tracking-tight mb-1">
-              {hoveredValue !== null ? hoveredValue.toLocaleString() : item.value}
+              {hoveredValue ? hoveredValue.toLocaleString() : item.value}
             </dd>
 
             {/* Change Indicator */}

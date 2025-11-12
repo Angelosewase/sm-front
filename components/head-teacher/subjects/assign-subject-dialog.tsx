@@ -22,14 +22,11 @@ import {
 import { toast } from "react-toastify";
 import { IconX } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
-import {
-  useAssignSubjectToTeacher,
-  useAssignSubjectToClassAndTeacher,
-  useAssignSubjectBulk,
-} from "@/hooks/use-subjects";
-import { useTeachers } from "@/hooks/use-teachers";
-import { useClasses } from "@/hooks/use-classes";
+import { useAssignSubjectBulk } from "@/hooks/use-subjects";
+import { useTeachers, useAssignSubjectsToTeacher } from "@/hooks/use-teachers";
+import { useAssignSubjectToClass, useClasses } from "@/hooks/use-classes";
 import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
+import { useSubjects } from "@/hooks/use-subjects";
 
 interface AssignSubjectDialogProps {
   trigger?: React.ReactNode;
@@ -38,6 +35,8 @@ interface AssignSubjectDialogProps {
   mode?: "class" | "teacher";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  teacherId?: string;
+
 }
 
 export function AssignSubjectDialog({
@@ -47,17 +46,18 @@ export function AssignSubjectDialog({
   mode,
   open: controlledOpen,
   onOpenChange,
+  teacherId,
 }: AssignSubjectDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
   const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   const assignBulkMutation = useAssignSubjectBulk();
-  const assignTeacherMutation = useAssignSubjectToTeacher();
-  const assignClassAndTeacherMutation = useAssignSubjectToClassAndTeacher();
+  const assignSubjects = useAssignSubjectsToTeacher();
 
   const [selectedClass, setSelectedClass] = React.useState("");
-  const [selectedTeacher, setSelectedTeacher] = React.useState("");
+  const [selectedTeacher, setSelectedTeacher] = React.useState(teacherId ?? "");
+  const [selectedSubject, setSelectedSubject] = React.useState<string>("");
   const [academicYear, setAcademicYear] = React.useState("");
   const [term, setTerm] = React.useState("");
 
@@ -65,17 +65,14 @@ export function AssignSubjectDialog({
     Array<{ id: string; className: string; teacher: string | undefined }>
   >([]);
 
-  const { data: teachersData } = useTeachers()
+  const assignSubjectToClass = useAssignSubjectToClass();
+  const { data: teachersData } = useTeachers();
   const { data: availableClassesData } = useClasses();
+  const { data: subjectsData } = useSubjects();
 
   const availableClasses = availableClassesData?.data ?? [];
   const availableTeachers = teachersData?.items ?? [];
-
-  const { data: academicYearsData } = useAcademicYears();
-  const academicYears = academicYearsData ?? [];
-
-  const { data: termsData } = useTerms();
-  const terms = termsData ?? [];
+  const availableSubjects = subjectsData?.items ?? [];
 
   const handleAddAssignment = () => {
     if (!selectedClass || !selectedTeacher) {
@@ -113,33 +110,30 @@ export function AssignSubjectDialog({
     toast.success("Assignment removed");
   };
 
-
   const handleSubmit = () => {
- /* ---- teacher mode --------------------------------------------------- */
+    /* ---- teacher mode --------------------------------------------------- */
     if (mode === "teacher") {
-      if (!subjectId) {
-        toast.error("Missing subjectId");
+      const finalSubjectId = subjectId ?? selectedSubject;
+      if (!finalSubjectId) {
+        toast.error("Please select a subject");
         return;
       }
-      if (!selectedTeacher || !academicYear) {
-        toast.error("Please select a teacher and academic year");
+      if (!selectedTeacher && !teacherId) {
+        toast.error("Please select a teacher");
         return;
       }
 
-      assignTeacherMutation.mutate(
-        {
-          subjectId: String(subjectId),
-          teacherId: selectedTeacher,
-          academicYear,
-          term: term || undefined,
-        },
+      assignSubjects.mutate(
+        { id: teacherId ? teacherId : selectedTeacher, payload: { subjectIds: [String(finalSubjectId)] } },
         {
           onSuccess: () => {
+            toast.success("Subject assigned to teacher");
+            if (!teacherId) setSelectedTeacher("");
+            if (!subjectId) setSelectedSubject("");
             setOpen(false);
-            setSelectedTeacher("");
-            setAcademicYear("");
-            setTerm("");
           },
+          onError: (err: any) =>
+            toast.error(err?.response?.data?.message || "Failed to assign subject"),
         }
       );
       return;
@@ -151,31 +145,25 @@ export function AssignSubjectDialog({
         toast.error("Missing subjectId");
         return;
       }
-      if (!selectedClass || !academicYear) {
-        toast.error("Please select a class and academic year");
+      if (!selectedClass) {
+        toast.error("Please select a class");
         return;
       }
 
-      assignClassAndTeacherMutation.mutate(
+      assignSubjectToClass.mutate(
         {
-          subjectId: String(subjectId),
+          subjectIds: [String(subjectId)],
           classId: selectedClass,
-          teacherId: selectedTeacher,
-          academicYear,
-          term: term || undefined,
         },
         {
           onSuccess: () => {
             setOpen(false);
-            setSelectedTeacher("");
-            setAcademicYear("");
-            setTerm("");
+            setSelectedClass("");
           },
         }
       );
       return;
     }
-
 
     /* ---- bulk (multiple) mode ------------------------------------------ */
     if (assignedClasses.length > 0) {
@@ -186,7 +174,7 @@ export function AssignSubjectDialog({
 
       const assignmentsPayload = assignedClasses.map((a) => ({
         classId: a.id,
-        teacherId: availableTeachers.find((t) => t.user.name === a.teacher)?._id,
+        teacherId: availableTeachers.find((t) => t.user.name === a.teacher)?.user._id,
         academicYear,
         term: term || undefined,
       }));
@@ -214,7 +202,6 @@ export function AssignSubjectDialog({
 
       return;
     }
-
 
     /* ---- bulk (multiple) mode ------------------------------------------ */
     if (assignedClasses.length === 0) {
@@ -257,7 +244,7 @@ export function AssignSubjectDialog({
           </DialogTitle>
           <DialogDescription className="text-sm">
             {mode === "teacher"
-              ? "Assign this subject to a teacher for an academic year and term."
+              ? "Assign this subject to a teacher."
               : "Assign this subject to classes and designate teachers to teach each class."}
           </DialogDescription>
         </DialogHeader>
@@ -284,12 +271,14 @@ export function AssignSubjectDialog({
               </div>
             )}
 
-            {/* ----- Teacher + Year/Term + Add button ----- */}
-
             {/* Teacher */}
             <div className="flex flex-col gap-2">
               <Label htmlFor="teacher-select">Teacher</Label>
-              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+              <Select
+                value={selectedTeacher}
+                onValueChange={setSelectedTeacher}
+                disabled={!!teacherId}
+              >
                 <SelectTrigger id="teacher-select">
                   <SelectValue placeholder="Choose a teacher" />
                 </SelectTrigger>
@@ -304,42 +293,24 @@ export function AssignSubjectDialog({
             </div>
           </div>
 
-          <div className="flex flex-row gap-5 justify-between items-center mb-4">
-            {/* Year + Term (stacked on mobile) */}
-            {/* <div className="flex flex-col gap-4 sm:grid-cols-2 sm:gap-3"> */}
+          {/* Subject (only for teacher mode when no subjectId provided) */}
+          {mode === "teacher" && !subjectId && (
             <div className="flex flex-col gap-2">
-              <Label htmlFor="academicYear">Academic Year</Label>
-              <Select value={academicYear} onValueChange={setAcademicYear}>
-                <SelectTrigger id="academicYear">
-                  <SelectValue placeholder="Select Academic Year" />
+              <Label htmlFor="subject-select">Subject</Label>
+              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger id="subject-select">
+                  <SelectValue placeholder="Choose a subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {academicYears.map((a) => (
-                    <SelectItem key={a._id} value={a.label}>
-                      {a.label}
+                  {availableSubjects.map((s: any) => (
+                    <SelectItem key={s._id} value={s._id}>
+                      {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="term">Term (optional)</Label>
-              <Select value={term} onValueChange={setTerm}>
-                <SelectTrigger id="term">
-                  <SelectValue placeholder="Select term" />
-                </SelectTrigger>
-                <SelectContent>
-                  {terms.map((t) => (
-                    <SelectItem key={t._id} value={t.name}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-          </div>
+          )}
 
           {/* Add Assignment button – full width on mobile */}
           <Button

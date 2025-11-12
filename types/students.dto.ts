@@ -101,3 +101,22 @@ export interface BulkStudentActionDto {
 }
 
 
+
+
+export interface StatTrendPoint {
+  date: string; // e.g., W1, W2, etc. or '2025-11-01'
+  value: number;
+}
+export interface StudentStatCard {
+  name: string;
+  value: number | string;
+  change: number | string;
+  percentageChange: number | string;
+  changeType: "neutral" | "positive" | "negative";
+  dataKey: string;
+  data: StatTrendPoint[];
+}
+export interface StudentStatsResponse {
+  cards: StudentStatCard[];
+}
+
