@@ -47,6 +47,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSubjects } from "@/hooks/use-subjects";
+import { useAssignSubjectToClass } from "@/hooks/use-classes";
 import { Class } from "@/lib/api/classes";
 import {
   useUpdateClass,
@@ -84,6 +87,17 @@ export const classSchema = z.object({
       _id: z.string(),
       name: z.string(),
       email: z.string(),
+    })
+    .optional()
+    .nullable(),
+  teacherProfile: z
+    .object({
+      _id: z.string(),
+      user: z.object({
+        _id: z.string(),
+        name: z.string(),
+        email: z.string(),
+      }),
     })
     .optional()
     .nullable(),
@@ -465,6 +479,12 @@ function ClassDetailViewer({ item }: { item: ClassData }) {
 }
 
 export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [activeClass, setActiveClass] = React.useState<ClassData | null>(null);
+  const [selectedSubjectIds, setSelectedSubjectIds] = React.useState<string[]>([]);
+
+  const { data: subjects } = useSubjects({ limit: 100 });
+  const assignSubjectToClass = useAssignSubjectToClass();
   const [activeTab, setActiveTab] = React.useState<ClassesTab>("all-classes");
   const [searchTerm, setSearchTerm] = React.useState("");
   const [gradeLevel, setGradeLevel] = React.useState<string | undefined>(
@@ -494,6 +514,7 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
       gradeLevel,
       academicYear,
       includeTrashed: true,
+      includeTeacherProfile: true,
     }),
     [debouncedSearch, gradeLevel, academicYear]
   );
@@ -654,11 +675,13 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
     {
       accessorKey: "classTeacher",
       header: "Teacher",
-      cell: ({ row }) => (
-        <div className="font-medium">
-          {row.original.classTeacher?.name || "No teacher assigned"}
-        </div>
-      ),
+      cell: ({ row }) => {
+        return (
+          <div className="font-medium">
+            {row.original.teacherProfile?.user?.name || "No teacher assigned"}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -666,11 +689,10 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
       cell: ({ row }) => (
         <Badge
           variant="outline"
-          className={`flex items-center gap-1 px-1.5 ${
-            row.original.isTrashed
-              ? "text-destructive border-destructive/40"
-              : "text-muted-foreground"
-          }`}
+          className={`flex items-center gap-1 px-1.5 ${row.original.isTrashed
+            ? "text-destructive border-destructive/40"
+            : "text-muted-foreground"
+            }`}
         >
           {row.original.isTrashed ? (
             <>Trashed</>
@@ -681,7 +703,7 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
           )}
           {!row.original.isTrashed &&
             row.original.status.charAt(0).toUpperCase() +
-              row.original.status.slice(1)}
+            row.original.status.slice(1)}
         </Badge>
       ),
     },
@@ -720,6 +742,14 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
 
       return [
         {
+          label: "Assign Subjects",
+          onClick: () => {
+            setActiveClass(row);
+            setSelectedSubjectIds([]);
+            setAssignOpen(true);
+          },
+        },
+        {
           label: "Move to Trash",
           onClick: () => openConfirmation("trash", row),
           variant: "destructive",
@@ -756,6 +786,26 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
     { label: "Active", value: "active" },
     { label: "Inactive", value: "inactive" },
   ];
+
+  const items = subjects?.items ?? [];
+  const toggleSubject = (id: string) => {
+    setSelectedSubjectIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+  const handleAssign = () => {
+    if (!activeClass || selectedSubjectIds.length === 0) return;
+    const classId = String((activeClass as any)._id ?? activeClass._id);
+    assignSubjectToClass.mutate(
+      { classId, subjectIds: selectedSubjectIds },
+      {
+        onSuccess: () => {
+          setAssignOpen(false);
+          setSelectedSubjectIds([]);
+        },
+      }
+    );
+  };
 
   const filterControls = (
     <div className="flex w-full flex-col gap-3 px-6">
@@ -979,7 +1029,30 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
     <>
       <GenericDataTable<ClassData>
         data={filteredData}
-        columns={columns}
+        columns={[
+          ...columns,
+          {
+            id: "actions",
+            Header: "Actions",
+            Cell: ({ row }: { row: any }) => (
+              <div className="flex items-center gap-2">
+                {!row.original.isTrashed && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setActiveClass(row.original);
+                      setAssignOpen(true);
+                    }}
+                  >
+                    Assign Subjects
+                  </Button>
+                )}
+              </div>
+            ),
+          },
+        ]}
         defaultTab="all-classes"
         onTabChange={(tab) => setActiveTab(tab as ClassesTab)}
         getRowId={(row) => row._id}
@@ -997,6 +1070,40 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
         columnVisibilityLabel="Customize Columns"
         customToolbarActions={filterControls}
       />
+
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assign Subjects to Class</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 max-h-[50vh] overflow-y-auto p-1">
+            {items.map((s: any) => (
+              <label key={s._id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedSubjectIds.includes(s._id)}
+                  onChange={() => toggleSubject(s._id)}
+                />
+                <span>{s.name ?? s.subjectName ?? s._id}</span>
+              </label>
+            ))}
+            {items.length === 0 && (
+              <div className="text-sm text-muted-foreground">No subjects found.</div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssign}
+              disabled={!activeClass || selectedSubjectIds.length === 0 || assignSubjectToClass.isPending}
+            >
+              Assign
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={confirmState.open}

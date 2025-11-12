@@ -108,16 +108,14 @@ export function useAssignSubjectsToTeacher() {
   });
 }
 
-export function useRemoveSubjectsFromTeacher() {
+/**
+ * Hook to remove a single subject from a teacher
+ */
+export function useRemoveSubjectFromTeacher() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: RemoveSubjectsDto;
-    }) => teachersApi.removeSubjects(id, payload),
+    mutationFn: ({ id, subjectId }: { id: string; subjectId: string }) =>
+      teachersApi.removeSubjects(id, { subjectIds: [subjectId] }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: teachersKeys.all,

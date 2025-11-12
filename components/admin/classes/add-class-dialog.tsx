@@ -127,7 +127,7 @@ export function AddClassDialog() {
                   <SelectContent>
                     {teachersData?.items.map((teacher) => (
                       <SelectItem key={teacher._id} value={teacher._id}>
-                        {teacher.name}
+                        {teacher.user.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

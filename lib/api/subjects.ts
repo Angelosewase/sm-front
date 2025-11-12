@@ -1,5 +1,5 @@
 import { getAuthToken } from "@/lib/actions/auth";
-import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassAndTeacherDto, RemoveFromClassDto } from "@/types/subjects.dto";
+import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassDto, RemoveFromClassDto } from "@/types/subjects.dto";
 import { axiosInstance } from "@/lib/axios";
 
 const API_BASE_URL = "/api/subjects"; // Adjust based on your API base URL
@@ -41,28 +41,10 @@ export const subjectsApi = {
 
   // Assign subject to teacher
   assignSubjectToTeacher: async (dto: AssignTeacherDto): Promise<void> => {
-    const token = await getAuthToken();
     const { data } = await axiosInstance.post<void>(
-      `${API_BASE_URL}/${dto.subjectId}/assign-to-teacher`,
+      `${API_BASE_URL}/${dto.teacherId}/subjects`,
       {
-        teacherId: dto.teacherId,
-        academicYear: dto.academicYear,
-        term: dto.term
-      }
-    );
-    return data;
-  },
-
-  assignSubjectToClassAndTeacher: async (
-    dto: AssignClassAndTeacherDto
-  ): Promise<void> => {
-    const { data } = await axiosInstance.post<void>(
-      `${API_BASE_URL}/${dto.subjectId}/assign-to-class-with-teacher`,
-      {
-        classId: dto.classId,
-        teacherId: dto.teacherId,
-        academicYear: dto.academicYear,
-        term: dto.term,
+        subjectIds: dto.subjectIds,
       }
     );
     return data;
@@ -141,6 +123,13 @@ export const subjectsApi = {
       {
         params: { academicYear, ...(term ? { term } : {}) },
       }
+    );
+    return data;
+  },
+
+  fetchTeacherSubjects: async (teacherId: string) => {
+    const { data } = await axiosInstance.get<any>(
+      `${API_BASE_URL}/teacher/${teacherId}/subjects`
     );
     return data;
   },

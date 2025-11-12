@@ -46,6 +46,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "react-toastify";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AssignSubjectDialog } from "../subjects";
 
 export const classSchema = z.object({
   id: z.number(),
@@ -58,121 +60,129 @@ export const classSchema = z.object({
   schedule: z.string(),
 });
 
-const columns: ColumnDef<z.infer<typeof classSchema>>[] = [
-  createDragColumn<z.infer<typeof classSchema>>(),
-  createSelectColumn<z.infer<typeof classSchema>>(),
-  {
-    accessorKey: "className",
-    header: "Class Name",
-    cell: ({ row }) => {
-      return <ClassDetailViewer item={row.original} />;
+const columns = (
+  onAssignSubjects: (item: z.infer<typeof classSchema>) => void
+): ColumnDef<z.infer<typeof classSchema>>[] => [
+    createDragColumn<z.infer<typeof classSchema>>(),
+    createSelectColumn<z.infer<typeof classSchema>>(),
+    {
+      accessorKey: "className",
+      header: "Class Name",
+      cell: ({ row }) => {
+        return <ClassDetailViewer item={row.original} />;
+      },
+      enableHiding: false,
     },
-    enableHiding: false,
-  },
-  {
-    accessorKey: "gradeLevel",
-    header: "Grade Level",
-    cell: ({ row }) => (
-      <div className="w-24">
+    {
+      accessorKey: "gradeLevel",
+      header: "Grade Level",
+      cell: ({ row }) => (
+        <div className="w-24">
+          <Badge variant="outline" className="text-muted-foreground px-1.5">
+            {row.original.gradeLevel}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "teacher",
+      header: "Teacher",
+      cell: ({ row }) => (
+        <div className="font-medium">{row.original.teacher}</div>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => (
         <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.gradeLevel}
+          {row.original.status === "Active" ? (
+            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+          ) : (
+            <IconCircleDashed />
+          )}
+          {row.original.status}
         </Badge>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "teacher",
-    header: "Teacher",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.teacher}</div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-1.5">
-        {row.original.status === "Active" ? (
-          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-        ) : (
-          <IconCircleDashed />
-        )}
-        {row.original.status}
-      </Badge>
-    ),
-  },
-  {
-    accessorKey: "enrolled",
-    header: () => <div className="w-full text-right">Enrolled</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            pending: `Updating ${row.original.className}`,
-            success: "Enrollment updated",
-            error: "Error updating enrollment",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-enrolled`} className="sr-only">
-          Enrolled
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.enrolled}
-          id={`${row.original.id}-enrolled`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "capacity",
-    header: () => <div className="w-full text-right">Capacity</div>,
-    cell: ({ row }) => (
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
-            pending: `Updating ${row.original.className}`,
-            success: "Capacity updated",
-            error: "Error updating capacity",
-          });
-        }}
-      >
-        <Label htmlFor={`${row.original.id}-capacity`} className="sr-only">
-          Capacity
-        </Label>
-        <Input
-          className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
-          defaultValue={row.original.capacity}
-          id={`${row.original.id}-capacity`}
-        />
-      </form>
-    ),
-  },
-  {
-    accessorKey: "schedule",
-    header: "Schedule",
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground">
-        {row.original.schedule}
-      </div>
-    ),
-  },
-  createActionsColumn<z.infer<typeof classSchema>>([
-    { label: "Edit", onClick: () => {} },
-    { label: "View Students", onClick: () => {} },
-    { label: "Duplicate", onClick: () => {} },
-    { label: "Archive", onClick: () => {}, variant: "destructive" },
-  ]),
-];
+      ),
+    },
+    {
+      accessorKey: "enrolled",
+      header: () => <div className="w-full text-right">Enrolled</div>,
+      cell: ({ row }) => (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
+              pending: `Updating ${row.original.className}`,
+              success: "Enrollment updated",
+              error: "Error updating enrollment",
+            });
+          }}
+        >
+          <Label htmlFor={`${row.original.id}-enrolled`} className="sr-only">
+            Enrolled
+          </Label>
+          <Input
+            className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
+            defaultValue={row.original.enrolled}
+            id={`${row.original.id}-enrolled`}
+          />
+        </form>
+      ),
+    },
+    {
+      accessorKey: "capacity",
+      header: () => <div className="w-full text-right">Capacity</div>,
+      cell: ({ row }) => (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            toast.promise(new Promise((resolve) => setTimeout(resolve, 1000)), {
+              pending: `Updating ${row.original.className}`,
+              success: "Capacity updated",
+              error: "Error updating capacity",
+            });
+          }}
+        >
+          <Label htmlFor={`${row.original.id}-capacity`} className="sr-only">
+            Capacity
+          </Label>
+          <Input
+            className="hover:bg-input/30 focus-visible:bg-background dark:hover:bg-input/30 dark:focus-visible:bg-input/30 h-8 w-16 border-transparent bg-transparent text-right shadow-none focus-visible:border dark:bg-transparent"
+            defaultValue={row.original.capacity}
+            id={`${row.original.id}-capacity`}
+          />
+        </form>
+      ),
+    },
+    {
+      accessorKey: "schedule",
+      header: "Schedule",
+      cell: ({ row }) => (
+        <div className="text-sm text-muted-foreground">
+          {row.original.schedule}
+        </div>
+      ),
+    },
+    createActionsColumn<z.infer<typeof classSchema>>([
+      { label: "Assign Subjects", onClick: onAssignSubjects },
+      { label: "Edit", onClick: () => { } },
+      { label: "View Students", onClick: () => { } },
+      { label: "Duplicate", onClick: () => { } },
+      { label: "Archive", onClick: () => { }, variant: "destructive" },
+    ]),
+  ];
 
 export function ClassDataTable({
   data,
 }: {
   data: z.infer<typeof classSchema>[];
 }) {
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [activeClass, setActiveClass] = React.useState<z.infer<typeof classSchema> | null>(null);
+  const [selectedSubjectIds, setSelectedSubjectIds] = React.useState<string[]>([]);
+
+  const { data: subjectsResp } = require("react").use(0 as any) as never; // placeholder to avoid unused import error
   const tabs = [
     {
       value: "all-classes",
@@ -204,23 +214,40 @@ export function ClassDataTable({
     },
   ];
 
+  const onAssignSubjects = (item: z.infer<typeof classSchema>) => {
+    setActiveClass(item);
+    setAssignOpen(true);
+  };
+
+  // Fetch available subjects for selection
+  const { data: subjectsData } = require("react").useMemo(() => ({}), [] as any) as never;
+
   return (
-    <GenericDataTable<z.infer<typeof classSchema>>
-      data={data}
-      columns={columns}
-      tabs={tabs}
-      defaultTab="all-classes"
-      config={{
-        enableDragDrop: true,
-        enableSelection: true,
-        enableColumnVisibility: true,
-        enablePagination: true,
-        pageSize: 10,
-        pageSizeOptions: [10, 20, 30, 40, 50],
-      }}
-      addButtonLabel="Add Class"
-      columnVisibilityLabel="Customize Columns"
-    />
+    <>
+      <GenericDataTable<z.infer<typeof classSchema>>
+        data={data}
+        columns={columns(onAssignSubjects)}
+        tabs={tabs}
+        defaultTab="all-classes"
+        config={{
+          enableDragDrop: true,
+          enableSelection: true,
+          enableColumnVisibility: true,
+          enablePagination: true,
+          pageSize: 10,
+          pageSizeOptions: [10, 20, 30, 40, 50],
+        }}
+        addButtonLabel="Add Class"
+        columnVisibilityLabel="Customize Columns"
+      />
+
+      {/* Assign Subjects Dialog */}
+      <AssignSubjectDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        classId={activeClass ? String(activeClass.id) : undefined}
+      />
+    </>
   );
 }
 

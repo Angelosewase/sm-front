@@ -15,9 +15,7 @@ export interface AssignTeacherToClassDto {
 
 export interface AssignSubjectToClassDto {
   classId: string;           // path param in API
-  subjectId: string;
-  academicYear: string;
-  teacherId?: string;        // optional per controller (optional teacher)
+  subjectIds: string[];
 }
 
 export interface IQueryClasses {
@@ -26,11 +24,10 @@ export interface IQueryClasses {
   academicYear?: string;
   level?: string;
   page?: number;
-  limit?: number;            // controller expects limit
+  limit?: number;            
   skip?: number;  
   order?: 'asc' | 'desc';
   sortBy?: 'createdAt'
-             // controller expects skip
 }
 
 export interface ClassLite {
@@ -47,6 +44,6 @@ export interface ClassLite {
 export interface PaginatedClassesResponse {
   data: ClassLite[];
   total: number;
-  page?: number;             // include if your backend returns it
-  limit?: number;            // include if your backend returns it
+  page?: number;            
+  limit?: number;            
 }
