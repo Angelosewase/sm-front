@@ -102,6 +102,11 @@ export const classSchema = z.object({
     .optional()
     .nullable(),
   status: z.enum(["active", "inactive"]),
+  assignedSubjects: z.array(z.object({
+    _id: z.string(),
+    name: z.string(),
+    code: z.string(),
+  })).optional(),
   studentCount: z.number(),
   capacity: z.number(),
   description: z.string().optional(),
@@ -439,6 +444,20 @@ function ClassDetailViewer({ item }: { item: ClassData }) {
                 rows={3}
               />
             </div>
+            <div className="flex flex-col gap-2">
+              <Label>Assigned Subjects</Label>
+              {item.assignedSubjects && item.assignedSubjects.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {item.assignedSubjects.map((s) => (
+                    <Badge key={s._id} variant="secondary">
+                      {s.name || s.code || s._id}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted-foreground">No subjects assigned.</div>
+              )}
+            </div>
             {isEditing && (
               <div className="flex gap-2 justify-end">
                 <Button
@@ -721,6 +740,13 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
       header: () => <div className="w-full text-right">Capacity</div>,
       cell: ({ row }) => (
         <div className="text-right font-medium">{row.original.capacity}</div>
+      ),
+    },
+    {
+      accessorKey: "assignedSubjects",
+      header: () => <div className="w-full text-right">Subjects</div>,
+      cell: ({ row }) => (
+        <div className="text-right font-medium">{row.original.assignedSubjects ? row.original.assignedSubjects.length : 0}</div>
       ),
     },
     createActionsColumn<ClassData>((row) => {

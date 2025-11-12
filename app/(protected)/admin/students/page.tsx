@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { AddStudentDialog } from "@/components/admin/students/add-student-dialog";
-import { StudentDataTable } from "@/components/admin/students/student-data-table";
-import { StudentStats } from "@/components/admin/students/student-stats";
+import { AddStudentDialog } from "@/components/common/students/add-student-dialog";
+import { StudentDataTable } from "@/components/common/students/student-data-table";
+import { StudentStats } from "@/components/common/students/student-stats";
 import { useSchool } from "@/contexts/school-context";
 
 export default function AdminStudentsPage() {

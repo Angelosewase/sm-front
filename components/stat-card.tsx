@@ -14,10 +14,13 @@ const sanitizeName = (name: string) => {
     .toLowerCase();
 };
 
+export type IChangeType = "positive" | "negative" | "neutral";
+
+
 export interface IStatCardDataItem {
   name: string;
   icon?: React.ReactNode;
-  changeType: "positive" | "negative" | "neutral";
+  changeType: IChangeType;
   value: number | string;
   change: number | string;
   percentageChange: number | string;

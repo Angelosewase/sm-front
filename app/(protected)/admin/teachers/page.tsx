@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { TeacherDataTable } from "../../../../components/admin/teachers/teacher-data-table";
-import { TeacherStats } from "../../../../components/admin/teachers/teacher-stats";
-import { AddTeacherDialog } from "../../../../components/admin/teachers/add-teacher-dialog";
+import { TeacherDataTable } from "@/components/common/teachers/teacher-data-table";
+import { TeacherStats } from "@/components/common/teachers/teacher-stats";
+import { AddTeacherDialog } from "@/components/common/teachers/add-teacher-dialog";
 import { useTeachers } from "@/hooks/use-teachers";
 
 export default function AdminTeachersPage() {
