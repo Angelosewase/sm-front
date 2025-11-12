@@ -30,17 +30,17 @@ export default function ClassesPage() {
   const isError = classesError || statsError
 
   const overviewStats = {
-    totalClasses: statsRes?.totalClasses ?? 0,
-    totalSubjects: statsRes?.totalSubjects ?? 0,
-    totalStudents: statsRes?.totalStudents ?? 0,
-    completedAssessments: statsRes?.assessments?.completed ?? 0,
-    pendingAssessments: statsRes?.assessments?.pending ?? 0,
+    totalClasses: statsRes?.stats.totalClasses ?? 0,
+    totalSubjects: statsRes?.stats.totalSubjects ?? 0,
+    totalStudents: statsRes?.stats.totalStudents ?? 0,
+    completedAssessments: statsRes?.stats.totalAssessmentsCompleted ?? 0,
+    pendingAssessments: statsRes?.stats.totalAssessmentsPending ?? 0,
   }
 
-  const classItems = (classesRes?.items || []).map((c) => ({
-    id: c.id,
-    name: c.name,
-    subjectCount: c.subjectCount ?? 0,
+  const classItems = (classesRes?.classes || []).map((c) => ({
+    id: c.classId,
+    name: c.className,
+    subjectCount: c.assignedSubjects ?? 0,
     studentCount: c.studentCount ?? 0,
     pendingAssessments: c.pendingAssessments ?? 0,
   }))

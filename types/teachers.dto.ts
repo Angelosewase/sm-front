@@ -125,16 +125,31 @@ export interface RemoveSubjectsDto {
 // ===== Teacher Analytics & Relations DTOs =====
 
 export interface TeacherDashboardStats {
-  totalClasses: number;
-  totalSubjects: number;
-  totalStudents: number;
-  assessments: {
-    total: number;
-    active: number;
-    pending: number;
-    completed: number;
-    trashed?: number;
+teacher: {
+    id: string;
+    name: string;
+    email: string;
   };
+  stats: {
+    totalClasses: number;
+    totalStudents: number;
+    totalSubjects: number;
+    totalAssessments: number;
+    totalAssessmentsActive: number;
+    totalAssessmentsPending: number;
+    totalAssessmentsCompleted: number;
+  };
+}
+
+export interface TeacherClass {
+  classId: string;
+  className: string;
+  gradeLevel: string;
+  studentCount: number;
+  capacity: number;
+  status: 'active' | 'inactive';
+  assignedSubjects: number;
+  pendingAssessments: number;
 }
 
 export interface TeacherClassAssigned {
@@ -146,6 +161,11 @@ export interface TeacherClassAssigned {
   pendingAssessments?: number;
 }
 
+export interface TeacherClassesResponse {
+  teacherId: string;
+  totalClasses: number;
+  classes: TeacherClass[];
+}
 export interface TeacherClassesAssignedResponse {
   items: TeacherClassAssigned[];
 }

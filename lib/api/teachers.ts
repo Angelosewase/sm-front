@@ -10,7 +10,7 @@ import {
   AssignSubjectsDto,
   RemoveSubjectsDto,
   TeacherDashboardStats,
-  TeacherClassesAssignedResponse,
+  TeacherClassesResponse,
   TeacherSubjectsResponse,
   TeacherStudentsQuery,
   TeacherStudentsResponse,
@@ -69,8 +69,8 @@ export const teachersApi = {
 
   getTeacherClasses: async (
     id: string
-  ): Promise<TeacherClassesAssignedResponse> => {
-    const { data } = await axiosInstance.get<TeacherClassesAssignedResponse>(
+  ): Promise<TeacherClassesResponse> => {
+    const { data } = await axiosInstance.get<TeacherClassesResponse>(
       `${baseTeachersPath}/${id}/classes-assigned`
     );
     return data;

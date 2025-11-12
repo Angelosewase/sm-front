@@ -6,6 +6,29 @@ import {
   IQueryClasses,
   PaginatedClassesResponse,
 } from "@/types/classes.types";
+
+export interface SubjectSummary {
+  _id: string;
+  code?: string;
+  name: string;
+  shortName?: string;
+  description?: string;
+  department?: string;
+  subjectType?: string;
+  maxScore?: number;
+  minPassingScore?: number;
+  creditHours?: number;
+  level?: string;
+  gradeLevels?: string[];
+  prerequisites?: string;
+  status?: string;
+  school?: string;
+  assessments?: string[];
+  assessmentsDone: number;
+  totalAssessments: number;
+  averageMark: number | null;
+  latestMarkDate: string | null;
+}
 import { axiosInstance } from "../axios";
 
 export interface Class {
@@ -211,6 +234,16 @@ export const classesApi = {
   listClassesForSubjects: async (subjectId: string): Promise<Class[]> => {
     const { data } = await axiosInstance.get<Class[]>(
       `${classesApiUrl}/subject/${subjectId}/classes`
+    );
+    return data;
+  },
+
+  /**
+   * List subjects assigned to a class
+   */
+  listClassSubjects: async (classId: string): Promise<SubjectSummary[]> => {
+    const { data } = await axiosInstance.get<SubjectSummary[]>(
+      `${classesApiUrl}/${classId}/subjects`
     );
     return data;
   },

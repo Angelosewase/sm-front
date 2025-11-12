@@ -1,7 +1,7 @@
 // api/subject.mutations.ts
 "use client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { toast } from "react-toastify";
 import {
   CreateSubjectDto,
   UpdateSubjectDto,
@@ -11,11 +11,17 @@ import {
   AssignTeacherDto,
   AssignClassDto,
   RemoveFromClassDto,
+  AssessmentDetail,
+  AssessmentFilterDto,
+  CreateAssessmentDto,
+  UpdateAssessmentDto,
+  AssessmentPerformance,
 } from "@/types/subjects.dto";
-import { getAuthToken } from "@/lib/actions/auth";
-
-import { toast } from "react-toastify";
-import { subjectsApi } from "@/lib/api/subjects";
+import {
+  subjectsApi,
+  SubjectAssessmentSummary,
+  SubjectStats,
+} from "@/lib/api/subjects";
 // Mutation hooks
 export const useCreateSubject = () => {
   const queryClient = useQueryClient();
@@ -77,6 +83,178 @@ export const useSubjectById = (id: string) => {
   });
 };
 
+export const useSubjectStats = (
+  subjectId: string,
+  opts?: { classId?: string; term?: string }
+) => {
+  return useQuery<SubjectStats, Error>({
+    queryKey: ["subject-stats", subjectId, opts?.classId, opts?.term],
+    queryFn: () => subjectsApi.fetchSubjectStats(subjectId, opts),
+    enabled: !!subjectId,
+    staleTime: 30_000,
+  });
+};
+
+export const useSubjectAssessments = (
+  subjectId: string,
+  opts?: { classId?: string; term?: string }
+) => {
+  return useQuery<SubjectAssessmentSummary[], Error>({
+    queryKey: ["subject-assessments", subjectId, opts?.classId, opts?.term],
+    queryFn: () => subjectsApi.fetchSubjectAssessments(subjectId, opts),
+    enabled: !!subjectId,
+    staleTime: 30_000,
+  });
+};
+
+// ---- Assessments hooks ----
+export const assessmentsKeys = {
+  all: ["assessments"] as const,
+  list: (params?: AssessmentFilterDto) =>
+    [...assessmentsKeys.all, "list", params] as const,
+  detail: (id: string) => [...assessmentsKeys.all, "detail", id] as const,
+  performance: (id: string) =>
+    [...assessmentsKeys.all, "performance", id] as const,
+  subjectPerformance: (
+    subjectId: string,
+    params?: { academicYear?: string; term?: string; classId?: string }
+  ) =>
+    [...assessmentsKeys.all, "subject-performance", subjectId, params] as const,
+  classPerformance: (
+    classId: string,
+    params?: { academicYear?: string; term?: string }
+  ) => [...assessmentsKeys.all, "class-performance", classId, params] as const,
+};
+
+export function useAssessments(params?: AssessmentFilterDto) {
+  return useQuery({
+    queryKey: assessmentsKeys.list(params),
+    queryFn: () => subjectsApi.fetchAssessments(params),
+  });
+}
+
+export function useAssessment(id?: string) {
+  return useQuery<AssessmentDetail>({
+    queryKey: assessmentsKeys.detail(id ?? "unknown"),
+    queryFn: () => subjectsApi.getAssessmentById(id as string),
+    enabled: !!id,
+  });
+}
+
+export function useCreateAssessment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateAssessmentDto) =>
+      subjectsApi.createAssessment(payload),
+    onSuccess: (_res, variables) => {
+      toast.success("Assessment created.");
+      // Invalidate relevant lists
+      qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+      if (variables?.subject && variables?.class) {
+        qc.invalidateQueries({
+          queryKey: [
+            "subject-assessments",
+            variables.subject,
+            variables.class,
+            variables.term as any,
+          ],
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ?? "Failed to create assessment"
+      );
+    },
+  });
+}
+
+export function useUpdateAssessment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateAssessmentDto }) =>
+      subjectsApi.updateAssessment(id, data),
+    onSuccess: (res) => {
+      toast.success("Assessment updated.");
+      qc.invalidateQueries({ queryKey: assessmentsKeys.detail(res._id) });
+      qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ?? "Failed to update assessment"
+      );
+    },
+  });
+}
+
+export function useSoftDeleteAssessment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => subjectsApi.softDeleteAssessment(id),
+    onSuccess: (res) => {
+      toast.success("Assessment moved to trash.");
+      qc.invalidateQueries({ queryKey: assessmentsKeys.detail(res._id) });
+      qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ?? "Failed to trash assessment"
+      );
+    },
+  });
+}
+
+export function useDeleteAssessment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => subjectsApi.permanentlyDeleteAssessment(id),
+    onSuccess: () => {
+      toast.success("Assessment permanently deleted.");
+      qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ?? "Failed to delete assessment"
+      );
+    },
+  });
+}
+
+export function useAssessmentPerformance(id?: string) {
+  return useQuery<AssessmentPerformance>({
+    queryKey: assessmentsKeys.performance(id ?? "unknown"),
+    queryFn: () => subjectsApi.getAssessmentPerformance(id as string),
+    enabled: !!id,
+  });
+}
+
+export function useSubjectAssessmentsPerformance(
+  subjectId?: string,
+  params?: { academicYear?: string; term?: string; classId?: string }
+) {
+  return useQuery<AssessmentPerformance>({
+    queryKey: assessmentsKeys.subjectPerformance(
+      subjectId ?? "unknown",
+      params
+    ),
+    queryFn: () =>
+      subjectsApi.getSubjectAssessmentsPerformance(subjectId as string, params),
+    enabled: !!subjectId,
+  });
+}
+
+export function useClassAssessmentsPerformance(
+  classId?: string,
+  params?: { academicYear?: string; term?: string }
+) {
+  return useQuery<AssessmentPerformance>({
+    queryKey: assessmentsKeys.classPerformance(classId ?? "unknown", params),
+    queryFn: () =>
+      subjectsApi.getClassAssessmentsPerformance(classId as string, params),
+    enabled: !!classId,
+  });
+}
+
 export const useDeleteSubject = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
@@ -105,8 +283,6 @@ export const useAssignSubjectToTeacher = () => {
     },
   });
 };
-
-
 
 export const useSchoolStats = (schoolId: string, academicYear: string) =>
   useQuery({
@@ -157,7 +333,8 @@ export const useTeacherSchedule = (
 ) =>
   useQuery({
     queryKey: ["teacherSchedule", teacherId, academicYear, term],
-    queryFn: () => subjectsApi.fetchTeacherSchedule(teacherId, academicYear, term),
+    queryFn: () =>
+      subjectsApi.fetchTeacherSchedule(teacherId, academicYear, term),
     enabled: !!teacherId && !!academicYear,
   });
 
@@ -177,7 +354,8 @@ export const useAssignSubjectBulk = () => {
 export const useDeleteAssignment = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: (assignmentId: string) => subjectsApi.deleteAssignment(assignmentId),
+    mutationFn: (assignmentId: string) =>
+      subjectsApi.deleteAssignment(assignmentId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["subjects"] });
       qc.invalidateQueries({ queryKey: ["classSubjects"] });
@@ -206,6 +384,6 @@ export const useListSubjectsForTeacher = (teacherId: string) => {
   useQuery({
     queryKey: ["subjectsForTeacher"],
     queryFn: () => subjectsApi.fetchTeacherSubjects(teacherId),
-    enabled: !!teacherId
+    enabled: !!teacherId,
   });
 };

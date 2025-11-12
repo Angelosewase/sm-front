@@ -19,6 +19,7 @@ import {
   TeacherAssessmentsResponse,
   TeacherAssignmentsQuery,
   TeacherAssignmentsResponse,
+  TeacherClassesResponse,
 } from "@/types/teachers.dto";
 
 export const teachersKeys = {
@@ -59,7 +60,7 @@ export function useTeacherDashboardStats(id: string) {
 }
 
 export function useTeacherClassesAssigned(id: string) {
-  return useQuery<TeacherClassesAssignedResponse>({
+  return useQuery<TeacherClassesResponse>({
     queryKey: teachersKeys.teacherClasses(id),
     queryFn: () => teachersApi.getTeacherClasses(id),
     enabled: !!id,
