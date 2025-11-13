@@ -148,7 +148,7 @@ export default function StudentDetailPage() {
   const studentId = params.id as string
   const [activeTab, setActiveTab] = useState("overview")
 
-  const studentData = mockStudentData[studentId as keyof typeof mockStudentData]
+  const studentData = mockStudentData.stu001
 
   if (!studentData) {
     return (

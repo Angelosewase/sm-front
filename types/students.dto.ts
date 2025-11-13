@@ -1,6 +1,10 @@
 import type { Class } from "@/lib/api/classes";
 
-export type StudentStatus = "active" | "graduated" | "transferred" | "suspended";
+export type StudentStatus =
+  | "active"
+  | "graduated"
+  | "transferred"
+  | "suspended";
 
 export type GuardianRelationship = "father" | "mother" | "guardian" | "other";
 
@@ -60,6 +64,8 @@ export interface StudentQueryParams {
   onlyTrashed?: boolean;
   sortBy?: "createdAt" | "updatedAt" | "name" | "studentId" | "status";
   sortOrder?: "asc" | "desc";
+
+  teacher?: string;
 }
 
 export interface CreateStudentDto {
@@ -100,9 +106,6 @@ export interface BulkStudentActionDto {
   ids: string[];
 }
 
-
-
-
 export interface StatTrendPoint {
   date: string; // e.g., W1, W2, etc. or '2025-11-01'
   value: number;
@@ -119,4 +122,3 @@ export interface StudentStatCard {
 export interface StudentStatsResponse {
   cards: StudentStatCard[];
 }
-
