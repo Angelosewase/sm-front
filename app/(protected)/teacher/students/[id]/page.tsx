@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import React, { useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   IconArrowLeft,
   IconUser,
@@ -16,147 +16,151 @@ import {
   IconChartBar,
   IconClipboardList,
   IconFileText,
-} from "@tabler/icons-react"
-import StudentPerformanceView from '@/components/reports/student-performance-view'
-import StudentResultsView from '@/components/reports/student-results-view'
+} from "@tabler/icons-react";
+import StudentPerformanceView from "@/components/reports/student-performance-view";
+import StudentResultsView from "@/components/reports/student-results-view";
 
 // Mock data - replace with actual API calls
 const mockStudentData = {
-  'stu001': {
-    id: 'stu001',
-    name: 'Emma Thompson',
-    studentId: 'STU2024001',
-    email: 'emma.thompson@student.edu',
-    phone: '+1 (555) 201-3001',
-    dateOfBirth: '2009-05-15',
-    className: 'Primary 5A',
+  stu001: {
+    id: "stu001",
+    name: "Emma Thompson",
+    studentId: "STU2024001",
+    email: "emma.thompson@student.edu",
+    phone: "+1 (555) 201-3001",
+    dateOfBirth: "2009-05-15",
+    className: "Primary 5A",
     averageScore: 85,
     attendance: 95,
-    status: 'Excellent',
+    status: "Excellent",
     subjects: [
       {
-        id: 'english',
-        name: 'English Language',
+        id: "english",
+        name: "English Language",
         score: 88,
-        grade: 'A',
+        grade: "A",
         assessments: 8,
-        lastUpdated: '2024-10-22'
+        lastUpdated: "2024-10-22",
       },
       {
-        id: 'mathematics',
-        name: 'Mathematics',
+        id: "mathematics",
+        name: "Mathematics",
         score: 85,
-        grade: 'A',
+        grade: "A",
         assessments: 10,
-        lastUpdated: '2024-10-23'
+        lastUpdated: "2024-10-23",
       },
       {
-        id: 'science',
-        name: 'Basic Science',
+        id: "science",
+        name: "Basic Science",
         score: 82,
-        grade: 'B+',
+        grade: "B+",
         assessments: 6,
-        lastUpdated: '2024-10-20'
+        lastUpdated: "2024-10-20",
       },
       {
-        id: 'social-studies',
-        name: 'Social Studies',
+        id: "social-studies",
+        name: "Social Studies",
         score: 86,
-        grade: 'A',
+        grade: "A",
         assessments: 5,
-        lastUpdated: '2024-10-21'
-      }
+        lastUpdated: "2024-10-21",
+      },
     ],
     recentAttendance: [
-      { date: '2024-10-23', status: 'Present' },
-      { date: '2024-10-22', status: 'Present' },
-      { date: '2024-10-21', status: 'Present' },
-      { date: '2024-10-20', status: 'Present' },
-      { date: '2024-10-19', status: 'Late' },
-      { date: '2024-10-18', status: 'Present' },
-      { date: '2024-10-17', status: 'Present' },
-      { date: '2024-10-16', status: 'Present' }
+      { date: "2024-10-23", status: "Present" },
+      { date: "2024-10-22", status: "Present" },
+      { date: "2024-10-21", status: "Present" },
+      { date: "2024-10-20", status: "Present" },
+      { date: "2024-10-19", status: "Late" },
+      { date: "2024-10-18", status: "Present" },
+      { date: "2024-10-17", status: "Present" },
+      { date: "2024-10-16", status: "Present" },
     ],
-    parentName: 'Sarah Thompson',
-    parentPhone: '+1 (555) 201-3000',
-    parentEmail: 'sarah.thompson@email.com'
+    parentName: "Sarah Thompson",
+    parentPhone: "+1 (555) 201-3000",
+    parentEmail: "sarah.thompson@email.com",
   },
-  'stu002': {
-    id: 'stu002',
-    name: 'Michael Chen',
-    studentId: 'STU2024002',
-    email: 'michael.chen@student.edu',
-    phone: '+1 (555) 202-3002',
-    dateOfBirth: '2008-08-22',
-    className: 'Primary 5A',
+  stu002: {
+    id: "stu002",
+    name: "Michael Chen",
+    studentId: "STU2024002",
+    email: "michael.chen@student.edu",
+    phone: "+1 (555) 202-3002",
+    dateOfBirth: "2008-08-22",
+    className: "Primary 5A",
     averageScore: 78,
     attendance: 90,
-    status: 'Good',
+    status: "Good",
     subjects: [
       {
-        id: 'english',
-        name: 'English Language',
+        id: "english",
+        name: "English Language",
         score: 75,
-        grade: 'B',
+        grade: "B",
         assessments: 8,
-        lastUpdated: '2024-10-22'
+        lastUpdated: "2024-10-22",
       },
       {
-        id: 'mathematics',
-        name: 'Mathematics',
+        id: "mathematics",
+        name: "Mathematics",
         score: 82,
-        grade: 'B+',
+        grade: "B+",
         assessments: 10,
-        lastUpdated: '2024-10-23'
+        lastUpdated: "2024-10-23",
       },
       {
-        id: 'science',
-        name: 'Basic Science',
+        id: "science",
+        name: "Basic Science",
         score: 76,
-        grade: 'B',
+        grade: "B",
         assessments: 6,
-        lastUpdated: '2024-10-20'
+        lastUpdated: "2024-10-20",
       },
       {
-        id: 'social-studies',
-        name: 'Social Studies',
+        id: "social-studies",
+        name: "Social Studies",
         score: 79,
-        grade: 'B+',
+        grade: "B+",
         assessments: 5,
-        lastUpdated: '2024-10-21'
-      }
+        lastUpdated: "2024-10-21",
+      },
     ],
     recentAttendance: [
-      { date: '2024-10-23', status: 'Present' },
-      { date: '2024-10-22', status: 'Present' },
-      { date: '2024-10-21', status: 'Absent' },
-      { date: '2024-10-20', status: 'Present' },
-      { date: '2024-10-19', status: 'Present' },
-      { date: '2024-10-18', status: 'Late' },
-      { date: '2024-10-17', status: 'Present' },
-      { date: '2024-10-16', status: 'Present' }
+      { date: "2024-10-23", status: "Present" },
+      { date: "2024-10-22", status: "Present" },
+      { date: "2024-10-21", status: "Absent" },
+      { date: "2024-10-20", status: "Present" },
+      { date: "2024-10-19", status: "Present" },
+      { date: "2024-10-18", status: "Late" },
+      { date: "2024-10-17", status: "Present" },
+      { date: "2024-10-16", status: "Present" },
     ],
-    parentName: 'David Chen',
-    parentPhone: '+1 (555) 202-3000',
-    parentEmail: 'david.chen@email.com'
-  }
-}
+    parentName: "David Chen",
+    parentPhone: "+1 (555) 202-3000",
+    parentEmail: "david.chen@email.com",
+  },
+};
 
 export default function StudentDetailPage() {
-  const router = useRouter()
-  const params = useParams()
-  const studentId = params.id as string
-  const [activeTab, setActiveTab] = useState("overview")
+  const router = useRouter();
+  const params = useParams();
+  const studentId = params.id as string;
+  const [activeTab, setActiveTab] = useState("overview");
 
-  const studentData = mockStudentData.stu001
+  const studentData = mockStudentData.stu001;
 
   if (!studentData) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-12">
-          <h1 className="text-2xl font-bold text-muted-foreground">Student Not Found</h1>
-          <p className="text-muted-foreground mt-2">The student you're looking for doesn't exist.</p>
-          <button 
+          <h1 className="text-2xl font-bold text-muted-foreground">
+            Student Not Found
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            The student you're looking for doesn't exist.
+          </p>
+          <button
             onClick={() => router.back()}
             className="mt-4 text-primary hover:underline"
           >
@@ -164,55 +168,59 @@ export default function StudentDetailPage() {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Excellent":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
       case "Good":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       case "Needs Attention":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300"
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
     }
-  }
+  };
 
   const getScoreColor = (score: number) => {
-    if (score >= 85) return "text-green-600"
-    if (score >= 70) return "text-blue-600"
-    if (score >= 60) return "text-yellow-600"
-    return "text-red-600"
-  }
+    if (score >= 85) return "text-green-600";
+    if (score >= 70) return "text-blue-600";
+    if (score >= 60) return "text-yellow-600";
+    return "text-red-600";
+  };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const initials = studentData.name
     .split(" ")
     .map((n) => n[0])
     .join("")
-    .toUpperCase()
+    .toUpperCase();
 
   const tabs = [
     { id: "overview", label: "Overview", icon: IconUser },
     { id: "performance", label: "Performance", icon: IconChartBar },
     { id: "report", label: "Report Card", icon: IconFileText },
-  ]
+  ];
 
   return (
     <div className="py-4">
       {/* Header */}
       <div className="flex items-center justify-between px-4 lg:px-4 mb-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/teacher/students')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/teacher/students")}
+          >
             <IconArrowLeft className="h-4 w-4 mr-2" />
             Back to Students
           </Button>
@@ -257,7 +265,11 @@ export default function StudentDetailPage() {
                   {studentData.status}
                 </Badge>
                 <div className="mt-2 text-sm">
-                  <span className={`font-bold text-lg ${getScoreColor(studentData.averageScore)}`}>
+                  <span
+                    className={`font-bold text-lg ${getScoreColor(
+                      studentData.averageScore
+                    )}`}
+                  >
                     {studentData.averageScore}%
                   </span>
                   <span className="text-muted-foreground"> avg</span>
@@ -275,7 +287,7 @@ export default function StudentDetailPage() {
         <div className="border-b border-border">
           <div className="flex gap-8">
             {tabs.map((tab) => {
-              const Icon = tab.icon
+              const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
@@ -292,7 +304,7 @@ export default function StudentDetailPage() {
                     <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                   )}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
@@ -300,28 +312,32 @@ export default function StudentDetailPage() {
         {/* Tab Content */}
         <div className="py-6">
           {activeTab === "overview" && (
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-7xl mx-auto">
               {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-1">Average Score</div>
-                  <div className={`text-2xl font-bold ${getScoreColor(studentData.averageScore)}`}>
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Average Score
+                  </div>
+                  <div
+                    className={`text-2xl font-bold ${getScoreColor(
+                      studentData.averageScore
+                    )}`}
+                  >
                     {studentData.averageScore}%
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Across {studentData.subjects.length} subjects
                   </div>
                 </div>
+
                 <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-1">Attendance Rate</div>
-                  <div className="text-2xl font-bold">{studentData.attendance}%</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Overall attendance
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Total Subjects
                   </div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <div className="text-sm text-muted-foreground mb-1">Total Subjects</div>
-                  <div className="text-2xl font-bold">{studentData.subjects.length}</div>
+                  <div className="text-2xl font-bold">
+                    {studentData.subjects.length}
+                  </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     Active subjects
                   </div>
@@ -329,38 +345,72 @@ export default function StudentDetailPage() {
               </div>
 
               {/* Subject Performance */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Subject Performance</h3>
-                <div className="space-y-3">
-                  {studentData.subjects.map((subject) => (
-                    <div key={subject.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                          <IconClipboardList className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+              <div >
+                <h3 className="text-lg font-semibold mb-4">
+                  Subject Performance
+                </h3>
+                <div>
+                  {studentData.subjects.map((subject, idx, arr) => {
+                    const isFirst = idx === 0;
+                    const isLast = idx === arr.length - 1;
+                    let baseClasses =
+                      "flex items-center justify-between p-4 transition-colors transform duration-150 bg-white dark:bg-muted";
+                    let borderClasses = "";
+                    let roundedClasses = "";
+
+                    if (isFirst) {
+                      borderClasses = "border-t border-x border-b-0";
+                      roundedClasses = "rounded-t-lg";
+                    } else if (isLast) {
+                      borderClasses = "border-x border-b";
+                      roundedClasses = "rounded-b-lg";
+                    } else {
+                      borderClasses = "border-x border-b";
+                      roundedClasses = "";
+                    }
+
+                    return (
+                      <div
+                        key={subject.id}
+                        className={`${baseClasses} ${borderClasses} ${roundedClasses} hover:bg-muted/50 hover:scale-101 transition-all cursor-pointer`}
+                        style={{ zIndex: arr.length - idx }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                            <IconClipboardList className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{subject.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {subject.assessments} assessment
+                              {subject.assessments !== 1 ? "s" : ""} • Last
+                              updated {formatDate(subject.lastUpdated)}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">{subject.name}</div>
+                        <div className="text-right">
+                          <div
+                            className={`text-lg font-bold ${getScoreColor(
+                              subject.score
+                            )}`}
+                          >
+                            {subject.score}%
+                          </div>
                           <div className="text-sm text-muted-foreground">
-                            {subject.assessments} assessment{subject.assessments !== 1 ? 's' : ''} • Last updated {formatDate(subject.lastUpdated)}
+                            Grade {subject.grade}
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`text-lg font-bold ${getScoreColor(subject.score)}`}>
-                          {subject.score}%
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Grade {subject.grade}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Contact Information */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  Contact Information
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 border rounded-lg">
                     <h4 className="font-medium mb-3">Student</h4>
@@ -411,5 +461,5 @@ export default function StudentDetailPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
