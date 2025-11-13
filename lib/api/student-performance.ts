@@ -19,9 +19,45 @@ export interface SubjectPerformanceSummary {
   terms: SubjectTermBreakdown[];
 }
 
+export type StudentPerformanceSummaryQuery = {
+  academicYear?: string;
+  term?: string;
+  subjectId?: string;
+  classId?: string;
+  assessmentId?: string;
+  assessmentType?: string;
+};
+
+export type SubjectAssessmentPerformanceQuery = {
+  term?: string;
+  year?: string;
+  studentId?: string;
+};
+
+export interface SubjectAssessmentPerformance {
+  subjectId?: string | null;
+  subject: string;
+  scores: Record<string, number | null>;
+}
+
+export interface StudentAssessmentRecord {
+  assessmentId: string;
+  assessmentTitle: string;
+  subject: string;
+  subjectId?: string | null;
+  studentId: string;
+  academicYear: string | null;
+  term: string | null;
+  score: number | null;
+  maxScore: number | null;
+  assessmentType: string;
+  deadline: string | null;
+}
+
 export const studentPerformanceApi = {
   getStudentPerformanceSummary: async (
-    studentId: string
+    studentId: string,
+    params?: StudentPerformanceSummaryQuery
   ): Promise<{
     subjects: SubjectPerformanceSummary[];
     overall: {
@@ -37,7 +73,31 @@ export const studentPerformanceApi = {
         totalMax: number;
         percentage: number | null;
       };
-    }>(getBaseUrl(studentId) + "/summary");
+    }>(`${getBaseUrl(studentId)}/summary`, {
+      params,
+    });
+    return data;
+  },
+
+  getSubjectAssessmentPerformances: async (
+    studentId: string,
+    params?: SubjectAssessmentPerformanceQuery
+  ): Promise<SubjectAssessmentPerformance[]> => {
+    const { data } = await axiosInstance.get<SubjectAssessmentPerformance[]>(
+      getBaseUrl(studentId),
+      { params }
+    );
+    return data;
+  },
+
+  getStudentAssessments: async (
+    studentId: string,
+    params?: SubjectAssessmentPerformanceQuery
+  ): Promise<StudentAssessmentRecord[]> => {
+    const { data } = await axiosInstance.get<StudentAssessmentRecord[]>(
+      `${getBaseUrl(studentId)}/assessments`,
+      { params }
+    );
     return data;
   },
 };

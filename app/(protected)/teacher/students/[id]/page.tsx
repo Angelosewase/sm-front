@@ -229,13 +229,13 @@ export default function StudentDetailPage() {
 
           {activeTab === "performance" && (
             <div>
-              <StudentPerformanceView />
+              <StudentPerformanceView studentId={studentId} />
             </div>
           )}
 
           {activeTab === "report" && (
             <div>
-              <StudentResultsView />
+              <StudentResultsView studentId={studentId} />
             </div>
           )}
         </div>
