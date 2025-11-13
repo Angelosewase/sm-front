@@ -21,10 +21,27 @@ export const marksKeys = {
   detail: (id: string) => [...marksKeyRoot, "detail", id] as const,
 };
 
+const showError = (error: any, fallback: string) => {
+  toast.error(error?.response?.data?.message ?? fallback);
+};
+
+const invalidateMarksList = (queryClient: ReturnType<typeof useQueryClient>) => {
+  queryClient.invalidateQueries({ queryKey: marksKeys.list() });
+};
+
 export const useMarks = () =>
   useQuery({
     queryKey: marksKeys.list(),
     queryFn: () => marksApi.listMarks(),
+  });
+
+export const useAssessmentMarks = (assessmentId?: string) =>
+  useQuery<MarkRecord[]>({
+    queryKey: assessmentId
+      ? marksKeys.assessment(assessmentId)
+      : marksKeys.assessment("unknown"),
+    queryFn: () => marksApi.getAssessmentMarks(assessmentId as string),
+    enabled: !!assessmentId,
   });
 
 export const useEnterMark = () => {
@@ -33,22 +50,13 @@ export const useEnterMark = () => {
   return useMutation<MarkRecord, any, EnterMarkDto>({
     mutationFn: (payload) => marksApi.enterMark(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: marksKeys.list() });
+      invalidateMarksList(queryClient);
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message ?? "Failed to record mark. Please try again."
-      );
+      showError(error, "Failed to record mark. Please try again.");
     },
   });
 };
-
-export const useAssessmentMarks = (assessmentId?: string) =>
-  useQuery<MarkRecord[]>({
-    queryKey: assessmentId ? marksKeys.assessment(assessmentId) : marksKeys.assessment("unknown"),
-    queryFn: () => marksApi.getAssessmentMarks(assessmentId as string),
-    enabled: !!assessmentId,
-  });
 
 export const useBulkEnterMarks = () => {
   const queryClient = useQueryClient();
@@ -56,12 +64,10 @@ export const useBulkEnterMarks = () => {
   return useMutation<BulkEnterMarksResult, any, BulkEnterMarksDto>({
     mutationFn: (payload) => marksApi.enterMarksBulk(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: marksKeys.list() });
+      invalidateMarksList(queryClient);
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message ?? "Failed to submit marks in bulk."
-      );
+      showError(error, "Failed to submit marks in bulk.");
     },
   });
 };
@@ -79,13 +85,10 @@ export const useUpdateMark = () => {
   >({
     mutationFn: ({ id, payload }) => marksApi.updateMark({ id, payload }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: marksKeys.list() });
+      invalidateMarksList(queryClient);
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message ??
-          "Failed to update mark. Please try again."
-      );
+      showError(error, "Failed to update mark. Please try again.");
     },
   });
 };

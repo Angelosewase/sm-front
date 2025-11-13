@@ -7,6 +7,7 @@ import React, {
   useRef,
   useCallback,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,395 +58,51 @@ import {
   IconTable,
   IconCards,
 } from "@tabler/icons-react";
+import {
+  studentPerformanceApi,
+  type SubjectAssessmentPerformance,
+  type StudentAssessmentRecord,
+} from "@/lib/api/student-performance";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "../ui/sidebar";
 
-// Assessment data structure
-interface Assessment {
+type StudentPerformanceViewProps = {
+  studentId: string;
+};
+
+type AssessmentColumn = {
   id: string;
-  type: "quiz" | "homework" | "exam" | "project" | "test";
   name: string;
-  date: string;
+  type: string;
   maxScore: number;
-  term: "1" | "2" | "3";
-  year: string;
-}
-
-// Subject performance data
-interface SubjectPerformance {
-  subject: string;
-  scores: { [assessmentId: string]: number | null }; // null means not taken
-}
-
-// Mock assessments data
-const assessments: Assessment[] = [
-  {
-    id: "q1",
-    type: "quiz",
-    name: "Algebra Quiz",
-    date: "2024-10-20",
-    maxScore: 100,
-    term: "1",
-    year: "2024",
-  },
-  {
-    id: "h1",
-    type: "homework",
-    name: "Chapter 5 HW",
-    date: "2024-10-18",
-    maxScore: 50,
-    term: "1",
-    year: "2024",
-  },
-  {
-    id: "e1",
-    type: "exam",
-    name: "Midterm",
-    date: "2024-10-15",
-    maxScore: 200,
-    term: "1",
-    year: "2024",
-  },
-  {
-    id: "q2",
-    type: "quiz",
-    name: "History Quiz",
-    date: "2024-10-12",
-    maxScore: 75,
-    term: "1",
-    year: "2024",
-  },
-  {
-    id: "h2",
-    type: "homework",
-    name: "Lab Report",
-    date: "2024-10-10",
-    maxScore: 100,
-    term: "1",
-    year: "2024",
-  },
-  {
-    id: "e2",
-    type: "exam",
-    name: "Geography Test",
-    date: "2024-10-08",
-    maxScore: 150,
-    term: "2",
-    year: "2024",
-  },
-  {
-    id: "p1",
-    type: "project",
-    name: "Science Project",
-    date: "2024-10-05",
-    maxScore: 100,
-    term: "2",
-    year: "2024",
-  },
-  {
-    id: "t1",
-    type: "test",
-    name: "Chemistry Test",
-    date: "2024-10-03",
-    maxScore: 80,
-    term: "2",
-    year: "2024",
-  },
-  {
-    id: "h3",
-    type: "homework",
-    name: "Math Problems",
-    date: "2024-10-01",
-    maxScore: 60,
-    term: "2",
-    year: "2024",
-  },
-  {
-    id: "q3",
-    type: "quiz",
-    name: "Biology Quiz",
-    date: "2024-09-28",
-    maxScore: 90,
-    term: "3",
-    year: "2024",
-  },
-  {
-    id: "q4",
-    type: "quiz",
-    name: "Physics Quiz",
-    date: "2024-09-25",
-    maxScore: 85,
-    term: "3",
-    year: "2024",
-  },
-  {
-    id: "h4",
-    type: "homework",
-    name: "English Essay",
-    date: "2024-09-20",
-    maxScore: 75,
-    term: "3",
-    year: "2024",
-  },
-  {
-    id: "e3",
-    type: "exam",
-    name: "Final Exam",
-    date: "2024-09-15",
-    maxScore: 250,
-    term: "3",
-    year: "2024",
-  },
-  {
-    id: "p2",
-    type: "project",
-    name: "Art Project",
-    date: "2024-09-10",
-    maxScore: 120,
-    term: "3",
-    year: "2024",
-  },
-  {
-    id: "t2",
-    type: "test",
-    name: "Math Test",
-    date: "2024-09-05",
-    maxScore: 95,
-    term: "3",
-    year: "2024",
-  },
-  // Previous year data
-  {
-    id: "q5",
-    type: "quiz",
-    name: "Literature Quiz",
-    date: "2023-12-20",
-    maxScore: 100,
-    term: "1",
-    year: "2023",
-  },
-  {
-    id: "h5",
-    type: "homework",
-    name: "History Assignment",
-    date: "2023-12-15",
-    maxScore: 80,
-    term: "1",
-    year: "2023",
-  },
-  {
-    id: "e4",
-    type: "exam",
-    name: "Year End Exam",
-    date: "2023-12-10",
-    maxScore: 300,
-    term: "1",
-    year: "2023",
-  },
-];
-
-// Mock student performance data
-const subjectPerformances: SubjectPerformance[] = [
-  {
-    subject: "Mathematics",
-    scores: {
-      q1: 85,
-      h1: 45,
-      e1: 175,
-      q2: null,
-      h2: null,
-      e2: null,
-      p1: null,
-      t1: null,
-      h3: 55,
-      q3: null,
-      q4: 78,
-      h4: null,
-      e3: 220,
-      p2: null,
-      t2: 88,
-      q5: 92,
-      h5: null,
-      e4: 275,
-    },
-  },
-  {
-    subject: "English",
-    scores: {
-      q1: null,
-      h1: 48,
-      e1: 180,
-      q2: null,
-      h2: 95,
-      e2: null,
-      p1: null,
-      t1: null,
-      h3: null,
-      q3: null,
-      q4: null,
-      h4: 68,
-      e3: 195,
-      p2: null,
-      t2: null,
-      q5: 88,
-      h5: 72,
-      e4: 265,
-    },
-  },
-  {
-    subject: "Science",
-    scores: {
-      q1: null,
-      h1: null,
-      e1: 165,
-      q2: null,
-      h2: 88,
-      e2: null,
-      p1: 92,
-      t1: 72,
-      h3: null,
-      q3: 82,
-      q4: 75,
-      h4: null,
-      e3: 205,
-      p2: 105,
-      t2: 85,
-      q5: null,
-      h5: null,
-      e4: 280,
-    },
-  },
-  {
-    subject: "History",
-    scores: {
-      q1: null,
-      h1: null,
-      e1: 155,
-      q2: 68,
-      h2: null,
-      e2: 135,
-      p1: null,
-      t1: null,
-      h3: null,
-      q3: null,
-      q4: null,
-      h4: 65,
-      e3: 188,
-      p2: null,
-      t2: null,
-      q5: 85,
-      h5: 75,
-      e4: 245,
-    },
-  },
-  {
-    subject: "Geography",
-    scores: {
-      q1: null,
-      h1: null,
-      e1: 170,
-      q2: null,
-      h2: null,
-      e2: 128,
-      p1: null,
-      t1: null,
-      h3: null,
-      q3: null,
-      q4: null,
-      h4: null,
-      e3: 198,
-      p2: null,
-      t2: null,
-      q5: null,
-      h5: null,
-      e4: 255,
-    },
-  },
-  {
-    subject: "Physics",
-    scores: {
-      q1: null,
-      h1: null,
-      e1: 185,
-      q2: null,
-      h2: 92,
-      e2: null,
-      p1: 88,
-      t1: 75,
-      h3: 58,
-      q3: null,
-      q4: 82,
-      h4: null,
-      e3: 215,
-      p2: 98,
-      t2: 90,
-      q5: null,
-      h5: null,
-      e4: 285,
-    },
-  },
-  {
-    subject: "Chemistry",
-    scores: {
-      q1: null,
-      h1: null,
-      e1: 160,
-      q2: null,
-      h2: null,
-      e2: null,
-      p1: 85,
-      t1: 68,
-      h3: null,
-      q3: 78,
-      q4: 72,
-      h4: null,
-      e3: 185,
-      p2: 88,
-      t2: 78,
-      q5: null,
-      h5: null,
-      e4: 260,
-    },
-  },
-  {
-    subject: "Biology",
-    scores: {
-      q1: null,
-      h1: null,
-      e1: 172,
-      q2: null,
-      h2: null,
-      e2: null,
-      p1: 90,
-      t1: null,
-      h3: null,
-      q3: 85,
-      q4: 80,
-      h4: null,
-      e3: 200,
-      p2: 95,
-      t2: null,
-      q5: null,
-      h5: null,
-      e4: 270,
-    },
-  },
-];
-
-// Helper function to get subject color
-const getSubjectColor = () => {
-  return "bg-sidebar";
+  deadline: string | null;
+  term: string | null;
+  academicYear: string | null;
 };
 
 type SubjectStatsEntry = {
-  assessment: Assessment;
+  assessment: AssessmentColumn;
   score: number | null;
   percentage: number | null;
 };
 
-// Helper function to get assessment type badge color
+type SubjectStats = {
+  entries: SubjectStatsEntry[];
+  average: number | null;
+  completedCount: number;
+  totalCount: number;
+  highest: SubjectStatsEntry | null;
+  lowest: SubjectStatsEntry | null;
+  missingCount: number;
+};
+
+const ALL_FILTER = "all";
+
+const getSubjectColor = () => "bg-sidebar";
+
 const getAssessmentTypeBadge = (type: string) => {
-  switch (type) {
+  const normalized = type?.toLowerCase?.();
+  switch (normalized) {
     case "quiz":
       return "bg-blue-500 text-white";
     case "homework":
@@ -461,72 +118,196 @@ const getAssessmentTypeBadge = (type: string) => {
   }
 };
 
-export default function StudentPerformanceView() {
+const getLocalizedDate = (
+  value?: string | null,
+  options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" }
+) => {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toLocaleDateString("en-US", options);
+};
+
+const formatTermLabel = (term?: string | null) => {
+  if (!term) {
+    return "Unknown";
+  }
+  const trimmed = term.trim();
+  if (!trimmed) {
+    return "Unknown";
+  }
+  if (/^\d+$/.test(trimmed)) {
+    return `Term ${trimmed}`;
+  }
+  return trimmed;
+};
+
+export default function StudentPerformanceView({
+  studentId,
+}: StudentPerformanceViewProps) {
   const { open: isSidebarOpen } = useSidebar();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTerm, setSelectedTerm] = useState<string>("all");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedTerm, setSelectedTerm] = useState<string>(ALL_FILTER);
+  const [selectedYear, setSelectedYear] = useState<string>(ALL_FILTER);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [activeSubject, setActiveSubject] = useState<SubjectPerformance | null>(
-    null
-  );
+  const [activeSubject, setActiveSubject] =
+    useState<SubjectAssessmentPerformance | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"table" | "summary">("table");
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const handleTermChange = (term: string) => {
-    setSelectedTerm(term);
-    setCurrentPage(1);
-  };
+  const activeTerm = selectedTerm !== ALL_FILTER ? selectedTerm : undefined;
+  const activeYear = selectedYear !== ALL_FILTER ? selectedYear : undefined;
 
-  const handleYearChange = (year: string) => {
-    setSelectedYear(year);
-    setCurrentPage(1);
-  };
+  const {
+    data: assessmentsData = [],
+    isLoading: isAssessmentsLoading,
+    isError: isAssessmentsError,
+  } = useQuery({
+    queryKey: [
+      "student-assessments",
+      studentId,
+      activeTerm ?? ALL_FILTER,
+      activeYear ?? ALL_FILTER,
+    ],
+    queryFn: () =>
+      studentPerformanceApi.getStudentAssessments(studentId, {
+        term: activeTerm,
+        year: activeYear,
+      }),
+    enabled: Boolean(studentId),
+  });
 
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1);
-  };
+  const {
+    data: subjectPerformancesData = [],
+    isLoading: isSubjectPerformanceLoading,
+    isError: isSubjectPerformanceError,
+  } = useQuery({
+    queryKey: [
+      "student-subject-performance",
+      studentId,
+      activeTerm ?? ALL_FILTER,
+      activeYear ?? ALL_FILTER,
+    ],
+    queryFn: () =>
+      studentPerformanceApi.getSubjectAssessmentPerformances(studentId, {
+        term: activeTerm,
+        year: activeYear,
+      }),
+    enabled: Boolean(studentId),
+  });
 
-  const handleSubjectDialog = (subject: SubjectPerformance | null) => {
-    setActiveSubject(subject);
-    setIsDialogOpen(!!subject);
-  };
-
-  // Filter assessments based on term and year
-  const filteredAssessments = useMemo(() => {
-    return assessments.filter((assessment) => {
-      const termMatch =
-        selectedTerm === "all" || assessment.term === selectedTerm;
-      const yearMatch =
-        selectedYear === "all" || assessment.year === selectedYear;
-      return termMatch && yearMatch;
+  const assessmentColumns = useMemo<AssessmentColumn[]>(() => {
+    const unique = new Map<string, AssessmentColumn>();
+    assessmentsData.forEach((assessment: StudentAssessmentRecord) => {
+      const maxScore =
+        typeof assessment.maxScore === "number" &&
+        !Number.isNaN(assessment.maxScore)
+          ? assessment.maxScore
+          : 100;
+      unique.set(assessment.assessmentId, {
+        id: assessment.assessmentId,
+        name: assessment.assessmentTitle,
+        type: assessment.assessmentType,
+        maxScore,
+        deadline: assessment.deadline ?? null,
+        term: assessment.term ?? null,
+        academicYear: assessment.academicYear ?? null,
+      });
     });
-  }, [selectedTerm, selectedYear]);
+    return Array.from(unique.values());
+  }, [assessmentsData]);
 
-  // Filter subjects based on search term
-  const filteredSubjects = useMemo(() => {
-    return subjectPerformances.filter((subject) =>
-      subject.subject.toLowerCase().includes(searchTerm.toLowerCase())
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    assessmentsData.forEach((assessment) => {
+      if (assessment.academicYear) {
+        years.add(assessment.academicYear);
+      }
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [assessmentsData]);
+
+  const availableTerms = useMemo(() => {
+    const terms = new Set<string>();
+    assessmentsData.forEach((assessment) => {
+      if (assessment.term) {
+        terms.add(assessment.term);
+      }
+    });
+    return Array.from(terms).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
     );
-  }, [searchTerm]);
+  }, [assessmentsData]);
+
+  useEffect(() => {
+    if (
+      selectedYear !== ALL_FILTER &&
+      availableYears.length > 0 &&
+      !availableYears.includes(selectedYear)
+    ) {
+      setSelectedYear(ALL_FILTER);
+    }
+  }, [availableYears, selectedYear]);
+
+  useEffect(() => {
+    if (
+      selectedTerm !== ALL_FILTER &&
+      availableTerms.length > 0 &&
+      !availableTerms.includes(selectedTerm)
+    ) {
+      setSelectedTerm(ALL_FILTER);
+    }
+  }, [availableTerms, selectedTerm]);
+
+  const subjectPerformances = subjectPerformancesData;
+
+  const filteredSubjects = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) {
+      return subjectPerformances;
+    }
+    return subjectPerformances.filter((subject) =>
+      (subject.subject ?? "").toLowerCase().includes(normalizedSearch)
+    );
+  }, [subjectPerformances, searchTerm]);
+
+  const paginatedSubjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredSubjects.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredSubjects, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredSubjects.length / itemsPerPage)
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const computeSubjectStats = useCallback(
-    (subjectPerf: SubjectPerformance) => {
-      const entries: SubjectStatsEntry[] = filteredAssessments.map(
+    (subjectPerf: SubjectAssessmentPerformance): SubjectStats => {
+      const entries: SubjectStatsEntry[] = assessmentColumns.map(
         (assessment) => {
-          const rawScore =
-            subjectPerf.scores[assessment.id] !== undefined
-              ? subjectPerf.scores[assessment.id]
-              : null;
-          const score = rawScore === null ? null : rawScore;
+          const rawScore = subjectPerf.scores?.[assessment.id];
+          const score =
+            rawScore === null || rawScore === undefined
+              ? null
+              : Number(rawScore);
+          const maxScore = assessment.maxScore;
           const percentage =
-            score !== null
-              ? Math.round((score / assessment.maxScore) * 100)
+            score !== null && maxScore > 0
+              ? Math.round((score / maxScore) * 100)
               : null;
 
           return {
@@ -546,10 +327,7 @@ export default function StudentPerformanceView() {
         if (entry.percentage !== null) {
           completedCount += 1;
           totalPercentage += entry.percentage;
-          if (
-            !highest ||
-            entry.percentage > (highest.percentage ?? -Infinity)
-          ) {
+          if (!highest || entry.percentage > (highest.percentage ?? -Infinity)) {
             highest = entry;
           }
           if (!lowest || entry.percentage < (lowest.percentage ?? Infinity)) {
@@ -573,10 +351,12 @@ export default function StudentPerformanceView() {
         missingCount: entries.filter((entry) => entry.score === null).length,
       };
     },
-    [filteredAssessments]
+    [assessmentColumns]
   );
 
-  const subjectSummaries = useMemo(() => {
+  const subjectSummaries = useMemo<
+    { subjectPerf: SubjectAssessmentPerformance; stats: SubjectStats }[]
+  >(() => {
     return filteredSubjects.map((subjectPerf) => ({
       subjectPerf,
       stats: computeSubjectStats(subjectPerf),
@@ -590,32 +370,18 @@ export default function StudentPerformanceView() {
     return computeSubjectStats(activeSubject);
   }, [activeSubject, computeSubjectStats]);
 
-  // Get unique years and terms for filter options
-  const availableYears = useMemo(() => {
-    const years = [...new Set(assessments.map((a) => a.year))].sort().reverse();
-    return years;
-  }, []);
-
-  const availableTerms = useMemo(() => {
-    return ["1", "2", "3"];
-  }, []);
-
-  // Paginate filtered subjects
-  const paginatedSubjects = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredSubjects.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredSubjects, currentPage, itemsPerPage]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredSubjects.length / itemsPerPage)
-  );
-
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    if (!activeSubject) {
+      return;
     }
-  }, [currentPage, totalPages]);
+    const stillExists = subjectPerformances.some(
+      (subject) => subject.subject === activeSubject.subject
+    );
+    if (!stillExists) {
+      setActiveSubject(null);
+      setIsDialogOpen(false);
+    }
+  }, [activeSubject, subjectPerformances]);
 
   const updateScrollState = useCallback(() => {
     const container = tableScrollRef.current;
@@ -628,19 +394,6 @@ export default function StudentPerformanceView() {
     setCanScrollLeft(scrollLeft > 0);
     setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
   }, []);
-
-  const handleHorizontalScroll = useCallback(
-    (direction: "left" | "right") => {
-      const container = tableScrollRef.current;
-      if (!container) {
-        return;
-      }
-      const scrollAmount = direction === "left" ? -320 : 320;
-      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
-      requestAnimationFrame(updateScrollState);
-    },
-    [updateScrollState]
-  );
 
   useEffect(() => {
     const container = tableScrollRef.current;
@@ -657,19 +410,54 @@ export default function StudentPerformanceView() {
 
   useEffect(() => {
     updateScrollState();
-  }, [filteredAssessments, paginatedSubjects, updateScrollState]);
+  }, [assessmentColumns, paginatedSubjects, updateScrollState]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  const handleSubjectDialog = (
+    subject: SubjectAssessmentPerformance | null
+  ) => {
+    setActiveSubject(subject);
+    setIsDialogOpen(Boolean(subject));
   };
+
+  const handleTermChange = (term: string) => {
+    setSelectedTerm(term);
+    setCurrentPage(1);
+  };
+
+  const handleYearChange = (year: string) => {
+    setSelectedYear(year);
+    setCurrentPage(1);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
+
+  const handleHorizontalScroll = useCallback(
+    (direction: "left" | "right") => {
+      const container = tableScrollRef.current;
+      if (!container) {
+        return;
+      }
+      const scrollAmount = direction === "left" ? -320 : 320;
+      container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+      requestAnimationFrame(updateScrollState);
+    },
+    [updateScrollState]
+  );
 
   const handleResetFilters = () => {
     setSearchTerm("");
-    setSelectedYear("all");
-    setSelectedTerm("all");
+    setSelectedYear(ALL_FILTER);
+    setSelectedTerm(ALL_FILTER);
     setItemsPerPage(10);
     setCurrentPage(1);
     setActiveTab("table");
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
   const showingFrom =
@@ -678,6 +466,13 @@ export default function StudentPerformanceView() {
     filteredSubjects.length === 0
       ? 0
       : Math.min(currentPage * itemsPerPage, filteredSubjects.length);
+
+  const isLoading = isAssessmentsLoading || isSubjectPerformanceLoading;
+  const isError = isAssessmentsError || isSubjectPerformanceError;
+
+  if (!studentId) {
+    return null;
+  }
 
   return (
     <div
@@ -728,12 +523,12 @@ export default function StudentPerformanceView() {
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <Select value={selectedYear} onValueChange={handleYearChange}>
                   <SelectTrigger className="w-28 rounded border-border/60 bg-background/90 sm:w-32">
                     <SelectValue placeholder="Year" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Years</SelectItem>
+                    <SelectItem value={ALL_FILTER}>All Years</SelectItem>
                     {availableYears.map((year) => (
                       <SelectItem key={year} value={year}>
                         {year}
@@ -741,15 +536,15 @@ export default function StudentPerformanceView() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={selectedTerm} onValueChange={setSelectedTerm}>
+                <Select value={selectedTerm} onValueChange={handleTermChange}>
                   <SelectTrigger className="w-28 rounded border-border/60 bg-background/90 sm:w-32">
                     <SelectValue placeholder="Term" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Terms</SelectItem>
+                    <SelectItem value={ALL_FILTER}>All Terms</SelectItem>
                     {availableTerms.map((term) => (
                       <SelectItem key={term} value={term}>
-                        Term {term}
+                        {formatTermLabel(term)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -786,16 +581,16 @@ export default function StudentPerformanceView() {
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="rounded border-dashed">
-              {filteredAssessments.length} assessments
+              {assessmentColumns.length} assessments
             </Badge>
-            {selectedYear !== "all" && (
+            {selectedYear !== ALL_FILTER && (
               <Badge variant="secondary" className="rounded">
                 Year: {selectedYear}
               </Badge>
             )}
-            {selectedTerm !== "all" && (
+            {selectedTerm !== ALL_FILTER && (
               <Badge variant="secondary" className="rounded">
-                Term: {selectedTerm}
+                Term: {formatTermLabel(selectedTerm)}
               </Badge>
             )}
             {searchTerm && (
@@ -841,47 +636,91 @@ export default function StudentPerformanceView() {
                         <TableHead className="sticky left-0 w-[140px] max-w-[140px] min-w-[140px] border-r border-border/40 bg-card/90 font-semibold uppercase tracking-wide text-xs">
                           Subject
                         </TableHead>
-                        {filteredAssessments.map((assessment) => (
-                          <TableHead
-                            key={assessment.id}
-                            className="min-w-[120px] max-w-[120px] border-border/40 p-3 text-center text-xs uppercase tracking-wide text-muted-foreground"
-                          >
-                            <div className="flex flex-col items-center gap-1 text-center">
-                              <span
-                                className={cn(
-                                  "rounded px-2 py-0.5 text-[10px] font-semibold uppercase",
-                                  getAssessmentTypeBadge(assessment.type)
+                        {assessmentColumns.map((assessment) => {
+                          const deadlineLabel = getLocalizedDate(
+                            assessment.deadline
+                          );
+                          const deadlineWithYear = getLocalizedDate(
+                            assessment.deadline,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            }
+                          );
+                          return (
+                            <TableHead
+                              key={assessment.id}
+                              className="min-w-[140px] max-w-[140px] border-border/40 p-3 text-center text-xs uppercase tracking-wide text-muted-foreground"
+                            >
+                              <div className="flex flex-col items-center gap-1 text-center">
+                                <span
+                                  className={cn(
+                                    "rounded px-2 py-0.5 text-[10px] font-semibold uppercase",
+                                    getAssessmentTypeBadge(assessment.type)
+                                  )}
+                                >
+                                  {assessment.type}
+                                </span>
+                                <span
+                                  className="line-clamp-1 text-[11px] font-medium text-foreground"
+                                  title={assessment.name}
+                                >
+                                  {assessment.name}
+                                </span>
+                                <div>
+
+                                <span className="text-[10px] text-muted-foreground mr-1">
+                                  {deadlineLabel ?? "—"}
+                                </span>
+                                {assessment.term && (
+                                  <span className="text-[10px] text-muted-foreground mr-1">
+                                    {formatTermLabel(assessment.term)}
+                                  </span>
                                 )}
-                              >
-                                {assessment.type}
-                              </span>
-                              <span
-                                className="line-clamp-1 text-[11px] font-medium text-foreground"
-                                title={assessment.name}
-                              >
-                                {assessment.name}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(assessment.date).toLocaleDateString(
-                                  "en-US",
-                                  { month: "short", day: "numeric" }
+                                {assessment.academicYear && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {assessment.academicYear}
+                                  </span>
                                 )}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                Max {assessment.maxScore}
-                              </span>
-                            </div>
-                          </TableHead>
-                        ))}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">
+                                  Max {assessment.maxScore}
+                                </span>
+                                <span className="sr-only">
+                                  {deadlineWithYear ?? ""}
+                                </span>
+                              </div>
+                            </TableHead>
+                          );
+                        })}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedSubjects.length > 0 ? (
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={assessmentColumns.length + 1}
+                            className="py-10 text-center text-sm text-muted-foreground"
+                          >
+                            Loading student performance…
+                          </TableCell>
+                        </TableRow>
+                      ) : isError ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={assessmentColumns.length + 1}
+                            className="py-10 text-center text-sm text-muted-foreground"
+                          >
+                            Unable to load performance data right now.
+                          </TableCell>
+                        </TableRow>
+                      ) : paginatedSubjects.length > 0 ? (
                         paginatedSubjects.map((subjectPerf, index) => {
                           const stats = computeSubjectStats(subjectPerf);
                           return (
                             <TableRow
-                              key={subjectPerf.subject}
+                              key={`${subjectPerf.subject}-${index}`}
                               onClick={() => handleSubjectDialog(subjectPerf)}
                               className={cn(
                                 "cursor-pointer transition-colors hover:bg-muted/50",
@@ -913,73 +752,61 @@ export default function StudentPerformanceView() {
                                   )}
                                 </div>
                               </TableCell>
-                              {filteredAssessments.map(
-                                (assessment, assessmentIndex) => {
-                                  const entry = stats.entries[assessmentIndex];
-                                  if (!entry) {
-                                    return (
-                                      <TableCell
-                                        key={assessment.id}
-                                        className="min-w-[120px] max-w-[120px] p-3 text-center text-sm text-muted-foreground"
-                                      >
-                                        -
-                                      </TableCell>
-                                    );
-                                  }
-                                  return (
-                                    <TableCell
-                                      key={assessment.id}
-                                      className="min-w-[120px] max-w-[120px] p-3 text-center"
-                                    >
-                                      {entry.score !== null ? (
-                                        <div className="flex flex-col items-center gap-1">
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <span
-                                                className={cn(
-                                                  "text-sm font-semibold",
-                                                  entry.percentage !== null &&
-                                                    entry.percentage >= 85
-                                                    ? "text-emerald-600"
-                                                    : entry.percentage !==
-                                                        null &&
-                                                      entry.percentage <= 60
-                                                    ? "text-red-500"
-                                                    : "text-foreground"
-                                                )}
-                                              >
-                                                {entry.score}
-                                              </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="text-xs">
-                                              {entry.score} /{" "}
-                                              {assessment.maxScore} (
-                                              {entry.percentage}%)
-                                            </TooltipContent>
-                                          </Tooltip>
-                                          <span className="text-[11px] text-muted-foreground">
-                                            {entry.percentage}%
+                              {stats.entries.map((entry) => (
+                                <TableCell
+                                  key={entry.assessment.id}
+                                  className="min-w-[140px] max-w-[140px] p-3 text-center"
+                                >
+                                  {entry.score !== null ? (
+                                    <div className="flex flex-col items-center gap-1">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span
+                                            className={cn(
+                                              "text-sm font-semibold",
+                                              entry.percentage !== null &&
+                                                entry.percentage >= 85
+                                                ? "text-emerald-600"
+                                                : entry.percentage !== null &&
+                                                    entry.percentage <= 60
+                                                ? "text-red-500"
+                                                : "text-foreground"
+                                            )}
+                                          >
+                                            {entry.score}
                                           </span>
-                                        </div>
-                                      ) : (
-                                        <Badge
-                                          variant="outline"
-                                          className="rounded px-3 py-0.5 text-[11px]"
-                                        >
-                                          Not taken
-                                        </Badge>
-                                      )}
-                                    </TableCell>
-                                  );
-                                }
-                              )}
+                                        </TooltipTrigger>
+                                        <TooltipContent className="text-xs">
+                                          {entry.score} /{" "}
+                                          {entry.assessment.maxScore}
+                                          {entry.percentage !== null
+                                            ? ` (${entry.percentage}%)`
+                                            : ""}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <span className="text-[11px] text-muted-foreground">
+                                        {entry.percentage !== null
+                                          ? `${entry.percentage}%`
+                                          : "—"}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <Badge
+                                      variant="outline"
+                                      className="rounded px-3 py-0.5 text-[11px]"
+                                    >
+                                      Not taken
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                              ))}
                             </TableRow>
                           );
                         })
                       ) : (
                         <TableRow>
                           <TableCell
-                            colSpan={filteredAssessments.length + 1}
+                            colSpan={assessmentColumns.length + 1}
                             className="py-10 text-center text-sm text-muted-foreground"
                           >
                             No subjects match your current filters or search.
@@ -1053,18 +880,26 @@ export default function StudentPerformanceView() {
             </TabsContent>
 
             <TabsContent value="summary" className="space-y-4">
-              {subjectSummaries.length > 0 ? (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/40 p-10 text-center text-sm text-muted-foreground">
+                  <IconInfoCircle className="h-6 w-6" />
+                  <span>Loading summary…</span>
+                </div>
+              ) : isError ? (
+                <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/40 p-10 text-center text-sm text-muted-foreground">
+                  <IconInfoCircle className="h-6 w-6" />
+                  <span>Unable to load summary for the selected filters.</span>
+                </div>
+              ) : subjectSummaries.length > 0 ? (
                 <div className="grid gap-3 max-w-7xl mx-auto">
                   {subjectSummaries.map(({ subjectPerf, stats }) => {
-                    const highest = stats.highest as SubjectStatsEntry | null;
-                    const lowest = stats.lowest as SubjectStatsEntry | null;
+                    const highest: SubjectStatsEntry | null = stats.highest;
+                    const lowest: SubjectStatsEntry | null = stats.lowest;
                     return (
                       <div
                         key={subjectPerf.subject}
-                        className="flex flex-row items-center gap-5 rounded border bg-sidebar/50 px-4 py-3 min-h-0"
-                        style={{ minHeight: 0 }}
+                        className="flex flex-row items-center gap-5 rounded border bg-sidebar/50 px-4 py-3"
                       >
-                        {/* Main subject info + stats count */}
                         <div className="flex-1 min-w-0 flex flex-row items-center gap-6">
                           <div className="flex flex-col justify-center min-w-0">
                             <p className="text-lg font-bold text-foreground truncate">
@@ -1087,11 +922,12 @@ export default function StudentPerformanceView() {
                               : "Not taken"}
                           </Badge>
                         </div>
-                        {/* Summaries grouped compact, horizontally */}
                         <div className="flex flex-row flex-wrap items-center gap-5">
                           {highest && (
                             <div className="flex flex-col items-center min-w-[6.2rem] text-center">
-                              <span className="font-semibold text-xs text-muted-foreground">Best</span>
+                              <span className="font-semibold text-xs text-muted-foreground">
+                                Best
+                              </span>
                               <span className="font-bold text-emerald-600 text-base leading-tight">
                                 {highest.assessment.name}
                               </span>
@@ -1102,7 +938,9 @@ export default function StudentPerformanceView() {
                           )}
                           {lowest && (
                             <div className="flex flex-col items-center min-w-[6.2rem] text-center">
-                              <span className="font-semibold text-xs text-muted-foreground">Needs focus</span>
+                              <span className="font-semibold text-xs text-muted-foreground">
+                                Needs focus
+                              </span>
                               <span className="font-bold text-amber-600 text-base leading-tight">
                                 {lowest.assessment.name}
                               </span>
@@ -1112,13 +950,14 @@ export default function StudentPerformanceView() {
                             </div>
                           )}
                           <div className="flex flex-col items-center min-w-[6.2rem] text-center">
-                            <span className="font-semibold text-xs text-muted-foreground">Outstanding</span>
+                            <span className="font-semibold text-xs text-muted-foreground">
+                              Missing
+                            </span>
                             <span className="font-bold text-foreground text-base">
                               {stats.missingCount}
                             </span>
                           </div>
                         </div>
-                        {/* Button at the end, fills height */}
                         <div className="ml-4 flex flex-col justify-center min-w-fit">
                           <Button
                             variant="ghost"
@@ -1184,14 +1023,11 @@ export default function StudentPerformanceView() {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(entry.assessment.date).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        }
-                      )}{" "}
+                      {getLocalizedDate(entry.assessment.deadline, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }) ?? "Date TBC"}{" "}
                       · Max score {entry.assessment.maxScore}
                     </p>
                   </div>
@@ -1212,7 +1048,9 @@ export default function StudentPerformanceView() {
                           {entry.score}
                         </span>
                         <p className="text-xs text-muted-foreground">
-                          {entry.percentage}% achieved
+                          {entry.percentage !== null
+                            ? `${entry.percentage}% achieved`
+                            : "No percentage available"}
                         </p>
                       </>
                     ) : (
