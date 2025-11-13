@@ -145,7 +145,7 @@ export default function ReportDetailPage() {
           </CardHeader>
         </Card>
       </div>
-      <StudentResultsView />
+      <StudentResultsView studentId={report.studentId} />
     </div>
   );
 }

@@ -235,7 +235,7 @@ export default function StudentDetailPage() {
 
           {activeTab === "report" && (
             <div>
-              <StudentResultsView />
+              <StudentResultsView studentId={studentId} />
             </div>
           )}
         </div>

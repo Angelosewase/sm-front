@@ -32,7 +32,7 @@ export default function StudentReportPage() {
         </div>
       </div>
 
-      <StudentResultsView />
+      <StudentResultsView studentId={studentId} />
     </div>
   )
 }
