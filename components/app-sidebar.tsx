@@ -163,7 +163,7 @@ export function DashboardSidebar() {
   );
 
   return (
-    <Sidebar variant="floating" collapsible="icon">
+    <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader
         className={cn(
           "flex md:pt-3.5",
