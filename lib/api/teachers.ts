@@ -67,9 +67,7 @@ export const teachersApi = {
     return data;
   },
 
-  getTeacherClasses: async (
-    id: string
-  ): Promise<TeacherClassesResponse> => {
+  getTeacherClasses: async (id: string): Promise<TeacherClassesResponse> => {
     const { data } = await axiosInstance.get<TeacherClassesResponse>(
       `${baseTeachersPath}/${id}/classes-assigned`
     );
@@ -212,6 +210,13 @@ export const teachersApi = {
     const { data } = await axiosInstance.delete<Teacher>(
       `${baseTeachersPath}/${id}/subjects`,
       { data: payload }
+    );
+    return data;
+  },
+
+  getTeacherByUserId: async (userId: string): Promise<Teacher> => {
+    const { data } = await axiosInstance.get<Teacher>(
+      `${baseTeachersPath}/user/${userId}`
     );
     return data;
   },

@@ -110,21 +110,94 @@ export interface CreateAssessmentDto {
 
 export type UpdateAssessmentDto = Partial<CreateAssessmentDto>;
 
+export interface AcademicYearSummary {
+  _id: string;
+  label: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface AssessmentSubjectSummary {
+  _id: string;
+  code: string;
+  name: string;
+  shortName: string;
+  department: string;
+  subjectType: "core" | "elective" | string;
+  maxScore: number;
+  minPassingScore: number;
+  creditHours: number;
+  level: string;
+  gradeLevels: string[];
+  prerequisites: string;
+  status: "Active" | "Inactive" | string;
+  school: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  assessments: string[];
+}
+
+export interface AssessmentStudentSummary {
+  _id: string;
+  studentId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  gradeLevel: string;
+  status: "active" | "inactive" | string;
+}
+
+export interface AssessmentClassSummary {
+  _id: string;
+  name: string;
+  gradeLevel: string;
+  capacity: number;
+  studentCount: number;
+  description: string;
+  status: "active" | "inactive" | string;
+  classTeacher: string;
+  isTrashed: boolean;
+  trashedAt: string | null;
+  assignedSubjects: string[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  students: AssessmentStudentSummary[];
+  id: string;
+}
+
+export interface AssessmentMark {
+  _id?: string;
+  student: string | AssessmentStudentSummary;
+  score?: number | null;
+  remarks?: string;
+  submittedAt?: string;
+  gradedAt?: string;
+  [key: string]: unknown;
+}
+
 export interface AssessmentDetail {
   _id: string;
-  title: string;
-  description?: string;
-  subject: string;
-  class: string;
+  academicYear: AcademicYearSummary | string;
   term: string;
-  academicYear: string;
-  AssessmentType: string;
+  subject: AssessmentSubjectSummary | string;
+  class: AssessmentClassSummary | string;
+  title: string;
   weight?: number;
-  maxScore?: number;
+  description?: string;
+  AssessmentType: "Test" | "Exam" | "Assignment" | string;
   deadline: string;
-  status: AssessmentStatus;
+  maxScore?: number;
+  status: AssessmentStatus | "pending" | "active" | "closed" | string;
+  submissionsCount?: number;
+  averageScore?: number;
+  marks?: AssessmentMark[];
   createdAt?: string;
   updatedAt?: string;
+  __v?: number;
 }
 
 export interface AssessmentFilterDto {

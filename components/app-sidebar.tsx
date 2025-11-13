@@ -39,12 +39,12 @@ const getCommonRoutes = (role: string): Route[] => [
     icon: <Home className="size-10" />,
     link: `/${role}`,
   },
-  {
-    id: "analytics",
-    title: "Analytics",
-    icon: <BarChart3 className="size-10" />,
-    link: `/${role}/analytics`,
-  },
+  // {
+  //   id: "analytics",
+  //   title: "Analytics",
+  //   icon: <BarChart3 className="size-10" />,
+  //   link: `/${role}/analytics`,
+  // },
 ];
 
 const getAdminRoutes = (): Route[] => [
@@ -163,7 +163,7 @@ export function DashboardSidebar() {
   );
 
   return (
-    <Sidebar variant="floating" collapsible="icon">
+    <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader
         className={cn(
           "flex md:pt-3.5",

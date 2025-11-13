@@ -94,6 +94,7 @@ export interface TeacherQueryParams {
   limit?: number;
   sortBy?: string;
   order?: "asc" | "desc";
+  
 }
 
 export interface TeacherListResponse {

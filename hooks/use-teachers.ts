@@ -20,6 +20,7 @@ import {
   TeacherAssignmentsQuery,
   TeacherAssignmentsResponse,
   TeacherClassesResponse,
+  Teacher,
 } from "@/types/teachers.dto";
 
 export const teachersKeys = {
@@ -42,6 +43,8 @@ export const teachersKeys = {
     [...teachersKeys.teacher(id), "assignments", params] as const,
   teacherDashboard: (id: string) =>
     [...teachersKeys.teacher(id), "dashboard"] as const,
+  teacherByUserId: (userId: string) =>
+    [...teachersKeys.all, "teacher", "user", userId] as const,
 };
 
 export function useTeachers(params?: TeacherQueryParams) {
@@ -172,7 +175,7 @@ export function useAssignSubjectsToTeacher() {
           : "Subjects assigned successfully"
       );
     },
-   
+
     onError: (error: any) => {
       toast.error(
         error?.response?.data?.message || "Failed to assign subjects"
@@ -406,3 +409,11 @@ export function useBulkPermanentlyDeleteTeachers() {
 
 // Backwards compatibility export
 export const useDeleteTeacher = useTrashTeacher;
+
+export const useGetTeacherByUserId = (userId: string) => {
+  return useQuery<Teacher>({
+    queryKey: teachersKeys.teacherByUserId(userId),
+    queryFn: () => teachersApi.getTeacherByUserId(userId),
+    enabled: !!userId,
+  });
+};

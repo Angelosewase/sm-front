@@ -17,6 +17,10 @@ import {
   UpdateStudentDto,
 } from "@/types/students.dto";
 import { dashbaordApi } from "@/lib/api/dashboard";
+import {
+  studentPerformanceApi,
+  SubjectPerformanceSummary,
+} from "@/lib/api/student-performance";
 
 export const studentsKeys = {
   all: ["students"] as const,
@@ -31,7 +35,12 @@ type StudentsListKey = ReturnType<typeof studentsKeys.list>;
 type StudentDetailKey = ReturnType<typeof studentsKeys.detail>;
 
 type UseStudentsOptions = Omit<
-  UseQueryOptions<StudentListResponse, unknown, StudentListResponse, StudentsListKey>,
+  UseQueryOptions<
+    StudentListResponse,
+    unknown,
+    StudentListResponse,
+    StudentsListKey
+  >,
   "queryKey" | "queryFn"
 >;
 
@@ -164,7 +173,9 @@ export function useChangeStudentClass() {
       toast.success("Student class assignment updated.");
       queryClient.invalidateQueries({ queryKey: studentsKeys.all });
       if (student?._id) {
-        queryClient.invalidateQueries({ queryKey: studentsKeys.detail(student._id) });
+        queryClient.invalidateQueries({
+          queryKey: studentsKeys.detail(student._id),
+        });
       }
     },
     onError: (error: any) => {
@@ -232,7 +243,7 @@ export function useStudentStats(
   options?: UseQueryOptions<StudentStatsResponse>
 ) {
   return useQuery<StudentStatsResponse>({
-    queryKey: ['student-stats', schoolId],
+    queryKey: ["student-stats", schoolId],
     queryFn: () => dashbaordApi.fetchStudentStats(schoolId),
     enabled: !!schoolId,
     staleTime: 60_000,
@@ -240,4 +251,30 @@ export function useStudentStats(
   });
 }
 
-
+export function useGetStudentPerformanceSummaryById(
+  studentId: string,
+  options?: UseQueryOptions<{
+    subjects: SubjectPerformanceSummary[];
+    overall: {
+      totalScore: number;
+      totalMax: number;
+      percentage: number | null;
+    };
+  }>
+) {
+  return useQuery<{
+    subjects: SubjectPerformanceSummary[];
+    overall: {
+      totalScore: number;
+      totalMax: number;
+      percentage: number | null;
+    };
+  }>({
+    queryKey: ["student-performance-summary", studentId],
+    queryFn: () =>
+      studentPerformanceApi.getStudentPerformanceSummary(studentId),
+    enabled: !!studentId,
+    staleTime: 60 * 1000,
+    ...options,
+  });
+}

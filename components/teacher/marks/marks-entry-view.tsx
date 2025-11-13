@@ -1,20 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Save, Send, Calendar, Target, Users, TrendingUp, CheckCircle, AlertCircle } from "lucide-react"
+import { ArrowLeft, Calendar, Target, Users, TrendingUp, CheckCircle, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Student {
   id: string
+  studentId?: string
+  studentRecordId?: string
   name: string
-  admissionNumber: string
+  admissionNumber?: string
+  email?: string
+  phoneNumber?: string
   score: number | null
   remarks: string
+  markId?: string
 }
 
 interface AssessmentData {
@@ -31,94 +36,153 @@ interface AssessmentData {
   lastSaved: string
 }
 
+export interface StudentMarkChange {
+  id: string
+  studentId?: string
+  studentRecordId?: string
+  markId?: string
+  score: number | null
+  remarks: string
+}
+
 interface MarksEntryViewProps {
   assessmentData: AssessmentData
   onBackClick: () => void
-  onScoreUpdate: (studentId: string, score: number | null, remarks: string) => void
+  onSaveChanges: (changes: StudentMarkChange[]) => Promise<Record<string, string | undefined> | void>
 }
 
-export function MarksEntryView({ 
-  assessmentData, 
-  onBackClick, 
-  onScoreUpdate 
+export function MarksEntryView({
+  assessmentData,
+  onBackClick,
+  onSaveChanges,
 }: MarksEntryViewProps) {
   const [students, setStudents] = useState<Student[]>(assessmentData.students)
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState(new Date(assessmentData.lastSaved))
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const initialStudentsRef = useRef<Map<string, Student>>(new Map())
 
   const { title, category, date, weight, maxScore, className, subjectName, isSubmitted } = assessmentData
 
-  // Auto-save functionality
   useEffect(() => {
-    if (!hasUnsavedChanges) return
+    setStudents(assessmentData.students)
+    setLastSaved(new Date(assessmentData.lastSaved))
+    setHasUnsavedChanges(false)
+    initialStudentsRef.current = new Map(
+      assessmentData.students.map(student => [student.id, { ...student }]),
+    )
+  }, [assessmentData.id, assessmentData.lastSaved, assessmentData.students])
 
-    const timeoutId = setTimeout(() => {
-      handleAutoSave()
-    }, 2000) // Auto-save after 2 seconds of inactivity
+  const detectChanges = useCallback((list: Student[]) => {
+    return list.some(student => {
+      const original = initialStudentsRef.current.get(student.id)
+      if (!original) return true
+      const scoreChanged = (student.score ?? null) !== (original.score ?? null)
+      const remarksChanged = (student.remarks ?? "") !== (original.remarks ?? "")
+      return scoreChanged || remarksChanged
+    })
+  }, [])
 
-    return () => clearTimeout(timeoutId)
-  }, [students, hasUnsavedChanges])
+  const collectChanges = useCallback((list: Student[]): StudentMarkChange[] => {
+    const changes: StudentMarkChange[] = []
+    list.forEach(student => {
+      const original = initialStudentsRef.current.get(student.id)
+      const scoreChanged = (student.score ?? null) !== (original?.score ?? null)
+      const remarksChanged = (student.remarks ?? "") !== (original?.remarks ?? "")
 
-  const handleAutoSave = async () => {
+      if (!original || scoreChanged || remarksChanged) {
+        changes.push({
+          id: student.id,
+          studentId: student.studentId,
+          studentRecordId: student.studentRecordId,
+          markId: student.markId,
+          score: student.score ?? null,
+          remarks: student.remarks ?? "",
+        })
+      }
+    })
+    return changes
+  }, [])
+
+  const handleScoreChange = (studentKey: string, value: string) => {
+    const score = value === '' ? null : parseFloat(value)
+    
+    // Validate score
+    if (score !== null && (score < 0 || (maxScore > 0 && score > maxScore))) {
+      console.error(`Score must be between 0 and ${maxScore > 0 ? maxScore : "∞"}`)
+      return
+    }
+
+    setStudents(prev => {
+      const updated = prev.map(student => {
+        if (student.id === studentKey) {
+          return { ...student, score }
+        }
+        return student
+      })
+      setHasUnsavedChanges(detectChanges(updated))
+      return updated
+    })
+  }
+
+  const handleRemarksChange = (studentKey: string, remarks: string) => {
+    setStudents(prev => {
+      const updated = prev.map(student => {
+        if (student.id === studentKey) {
+          return { ...student, remarks }
+        }
+        return student
+      })
+      setHasUnsavedChanges(detectChanges(updated))
+      return updated
+    })
+  }
+
+  const handleDiscardChanges = () => {
+    if (assessmentData.isSubmitted) return
+    const restored = Array.from(initialStudentsRef.current.values()).map(student => ({ ...student }))
+    setStudents(restored)
+    setHasUnsavedChanges(false)
+  }
+
+  const handleSaveChanges = async () => {
+    if (assessmentData.isSubmitted) return
+    const changes = collectChanges(students)
+    if (changes.length === 0) return
+
     setIsSaving(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
-      setLastSaved(new Date())
+      const markUpdates = (await onSaveChanges(changes)) ?? {}
+      const finalStudents = students.map(student => {
+        const updatedMarkId = markUpdates[student.id]
+        if (updatedMarkId && updatedMarkId !== student.markId) {
+          return { ...student, markId: updatedMarkId }
+        }
+        return student
+      })
+      setStudents(finalStudents)
+      initialStudentsRef.current = new Map(
+        finalStudents.map(s => [s.id, { ...s }]),
+      )
       setHasUnsavedChanges(false)
-      console.log("Changes saved automatically")
+      setLastSaved(new Date())
     } catch (error) {
-      console.error("Failed to save changes")
+      console.error("Failed to save changes:", error)
     } finally {
       setIsSaving(false)
     }
   }
 
-  const handleScoreChange = (studentId: string, value: string) => {
-    const score = value === '' ? null : parseFloat(value)
-    
-    // Validate score
-    if (score !== null && (score < 0 || score > maxScore)) {
-      console.error(`Score must be between 0 and ${maxScore}`)
-      return
-    }
-
-    setStudents(prev => prev.map(student => 
-      student.id === studentId 
-        ? { ...student, score }
-        : student
-    ))
-    setHasUnsavedChanges(true)
-    
-    const student = students.find(s => s.id === studentId)
-    if (student) {
-      onScoreUpdate(studentId, score, student.remarks)
-    }
-  }
-
-  const handleRemarksChange = (studentId: string, remarks: string) => {
-    setStudents(prev => prev.map(student => 
-      student.id === studentId 
-        ? { ...student, remarks }
-        : student
-    ))
-    setHasUnsavedChanges(true)
-    
-    const student = students.find(s => s.id === studentId)
-    if (student) {
-      onScoreUpdate(studentId, student.score, remarks)
-    }
-  }
-
   const getScoreValidation = (score: number | null) => {
     if (score === null) return { isValid: true, message: '' }
-    if (score < 0 || score > maxScore) return { isValid: false, message: `Must be 0-${maxScore}` }
+    if (score < 0) return { isValid: false, message: 'Must be ≥ 0' }
+    if (maxScore > 0 && score > maxScore) return { isValid: false, message: `Must be 0-${maxScore}` }
     return { isValid: true, message: '' }
   }
 
   const getGrade = (score: number | null) => {
     if (score === null) return 'N/A'
+    if (maxScore <= 0) return 'N/A'
     const percentage = (score / maxScore) * 100
     if (percentage >= 90) return 'A+'
     if (percentage >= 80) return 'A'
@@ -130,6 +194,7 @@ export function MarksEntryView({
 
   const getGradeColor = (score: number | null) => {
     if (score === null) return 'text-gray-500'
+    if (maxScore <= 0) return 'text-gray-500'
     const percentage = (score / maxScore) * 100
     if (percentage >= 80) return 'text-green-600'
     if (percentage >= 70) return 'text-blue-600'
@@ -138,11 +203,14 @@ export function MarksEntryView({
   }
 
   const completedCount = students.filter(s => s.score !== null).length
-  const averageScore = students.filter(s => s.score !== null).reduce((sum, s) => sum + (s.score || 0), 0) / completedCount || 0
-  const completionPercentage = (completedCount / students.length) * 100
+  const totalScore = students.reduce((sum, s) => sum + (s.score ?? 0), 0)
+  const averageScore = completedCount > 0 ? totalScore / completedCount : 0
+  const completionPercentage = students.length > 0 ? (completedCount / students.length) * 100 : 0
+  const averagePercentage = maxScore > 0 && completedCount > 0 ? (averageScore / maxScore) * 100 : null
 
   const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
+    const safeCategory = category?.toLowerCase?.() ?? ''
+    switch (safeCategory) {
       case 'quiz': return "bg-purple-100 text-purple-800"
       case 'homework': return "bg-blue-100 text-blue-800"
       case 'test': return "bg-orange-100 text-orange-800"
@@ -153,17 +221,21 @@ export function MarksEntryView({
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return '—'
+    const dateValue = new Date(dateString)
+    if (Number.isNaN(dateValue.getTime())) return '—'
+    return dateValue.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     })
   }
 
   const formatTime = (date: Date) => {
+    if (!date || Number.isNaN(date.getTime())) return '—'
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -173,7 +245,7 @@ export function MarksEntryView({
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={onBackClick}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to {subjectName}
+          Back to {subjectName || "subject"}
         </Button>
         
         <div className="flex items-center gap-2 ml-auto">
@@ -278,7 +350,7 @@ export function MarksEntryView({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {completedCount > 0 ? ((averageScore / maxScore) * 100).toFixed(1) : 'N/A'}%
+              {averagePercentage !== null ? `${averagePercentage.toFixed(1)}%` : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">
               Class average
@@ -288,12 +360,29 @@ export function MarksEntryView({
       </div>
 
       {/* Marks Entry Table */}
-      <Card>
+      <Card className="border-0 shadow-none px-0">
         <CardHeader>
-          <CardTitle>Student Marks</CardTitle>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="text-lg font-bold">Student Marks</CardTitle>
+            {!isSubmitted && hasUnsavedChanges && (
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleSaveChanges} disabled={isSaving}>
+                  Save changes
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDiscardChanges}
+                  disabled={isSaving}
+                >
+                  Discard
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="py-4 px-0 border-2 rounded-lg">
+          <Table className="border-none">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
@@ -306,56 +395,69 @@ export function MarksEntryView({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student, index) => {
-                const validation = getScoreValidation(student.score)
-                const percentage = student.score !== null ? (student.score / maxScore) * 100 : null
-                
-                return (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-mono text-sm">{student.admissionNumber}</TableCell>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min="0"
-                        max={maxScore}
-                        step="0.5"
-                        value={student.score ?? ''}
-                        onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                        className={cn(
-                          "w-20 text-center",
-                          !validation.isValid && "border-red-500 focus-visible:border-red-500"
+              {students.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    No students found for this class yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                students.map((student, index) => {
+                  const validation = getScoreValidation(student.score)
+                  const percentage =
+                    student.score !== null && maxScore > 0
+                      ? (student.score / maxScore) * 100
+                      : null
+
+                  return (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {student.admissionNumber ?? student.studentId ?? "—"}
+                      </TableCell>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={maxScore > 0 ? maxScore : undefined}
+                          step="0.5"
+                          value={student.score ?? ''}
+                          onChange={(e) => handleScoreChange(student.id, e.target.value)}
+                          className={cn(
+                            "w-20 text-center",
+                            !validation.isValid && "border-red-500 focus-visible:border-red-500"
+                          )}
+                          placeholder="0"
+                          disabled={isSubmitted}
+                        />
+                        {!validation.isValid && (
+                          <p className="text-xs text-red-500 mt-1">{validation.message}</p>
                         )}
-                        placeholder="0"
-                        disabled={isSubmitted}
-                      />
-                      {!validation.isValid && (
-                        <p className="text-xs text-red-500 mt-1">{validation.message}</p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className={cn("font-medium", getGradeColor(student.score))}>
-                        {getGrade(student.score)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className={cn("font-medium", getGradeColor(student.score))}>
-                        {percentage !== null ? percentage.toFixed(0) + '%' : 'N/A'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={student.remarks}
-                        onChange={(e) => handleRemarksChange(student.id, e.target.value)}
-                        placeholder="Optional remarks..."
-                        className="min-w-48"
-                        disabled={isSubmitted}
-                      />
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn("font-medium", getGradeColor(student.score))}>
+                          {getGrade(student.score)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn("font-medium", getGradeColor(student.score))}>
+                          {percentage !== null ? `${percentage.toFixed(0)}%` : 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          value={student.remarks}
+                          onChange={(e) => handleRemarksChange(student.id, e.target.value)}
+                          placeholder="Optional remarks..."
+                          className="min-w-48"
+                          disabled={isSubmitted}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>

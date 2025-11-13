@@ -1,245 +1,244 @@
-"use client"
+"use client";
 
-import React from 'react'
-import { StudentDataTable } from '@/components/teacher/students/student-data-table'
-import { StudentsOverview } from '@/components/teacher/students/students-overview'
+import React from "react";
+import { AlertCircle } from "lucide-react";
 
-// Mock data - replace with actual API calls
-const mockStudents = [
-  {
-    id: 'stu001',
-    name: 'Emma Thompson',
-    studentId: 'STU2024001',
-    email: 'emma.thompson@student.edu',
-    className: 'Primary 5A',
-    averageScore: 85,
-    attendance: 95,
-    status: 'Active',
-    dateOfBirth: '2009-05-15',
-    phone: '+1 (555) 201-3001',
-    parentName: 'Sarah Thompson',
-    parentPhone: '+1 (555) 201-3000'
-  },
-  {
-    id: 'stu002',
-    name: 'Michael Chen',
-    studentId: 'STU2024002',
-    email: 'michael.chen@student.edu',
-    className: 'Primary 5A',
-    averageScore: 78,
-    attendance: 90,
-    status: 'Active',
-    dateOfBirth: '2008-08-22',
-    phone: '+1 (555) 202-3002',
-    parentName: 'David Chen',
-    parentPhone: '+1 (555) 202-3000'
-  },
-  {
-    id: 'stu003',
-    name: 'Sophia Rodriguez',
-    studentId: 'STU2024003',
-    email: 'sophia.rodriguez@student.edu',
-    className: 'Primary 5B',
-    averageScore: 92,
-    attendance: 98,
-    status: 'Active',
-    dateOfBirth: '2007-12-10',
-    phone: '+1 (555) 203-3003',
-    parentName: 'Maria Rodriguez',
-    parentPhone: '+1 (555) 203-3000'
-  },
-  {
-    id: 'stu004',
-    name: 'James Wilson',
-    studentId: 'STU2024004',
-    email: 'james.wilson@student.edu',
-    className: 'Primary 5A',
-    averageScore: 68,
-    attendance: 85,
-    status: 'Active',
-    dateOfBirth: '2009-03-28',
-    phone: '+1 (555) 204-3004',
-    parentName: 'Robert Wilson',
-    parentPhone: '+1 (555) 204-3000'
-  },
-  {
-    id: 'stu005',
-    name: 'Olivia Martinez',
-    studentId: 'STU2024005',
-    email: 'olivia.martinez@student.edu',
-    className: 'Primary 5B',
-    averageScore: 82,
-    attendance: 92,
-    status: 'Active',
-    dateOfBirth: '2008-07-19',
-    phone: '+1 (555) 205-3005',
-    parentName: 'Carlos Martinez',
-    parentPhone: '+1 (555) 205-3000'
-  },
-  {
-    id: 'stu006',
-    name: 'Ethan Brown',
-    studentId: 'STU2024006',
-    email: 'ethan.brown@student.edu',
-    className: 'Primary 4A',
-    averageScore: 95,
-    attendance: 97,
-    status: 'Active',
-    dateOfBirth: '2007-11-05',
-    phone: '+1 (555) 206-3006',
-    parentName: 'Jennifer Brown',
-    parentPhone: '+1 (555) 206-3000'
-  },
-  {
-    id: 'stu007',
-    name: 'Ava Johnson',
-    studentId: 'STU2024007',
-    email: 'ava.johnson@student.edu',
-    className: 'Primary 5B',
-    averageScore: 88,
-    attendance: 94,
-    status: 'Active',
-    dateOfBirth: '2008-04-18',
-    phone: '+1 (555) 207-3007',
-    parentName: 'Michael Johnson',
-    parentPhone: '+1 (555) 207-3000'
-  },
-  {
-    id: 'stu008',
-    name: 'Noah Davis',
-    studentId: 'STU2024008',
-    email: 'noah.davis@student.edu',
-    className: 'Primary 4A',
-    averageScore: 75,
-    attendance: 88,
-    status: 'Active',
-    dateOfBirth: '2009-09-12',
-    phone: '+1 (555) 208-3008',
-    parentName: 'Linda Davis',
-    parentPhone: '+1 (555) 208-3000'
-  },
-  {
-    id: 'stu009',
-    name: 'Isabella Garcia',
-    studentId: 'STU2024009',
-    email: 'isabella.garcia@student.edu',
-    className: 'Primary 5A',
-    averageScore: 91,
-    attendance: 96,
-    status: 'Active',
-    dateOfBirth: '2008-11-30',
-    phone: '+1 (555) 209-3009',
-    parentName: 'Jose Garcia',
-    parentPhone: '+1 (555) 209-3000'
-  },
-  {
-    id: 'stu010',
-    name: 'Liam Martinez',
-    studentId: 'STU2024010',
-    email: 'liam.martinez@student.edu',
-    className: 'Primary 6C',
-    averageScore: 79,
-    attendance: 91,
-    status: 'Active',
-    dateOfBirth: '2007-02-14',
-    phone: '+1 (555) 210-3010',
-    parentName: 'Ana Martinez',
-    parentPhone: '+1 (555) 210-3000'
-  },
-  {
-    id: 'stu011',
-    name: 'Mia Anderson',
-    studentId: 'STU2024011',
-    email: 'mia.anderson@student.edu',
-    className: 'Primary 5B',
-    averageScore: 86,
-    attendance: 93,
-    status: 'Active',
-    dateOfBirth: '2008-06-25',
-    phone: '+1 (555) 211-3011',
-    parentName: 'Karen Anderson',
-    parentPhone: '+1 (555) 211-3000'
-  },
-  {
-    id: 'stu012',
-    name: 'Benjamin Thomas',
-    studentId: 'STU2024012',
-    email: 'benjamin.thomas@student.edu',
-    className: 'Primary 4A',
-    averageScore: 72,
-    attendance: 87,
-    status: 'Active',
-    dateOfBirth: '2009-08-08',
-    phone: '+1 (555) 212-3012',
-    parentName: 'James Thomas',
-    parentPhone: '+1 (555) 212-3000'
-  },
-  {
-    id: 'stu013',
-    name: 'Charlotte Lee',
-    studentId: 'STU2024013',
-    email: 'charlotte.lee@student.edu',
-    className: 'Primary 5A',
-    averageScore: 89,
-    attendance: 95,
-    status: 'Active',
-    dateOfBirth: '2008-12-03',
-    phone: '+1 (555) 213-3013',
-    parentName: 'Susan Lee',
-    parentPhone: '+1 (555) 213-3000'
-  },
-  {
-    id: 'stu014',
-    name: 'Lucas White',
-    studentId: 'STU2024014',
-    email: 'lucas.white@student.edu',
-    className: 'Primary 6C',
-    averageScore: 65,
-    attendance: 82,
-    status: 'Active',
-    dateOfBirth: '2007-03-17',
-    phone: '+1 (555) 214-3014',
-    parentName: 'Mark White',
-    parentPhone: '+1 (555) 214-3000'
-  },
-  {
-    id: 'stu015',
-    name: 'Amelia Harris',
-    studentId: 'STU2024015',
-    email: 'amelia.harris@student.edu',
-    className: 'Primary 5B',
-    averageScore: 94,
-    attendance: 99,
-    status: 'Active',
-    dateOfBirth: '2008-10-22',
-    phone: '+1 (555) 215-3015',
-    parentName: 'Patricia Harris',
-    parentPhone: '+1 (555) 215-3000'
-  }
-]
+import { StudentsOverview } from "@/components/teacher/students/students-overview";
+import { StudentDataTable } from "@/components/teacher/students/student-data-table";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useAuth } from "@/contexts/auth-context";
+import { useStudents } from "@/hooks/use-students";
+import {
+  useGetTeacherByUserId,
+  useTeacherClassesAssigned,
+} from "@/hooks/use-teachers";
+import { Student, StudentQueryParams } from "@/types/students.dto";
 
-const mockStats = {
-  totalStudents: 108,
-  averageScore: 82,
-  topPerformers: 45,
-  totalClasses: 4
-}
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 100;
 
 export default function StudentsPage() {
-  return (
-    <div className="flex-1 space-y-4 p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Students</h1>
-          <p className="text-muted-foreground">
-            View and track your students' performance and attendance across all classes.
-          </p>
-        </div>
-      </div>
+  const { user } = useAuth();
+  const { data: teacher } = useGetTeacherByUserId(user?.id ?? "");
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [classFilter, setClassFilter] = React.useState("");
+  const teacherId = teacher?._id ?? "";
 
-      <StudentsOverview stats={mockStats} />
-      
-      <StudentDataTable data={mockStudents} />
+  const debouncedSearch = useDebouncedValue(searchTerm, 400);
+
+  const queryParams = React.useMemo<StudentQueryParams>(() => {
+    const params: StudentQueryParams = {
+      page: DEFAULT_PAGE,
+      limit: DEFAULT_LIMIT,
+    };
+
+    if (teacherId) {
+      params.teacher = teacherId;
+    }
+
+    if (debouncedSearch) {
+      params.search = debouncedSearch;
+    }
+
+    if (classFilter) {
+      params.classId = classFilter;
+    }
+
+    params.status = "active";
+
+    return params;
+  }, [teacherId, debouncedSearch, classFilter]);
+
+  const studentsQuery = useStudents(queryParams, {
+    enabled: Boolean(teacherId),
+  });
+
+  const { data: classesResponse } = useTeacherClassesAssigned(teacherId);
+  const classOptions = React.useMemo(
+    () =>
+      (classesResponse?.classes ?? []).map((cls) => ({
+        value: cls.classId,
+        label: cls.className,
+      })),
+    [classesResponse?.classes]
+  );
+
+  const students = studentsQuery.data?.data ?? [];
+
+  const classCount = classOptions.length;
+  const totalFromMeta = studentsQuery.data?.meta.total;
+  const overviewStats = React.useMemo(
+    () => buildOverviewStats(students, classCount, totalFromMeta),
+    [students, classCount, totalFromMeta]
+  );
+
+  const filtersActive = Boolean(searchTerm) || Boolean(classFilter);
+
+  const handleResetFilters = React.useCallback(() => {
+    setSearchTerm("");
+    setClassFilter("");
+  }, []);
+
+  if (!teacherId) {
+    return (
+      <div className="flex-1 space-y-4 p-6">
+        <Alert>
+          <AlertCircle className="size-5" />
+          <div>
+            <AlertTitle>Account details incomplete</AlertTitle>
+            <AlertDescription>
+              We could not determine your teacher profile. Please contact the
+              admin team.
+            </AlertDescription>
+          </div>
+        </Alert>
+      </div>
+    );
+  }
+
+  const isLoading = studentsQuery.isLoading && !studentsQuery.data;
+  const isFetching = studentsQuery.isFetching;
+
+  return (
+    <div className="flex-1 space-y-6 p-4">
+      <header className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight">My Students</h1>
+        <p className="text-muted-foreground">
+          Search and review the students assigned to your classes.
+        </p>
+      </header>
+
+      <StudentsOverview stats={overviewStats} />
+
+      <section className="">
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            className="w-full max-w-xs"
+            placeholder="Search name, ID, email..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            disabled={isFetching}
+          />
+
+          <Select
+            value={classFilter}
+            onValueChange={setClassFilter}
+            disabled={isFetching || classOptions.length === 0}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="All classes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All classes</SelectItem>
+              {classOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {filtersActive ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleResetFilters}
+              disabled={isFetching}
+            >
+              Reset
+            </Button>
+          ) : null}
+        </div>
+      </section>
+
+      {studentsQuery.isError ? (
+        <Alert variant="destructive">
+          <AlertCircle className="size-5" />
+          <div>
+            <AlertTitle>Unable to load students</AlertTitle>
+            <AlertDescription>
+              {getErrorMessage(studentsQuery.error)}
+            </AlertDescription>
+          </div>
+        </Alert>
+      ) : null}
+
+      {isLoading ? (
+        <div className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
+          Loading students...
+        </div>
+      ) : (
+        <StudentDataTable students={students} />
+      )}
     </div>
-  )
+  );
+}
+
+function useDebouncedValue<T>(value: T, delay = 400) {
+  const [debounced, setDebounced] = React.useState(value);
+
+  React.useEffect(() => {
+    const handle = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(handle);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+function getErrorMessage(error: unknown) {
+  if (!error) return "Unknown error";
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (typeof (error as any)?.message === "string")
+    return (error as any).message;
+  return "Something went wrong while fetching students.";
+}
+
+function buildOverviewStats(
+  students: Student[],
+  fallbackClassCount: number,
+  totalFromMeta?: number
+) {
+  const totalStudents = totalFromMeta ?? students.length;
+
+  const scores = students
+    .map((student) => student.academicScore)
+    .filter((score): score is number => typeof score === "number");
+
+  const averageScore =
+    scores.length > 0
+      ? Math.round(
+          scores.reduce((sum, score) => sum + score, 0) / scores.length
+        )
+      : 0;
+
+  const topPerformers = scores.filter((score) => score >= 85).length;
+
+  const uniqueClassIds = new Set<string>();
+  students.forEach((student) => {
+    if (student.classId) {
+      uniqueClassIds.add(student.classId);
+    } else if (student.class?._id) {
+      uniqueClassIds.add(student.class._id);
+    }
+  });
+
+  const totalClasses =
+    uniqueClassIds.size > 0 ? uniqueClassIds.size : fallbackClassCount;
+
+  return {
+    totalStudents,
+    averageScore,
+    topPerformers,
+    totalClasses,
+  };
 }
