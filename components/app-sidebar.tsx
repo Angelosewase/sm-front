@@ -39,12 +39,12 @@ const getCommonRoutes = (role: string): Route[] => [
     icon: <Home className="size-10" />,
     link: `/${role}`,
   },
-  {
-    id: "analytics",
-    title: "Analytics",
-    icon: <BarChart3 className="size-10" />,
-    link: `/${role}/analytics`,
-  },
+  // {
+  //   id: "analytics",
+  //   title: "Analytics",
+  //   icon: <BarChart3 className="size-10" />,
+  //   link: `/${role}/analytics`,
+  // },
 ];
 
 const getAdminRoutes = (): Route[] => [

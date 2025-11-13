@@ -11,3 +11,11 @@ export { StudentsOverview } from './students/students-overview'
 export { MarksManagementView } from './marks/marks-management-view'
 export { MarksEntryView } from './marks/marks-entry-view'
 export { CreateAssessmentDialog } from './marks/create-assessment-dialog'
+
+// Dashboard components
+export { TeacherHero } from './dashboard/teacher-hero'
+export { TeacherSummaryCards } from './dashboard/teacher-summary-cards'
+export { AssessmentStatusCard } from './dashboard/assessment-status-card'
+export { TeacherClassesCard } from './dashboard/classes-card'
+export { UpcomingAssessmentsCard } from './dashboard/upcoming-assessments-card'
+export { QuickActionsCard } from './dashboard/quick-actions-card'
