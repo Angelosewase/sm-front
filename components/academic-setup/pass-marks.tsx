@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { BookOpen, Save, AlertTriangle } from "lucide-react";
 import {
   AlertDialog,
@@ -18,140 +18,358 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useSchool } from "@/contexts/school-context";
+import { usePassMarksBySchool, useCreatePassMarks, useUpdatePassMarks } from "@/hooks/use-pass-marks";
+import { CreatePassMarksDto, UpdatePassMarksDto } from "@/lib/api/pass-marks";
 
 interface PassMarkSettings {
-  globalPassMark: number;
+  passMark: number;
   secondSittingMin: number;
   secondSittingMax: number;
-  failureThreshold: number;
+  failMark: number;
 }
 
 export function PassMarks() {
-  const [settings, setSettings] = useState<PassMarkSettings>({
-    globalPassMark: 50,
+  const { school } = useSchool();
+  const { data: passMarks, isLoading, error: passMarksError } = usePassMarksBySchool(school?.id);
+  const createMutation = useCreatePassMarks();
+  const updateMutation = useUpdatePassMarks();
+
+  // Default values
+  const defaultSettings: PassMarkSettings = {
+    passMark: 50,
     secondSittingMin: 40,
     secondSittingMax: 49,
-    failureThreshold: 0,
-  });
+    failMark: 39,
+  };
+
+  // Initialize from API data or defaults
+  const [settings, setSettings] = useState<PassMarkSettings>(defaultSettings);
 
   // Local state for unsaved changes
-  const [localGlobalPassMark, setLocalGlobalPassMark] = useState(50);
+  const [localPassMark, setLocalPassMark] = useState(50);
   const [localSecondSittingMin, setLocalSecondSittingMin] = useState(40);
   const [localSecondSittingMax, setLocalSecondSittingMax] = useState(49);
-  const [localFailureThreshold, setLocalFailureThreshold] = useState(0);
+  const [localFailMark, setLocalFailMark] = useState(39);
 
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [pendingSettings, setPendingSettings] = useState<PassMarkSettings | null>(null);
-  const [isGlobalPassMarkDialogOpen, setIsGlobalPassMarkDialogOpen] = useState(false);
+  const [isPassMarkDialogOpen, setIsPassMarkDialogOpen] = useState(false);
   const [isSecondSittingDialogOpen, setIsSecondSittingDialogOpen] = useState(false);
-  const [isFailureThresholdDialogOpen, setIsFailureThresholdDialogOpen] = useState(false);
+  const [isFailMarkDialogOpen, setIsFailMarkDialogOpen] = useState(false);
+
+  // Load data from API
+  useEffect(() => {
+    if (passMarks) {
+      const loadedSettings: PassMarkSettings = {
+        passMark: passMarks.passMark,
+        secondSittingMin: passMarks.secondSittingMin,
+        secondSittingMax: passMarks.secondSittingMax,
+        failMark: passMarks.failMark,
+      };
+      setSettings(loadedSettings);
+      setLocalPassMark(loadedSettings.passMark);
+      setLocalSecondSittingMin(loadedSettings.secondSittingMin);
+      setLocalSecondSittingMax(loadedSettings.secondSittingMax);
+      setLocalFailMark(loadedSettings.failMark);
+    }
+  }, [passMarks]);
+
+  // Handle query errors
+  useEffect(() => {
+    if (passMarksError) {
+      const errorMessage = (passMarksError as any)?.response?.data?.message || 
+        (passMarksError as any)?.response?.status === 404
+          ? "No pass marks configuration found. Create one to get started."
+          : "Failed to load pass marks configuration. Please refresh the page.";
+      
+      // Only show error if it's not a 404 (not found is expected if not created yet)
+      if ((passMarksError as any)?.response?.status !== 404) {
+        toast.error(errorMessage);
+        console.error("Load pass marks error:", passMarksError);
+      }
+    }
+  }, [passMarksError]);
 
   // Sync local state with saved settings
   useEffect(() => {
-    setLocalGlobalPassMark(settings.globalPassMark);
+    setLocalPassMark(settings.passMark);
     setLocalSecondSittingMin(settings.secondSittingMin);
     setLocalSecondSittingMax(settings.secondSittingMax);
-    setLocalFailureThreshold(settings.failureThreshold);
+    setLocalFailMark(settings.failMark);
   }, [settings]);
 
   const updateSetting = (field: keyof PassMarkSettings, value: number) => {
     setSettings(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateSettings = (): string | null => {
-    if (settings.globalPassMark < 0 || settings.globalPassMark > 100) {
-      return "Global pass mark must be between 0 and 100";
+  const validateSettings = (settingsToValidate: PassMarkSettings): string | null => {
+    // Validation rule: failMark < secondSittingMin < secondSittingMax < passMark
+    if (settingsToValidate.passMark < 0 || settingsToValidate.passMark > 100) {
+      return "Pass mark must be between 0 and 100";
     }
-    if (settings.secondSittingMin < 0 || settings.secondSittingMin > 100) {
+    if (settingsToValidate.secondSittingMin < 0 || settingsToValidate.secondSittingMin > 100) {
       return "Second sitting minimum must be between 0 and 100";
     }
-    if (settings.secondSittingMax < 0 || settings.secondSittingMax > 100) {
+    if (settingsToValidate.secondSittingMax < 0 || settingsToValidate.secondSittingMax > 100) {
       return "Second sitting maximum must be between 0 and 100";
     }
-    if (settings.secondSittingMin >= settings.secondSittingMax) {
-      return "Second sitting minimum must be less than maximum";
+    if (settingsToValidate.failMark < 0 || settingsToValidate.failMark > 100) {
+      return "Fail mark must be between 0 and 100";
     }
-    if (settings.failureThreshold < 0 || settings.failureThreshold > 100) {
-      return "Failure threshold must be between 0 and 100";
+    if (settingsToValidate.secondSittingMin >= settingsToValidate.secondSittingMax) {
+      return "Second sitting minimum must be less than second sitting maximum";
     }
-    if (settings.secondSittingMax >= settings.globalPassMark) {
-      return "Second sitting maximum must be less than global pass mark";
+    if (settingsToValidate.failMark >= settingsToValidate.secondSittingMin) {
+      return "Fail mark must be less than second sitting minimum";
     }
-    if (settings.failureThreshold >= settings.secondSittingMin) {
-      return "Failure threshold must be less than second sitting minimum";
+    if (settingsToValidate.secondSittingMax >= settingsToValidate.passMark) {
+      return "Second sitting maximum must be less than pass mark";
     }
     return null;
   };
 
-  const handleSave = () => {
-    const error = validateSettings();
+  const handleSave = async () => {
+    if (!school?.id) {
+      toast.error("School information not found. Please refresh the page.");
+      return;
+    }
+
+    const settingsToSave: PassMarkSettings = {
+      passMark: localPassMark,
+      secondSittingMin: localSecondSittingMin,
+      secondSittingMax: localSecondSittingMax,
+      failMark: localFailMark,
+    };
+
+    const error = validateSettings(settingsToSave);
     if (error) {
       toast.error(error);
       return;
     }
-    setPendingSettings(settings);
+
+    setPendingSettings(settingsToSave);
     setIsSaveDialogOpen(true);
   };
 
-  const confirmSave = () => {
-    if (pendingSettings) {
-      // TODO: Call API to save settings
-      toast.success("Pass mark settings updated successfully");
+  const confirmSave = async () => {
+    if (!pendingSettings || !school?.id) {
+      toast.error("Missing required information. Please try again.");
+      return;
+    }
+
+    try {
+      if (passMarks) {
+        // Update existing
+        const updatePayload: UpdatePassMarksDto = {
+          passMark: pendingSettings.passMark,
+          secondSittingMin: pendingSettings.secondSittingMin,
+          secondSittingMax: pendingSettings.secondSittingMax,
+          failMark: pendingSettings.failMark,
+        };
+        await updateMutation.mutateAsync({
+          schoolId: school.id,
+          payload: updatePayload,
+        });
+        toast.success("Pass marks configuration updated successfully");
+      } else {
+        // Create new
+        const createPayload: CreatePassMarksDto = {
+          school: school.id,
+          passMark: pendingSettings.passMark,
+          secondSittingMin: pendingSettings.secondSittingMin,
+          secondSittingMax: pendingSettings.secondSittingMax,
+          failMark: pendingSettings.failMark,
+        };
+        await createMutation.mutateAsync(createPayload);
+        toast.success("Pass marks configuration created successfully");
+      }
       setIsSaveDialogOpen(false);
       setPendingSettings(null);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 
+        "Failed to save pass marks configuration. Please try again.";
+      toast.error(errorMessage);
+      console.error("Save pass marks error:", error);
     }
   };
 
   // Save handlers that trigger dialogs
-  const handleSaveGlobalPassMark = () => {
-    if (localGlobalPassMark <= settings.secondSittingMax) {
-      toast.error("Global pass mark must be greater than second sitting maximum");
+  const handleSavePassMark = () => {
+    if (!school?.id) {
+      toast.error("School information not found. Please refresh the page.");
       return;
     }
-    setIsGlobalPassMarkDialogOpen(true);
+
+    const testSettings: PassMarkSettings = {
+      passMark: localPassMark,
+      secondSittingMin: settings.secondSittingMin,
+      secondSittingMax: settings.secondSittingMax,
+      failMark: settings.failMark,
+    };
+
+    const error = validateSettings(testSettings);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    setIsPassMarkDialogOpen(true);
   };
 
   const handleSaveSecondSitting = () => {
-    if (localSecondSittingMin >= localSecondSittingMax) {
-      toast.error("Minimum must be less than maximum");
+    if (!school?.id) {
+      toast.error("School information not found. Please refresh the page.");
       return;
     }
-    if (localSecondSittingMax >= settings.globalPassMark) {
-      toast.error("Second sitting maximum must be less than global pass mark");
+
+    const testSettings: PassMarkSettings = {
+      passMark: settings.passMark,
+      secondSittingMin: localSecondSittingMin,
+      secondSittingMax: localSecondSittingMax,
+      failMark: settings.failMark,
+    };
+
+    const error = validateSettings(testSettings);
+    if (error) {
+      toast.error(error);
       return;
     }
-    if (localSecondSittingMin <= settings.failureThreshold) {
-      toast.error("Second sitting minimum must be greater than failure threshold");
-      return;
-    }
+
     setIsSecondSittingDialogOpen(true);
   };
 
-  const handleSaveFailureThreshold = () => {
-    if (localFailureThreshold >= settings.secondSittingMin) {
-      toast.error("Failure threshold must be less than second sitting minimum");
+  const handleSaveFailMark = () => {
+    if (!school?.id) {
+      toast.error("School information not found. Please refresh the page.");
       return;
     }
-    setIsFailureThresholdDialogOpen(true);
+
+    const testSettings: PassMarkSettings = {
+      passMark: settings.passMark,
+      secondSittingMin: settings.secondSittingMin,
+      secondSittingMax: settings.secondSittingMax,
+      failMark: localFailMark,
+    };
+
+    const error = validateSettings(testSettings);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+
+    setIsFailMarkDialogOpen(true);
   };
 
-  const confirmGlobalPassMark = () => {
-    updateSetting("globalPassMark", localGlobalPassMark);
-    setIsGlobalPassMarkDialogOpen(false);
-    toast.success("Global pass mark updated");
+  const confirmPassMark = async () => {
+    if (!school?.id) {
+      toast.error("School information not found. Please refresh the page.");
+      return;
+    }
+
+    try {
+      const payload: UpdatePassMarksDto = { passMark: localPassMark };
+      
+      if (passMarks) {
+        await updateMutation.mutateAsync({
+          schoolId: school.id,
+          payload,
+        });
+        toast.success("Pass mark updated successfully");
+      } else {
+        // Create with defaults and update pass mark
+        const createPayload: CreatePassMarksDto = {
+          school: school.id,
+          passMark: localPassMark,
+          secondSittingMin: settings.secondSittingMin,
+          secondSittingMax: settings.secondSittingMax,
+          failMark: settings.failMark,
+        };
+        await createMutation.mutateAsync(createPayload);
+        toast.success("Pass mark configuration created successfully");
+      }
+      setIsPassMarkDialogOpen(false);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 
+        "Failed to update pass mark. Please try again.";
+      toast.error(errorMessage);
+      console.error("Update pass mark error:", error);
+    }
   };
 
-  const confirmSecondSitting = () => {
-    updateSetting("secondSittingMin", localSecondSittingMin);
-    updateSetting("secondSittingMax", localSecondSittingMax);
-    setIsSecondSittingDialogOpen(false);
-    toast.success("Second sitting range updated");
+  const confirmSecondSitting = async () => {
+    if (!school?.id) {
+      toast.error("School information not found. Please refresh the page.");
+      return;
+    }
+
+    try {
+      const payload: UpdatePassMarksDto = {
+        secondSittingMin: localSecondSittingMin,
+        secondSittingMax: localSecondSittingMax,
+      };
+      
+      if (passMarks) {
+        await updateMutation.mutateAsync({
+          schoolId: school.id,
+          payload,
+        });
+        toast.success("Second sitting range updated successfully");
+      } else {
+        // Create with defaults and update second sitting
+        const createPayload: CreatePassMarksDto = {
+          school: school.id,
+          passMark: settings.passMark,
+          secondSittingMin: localSecondSittingMin,
+          secondSittingMax: localSecondSittingMax,
+          failMark: settings.failMark,
+        };
+        await createMutation.mutateAsync(createPayload);
+        toast.success("Second sitting range configuration created successfully");
+      }
+      setIsSecondSittingDialogOpen(false);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 
+        "Failed to update second sitting range. Please try again.";
+      toast.error(errorMessage);
+      console.error("Update second sitting error:", error);
+    }
   };
 
-  const confirmFailureThreshold = () => {
-    updateSetting("failureThreshold", localFailureThreshold);
-    setIsFailureThresholdDialogOpen(false);
-    toast.success("Failure threshold updated");
+  const confirmFailMark = async () => {
+    if (!school?.id) {
+      toast.error("School information not found. Please refresh the page.");
+      return;
+    }
+
+    try {
+      const payload: UpdatePassMarksDto = { failMark: localFailMark };
+      
+      if (passMarks) {
+        await updateMutation.mutateAsync({
+          schoolId: school.id,
+          payload,
+        });
+        toast.success("Fail mark updated successfully");
+      } else {
+        // Create with defaults and update fail mark
+        const createPayload: CreatePassMarksDto = {
+          school: school.id,
+          passMark: settings.passMark,
+          secondSittingMin: settings.secondSittingMin,
+          secondSittingMax: settings.secondSittingMax,
+          failMark: localFailMark,
+        };
+        await createMutation.mutateAsync(createPayload);
+        toast.success("Fail mark configuration created successfully");
+      }
+      setIsFailMarkDialogOpen(false);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || 
+        "Failed to update fail mark. Please try again.";
+      toast.error(errorMessage);
+      console.error("Update fail mark error:", error);
+    }
   };
 
   return (
@@ -164,50 +382,58 @@ export function PassMarks() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Global Pass Mark */}
-          <div className="p-6 border rounded-lg space-y-4">
-            <div className="flex items-center gap-3">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <div>
-                <h3 className="font-semibold text-lg">Global Pass Mark</h3>
-                <p className="text-sm text-muted-foreground">
-                  Minimum percentage required for a student to be marked as passed
-                </p>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading pass marks configuration...</div>
+          ) : (
+            <>
+              {/* Pass Mark */}
+              <div className="p-6 border rounded-lg space-y-4">
+                <div className="flex items-center gap-3">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-lg">Pass Mark</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Minimum percentage required for a student to be marked as passed
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Label htmlFor="pass-mark" className="whitespace-nowrap">
+                      Pass Mark:
+                    </Label>
+                    <Input
+                      id="pass-mark"
+                      type="number"
+                      value={localPassMark}
+                      onChange={(e) => setLocalPassMark(parseInt(e.target.value) || 0)}
+                      min="0"
+                      max="100"
+                      className="w-32"
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                  <Badge variant={localPassMark >= 50 ? "default" : "secondary"}>
+                    {localPassMark >= 50 ? "Standard" : "Custom"}
+                  </Badge>
+                </div>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  <p className="text-muted-foreground">
+                    Students with an average score of <strong>{localPassMark}%</strong> or higher 
+                    will be marked as <strong>Passed</strong>.
+                  </p>
+                </div>
+                <div className="flex justify-end">
+                  <Button 
+                    onClick={handleSavePassMark} 
+                    className="flex items-center gap-2"
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                  >
+                    <Save className="h-4 w-4" />
+                    {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Pass Mark"}
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 flex-1">
-                <Label htmlFor="global-pass-mark" className="whitespace-nowrap">
-                  Pass Mark:
-                </Label>
-                <Input
-                  id="global-pass-mark"
-                  type="number"
-                  value={localGlobalPassMark}
-                  onChange={(e) => setLocalGlobalPassMark(parseInt(e.target.value) || 0)}
-                  min="0"
-                  max="100"
-                  className="w-32"
-                />
-                <span className="text-sm text-muted-foreground">%</span>
-              </div>
-              <Badge variant={localGlobalPassMark >= 50 ? "default" : "secondary"}>
-                {localGlobalPassMark >= 50 ? "Standard" : "Custom"}
-              </Badge>
-            </div>
-            <div className="p-3 bg-muted rounded-md text-sm">
-              <p className="text-muted-foreground">
-                Students with an average score of <strong>{localGlobalPassMark}%</strong> or higher 
-                will be marked as <strong>Passed</strong>.
-              </p>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={handleSaveGlobalPassMark} className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Save Global Pass Mark
-              </Button>
-            </div>
-          </div>
 
           {/* Second Sitting Range */}
           <div className="p-6 border rounded-lg space-y-4">
@@ -259,19 +485,23 @@ export function PassMarks() {
               </p>
             </div>
             <div className="flex justify-end">
-              <Button onClick={handleSaveSecondSitting} className="flex items-center gap-2">
+              <Button 
+                onClick={handleSaveSecondSitting} 
+                className="flex items-center gap-2"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
                 <Save className="h-4 w-4" />
-                Save Second Sitting Range
+                {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Second Sitting Range"}
               </Button>
             </div>
           </div>
 
-          {/* Failure Threshold */}
+          {/* Fail Mark */}
           <div className="p-6 border rounded-lg space-y-4">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-destructive" />
               <div>
-                <h3 className="font-semibold text-lg">Failure Threshold</h3>
+                <h3 className="font-semibold text-lg">Fail Mark</h3>
                 <p className="text-sm text-muted-foreground">
                   Maximum percentage below which a student is marked as failed
                 </p>
@@ -279,14 +509,14 @@ export function PassMarks() {
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 flex-1">
-                <Label htmlFor="failure-threshold" className="whitespace-nowrap">
-                  Failure Threshold:
+                <Label htmlFor="fail-mark" className="whitespace-nowrap">
+                  Fail Mark:
                 </Label>
                 <Input
-                  id="failure-threshold"
+                  id="fail-mark"
                   type="number"
-                  value={localFailureThreshold}
-                  onChange={(e) => setLocalFailureThreshold(parseInt(e.target.value) || 0)}
+                  value={localFailMark}
+                  onChange={(e) => setLocalFailMark(parseInt(e.target.value) || 0)}
                   min="0"
                   max="100"
                   className="w-32"
@@ -297,14 +527,18 @@ export function PassMarks() {
             </div>
             <div className="p-3 bg-destructive/10 rounded-md text-sm">
               <p className="text-muted-foreground">
-                Students scoring <strong>{localFailureThreshold}%</strong> or below 
+                Students scoring <strong>{localFailMark}%</strong> or below 
                 will be marked as <strong>Failed</strong>.
               </p>
             </div>
             <div className="flex justify-end">
-              <Button onClick={handleSaveFailureThreshold} className="flex items-center gap-2">
+              <Button 
+                onClick={handleSaveFailMark} 
+                className="flex items-center gap-2"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
                 <Save className="h-4 w-4" />
-                Save Failure Threshold
+                {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Save Fail Mark"}
               </Button>
             </div>
           </div>
@@ -316,7 +550,7 @@ export function PassMarks() {
               <div>
                 <p className="text-muted-foreground">Passed</p>
                 <p className="font-medium text-green-600 dark:text-green-400">
-                  {localGlobalPassMark}% and above
+                  {localPassMark}% and above
                 </p>
               </div>
               <div>
@@ -328,12 +562,13 @@ export function PassMarks() {
               <div>
                 <p className="text-muted-foreground">Failed</p>
                 <p className="font-medium text-destructive">
-                  {localFailureThreshold}% and below
+                  {localFailMark}% and below
                 </p>
               </div>
             </div>
           </div>
-
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -346,9 +581,9 @@ export function PassMarks() {
               Are you sure you want to update the pass mark configuration with the following settings?
               <div className="mt-4 space-y-2 text-sm">
                 <div className="p-3 bg-muted rounded-md">
-                  <p><strong>Global Pass Mark:</strong> {pendingSettings?.globalPassMark}%</p>
+                  <p><strong>Pass Mark:</strong> {pendingSettings?.passMark}%</p>
                   <p><strong>Second Sitting Range:</strong> {pendingSettings?.secondSittingMin}% - {pendingSettings?.secondSittingMax}%</p>
-                  <p><strong>Failure Threshold:</strong> {pendingSettings?.failureThreshold}%</p>
+                  <p><strong>Fail Mark:</strong> {pendingSettings?.failMark}%</p>
                 </div>
                 <p className="text-destructive font-medium">
                   This will affect how all students are evaluated. Make sure these values are correct.
@@ -357,39 +592,50 @@ export function PassMarks() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingSettings(null)}>
+            <AlertDialogCancel 
+              onClick={() => setPendingSettings(null)}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSave}>
-              Confirm and Save
+            <AlertDialogAction 
+              onClick={confirmSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : "Confirm and Save"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Global Pass Mark Confirmation Dialog */}
+      {/* Pass Mark Confirmation Dialog */}
       <AlertDialog 
-        open={isGlobalPassMarkDialogOpen} 
-        onOpenChange={setIsGlobalPassMarkDialogOpen}
+        open={isPassMarkDialogOpen} 
+        onOpenChange={setIsPassMarkDialogOpen}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Update Global Pass Mark</AlertDialogTitle>
+            <AlertDialogTitle>Update Pass Mark</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to change the global pass mark from <strong>{settings.globalPassMark}%</strong> to <strong>{localGlobalPassMark}%</strong>?
+              Are you sure you want to change the pass mark from <strong>{settings.passMark}%</strong> to <strong>{localPassMark}%</strong>?
               <div className="mt-3 p-3 bg-muted rounded-md text-sm">
                 <p>This will affect how all students are evaluated:</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Students with {localGlobalPassMark}% or above will be marked as <strong>Passed</strong></li>
+                  <li>Students with {localPassMark}% or above will be marked as <strong>Passed</strong></li>
                   <li>This change will apply to all future evaluations</li>
                 </ul>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmGlobalPassMark}>
-              Confirm Update
+            <AlertDialogCancel disabled={createMutation.isPending || updateMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmPassMark}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Updating..." : "Confirm Update"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -412,38 +658,46 @@ export function PassMarks() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSecondSitting}>
-              Confirm Update
+            <AlertDialogCancel disabled={createMutation.isPending || updateMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmSecondSitting}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Updating..." : "Confirm Update"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Failure Threshold Confirmation Dialog */}
+      {/* Fail Mark Confirmation Dialog */}
       <AlertDialog 
-        open={isFailureThresholdDialogOpen} 
-        onOpenChange={setIsFailureThresholdDialogOpen}
+        open={isFailMarkDialogOpen} 
+        onOpenChange={setIsFailMarkDialogOpen}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Update Failure Threshold</AlertDialogTitle>
+            <AlertDialogTitle>Update Fail Mark</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to change the failure threshold from <strong>{settings.failureThreshold}%</strong> to <strong>{localFailureThreshold}%</strong>?
+              Are you sure you want to change the fail mark from <strong>{settings.failMark}%</strong> to <strong>{localFailMark}%</strong>?
               <div className="mt-3 p-3 bg-destructive/10 rounded-md text-sm">
                 <p className="font-medium text-destructive">Warning: This is a critical setting</p>
-                <p className="mt-2">Students scoring {localFailureThreshold}% or below will be marked as <strong>Failed</strong>.</p>
+                <p className="mt-2">Students scoring {localFailMark}% or below will be marked as <strong>Failed</strong>.</p>
                 <p className="mt-2">This change will affect student evaluations and may impact their academic standing.</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={createMutation.isPending || updateMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={confirmFailureThreshold}
+              onClick={confirmFailMark}
+              disabled={createMutation.isPending || updateMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Confirm Update
+              {createMutation.isPending || updateMutation.isPending ? "Updating..." : "Confirm Update"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
