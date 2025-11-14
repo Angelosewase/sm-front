@@ -5,6 +5,7 @@ import {
   type RegistrationAnalyticsDto,
   type TimeSeriesItem,
   type GenderDistributionItem,
+  type SchoolPerformanceAnalyticsDto,
 } from "@/lib/api/dashboard";
 import type { ReactNode } from "react";
 
@@ -213,6 +214,51 @@ export function useRegistrationAnalytics(
       return dashbaordApi.fetchRegistrationAnalytics(schoolId);
     },
     enabled: !!schoolId,
+    staleTime: 60_000,
+    ...options,
+  });
+}
+
+export type PerformanceScope = "term" | "year" | "all";
+
+export interface PerformanceQueryParams {
+  schoolId?: string;
+  classId?: string;
+  academicYear?: string;
+  termId?: string;
+  scope?: PerformanceScope;
+}
+
+export const performanceKeys = {
+  all: ["performance-analytics"] as const,
+  detail: (params: PerformanceQueryParams) =>
+    [
+      ...performanceKeys.all,
+      params.schoolId ?? "unknown-school",
+      params.classId ?? "all-classes",
+      params.academicYear ?? "all-years",
+      params.termId ?? "all-terms",
+      params.scope ?? "all",
+    ] as const,
+};
+
+export type PerformanceAnalyticsKey = ReturnType<typeof performanceKeys.detail>;
+
+export function usePerformanceAnalytics(
+  params: PerformanceQueryParams,
+  options?: UseQueryOptions<SchoolPerformanceAnalyticsDto>
+) {
+  const hasSchool = !!params.schoolId;
+
+  return useQuery<SchoolPerformanceAnalyticsDto>({
+    queryKey: performanceKeys.detail(params),
+    queryFn: () => {
+      if (!params.schoolId) {
+        throw new Error("schoolId is required to fetch performance analytics");
+      }
+      return dashbaordApi.fetchPerformanceAnalytics(params);
+    },
+    enabled: hasSchool,
     staleTime: 60_000,
     ...options,
   });
