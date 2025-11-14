@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Clock, Calendar } from "lucide-react";
-import { useTerms } from "@/hooks/use-academic-terms";
-import { useActiveAcademicYear } from "@/hooks/use-academic-terms";
-import { activateTerm, updateTerm } from "@/lib/api/academic-terms";
+import { useTermsByAcademicYear } from "@/hooks/use-academic-terms";
+import { useOpenAcademicYear } from "@/hooks/use-academic-terms";
+import { termsApi, Term } from "@/lib/api/academic-terms";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -20,84 +20,122 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Term } from "@/lib/api/academic-terms";
 
-// Standard term names - always First, Second, Third
-const TERM_NAMES = ["First Term", "Second Term", "Third Term"];
+// Standard term names based on order (1, 2, 3)
+const TERM_NAMES = ["Term 1", "Term 2", "Term 3"];
 
 export function Terms() {
   const queryClient = useQueryClient();
-  const { data: activeAcademicYear, isLoading: isLoadingActiveYear } = useActiveAcademicYear();
-  const { data: terms = [], isLoading: isLoadingTerms } = useTerms(activeAcademicYear?._id);
-  const [isActivateDialogOpen, setIsActivateDialogOpen] = useState(false);
-  const [termToActivate, setTermToActivate] = useState<{ id: string; name: string } | null>(null);
+  const { data: openAcademicYear, isLoading: isLoadingOpenYear } = useOpenAcademicYear();
+  const { data: terms = [], isLoading: isLoadingTerms } = useTermsByAcademicYear(openAcademicYear?._id);
+  const [isOpenTermDialogOpen, setIsOpenTermDialogOpen] = useState(false);
+  const [isCloseTermDialogOpen, setIsCloseTermDialogOpen] = useState(false);
+  const [termToOpen, setTermToOpen] = useState<{ order: number; name: string } | null>(null);
+  const [termToClose, setTermToClose] = useState<{ order: number; name: string } | null>(null);
 
-  // Normalize terms to always show First, Second, Third terms
-  // If a term doesn't exist for an order, we'll still show it but disabled
+  // Normalize terms to always show Term 1, Term 2, Term 3
+  // Terms should always exist (created when academic year is created)
   const normalizedTerms = useMemo(() => {
     const termMap = new Map(terms.map(term => [term.order, term]));
     return TERM_NAMES.map((name, index) => {
       const order = index + 1;
       const existingTerm = termMap.get(order);
-      // If term exists, use it; otherwise create a placeholder for display
+      // Terms should always exist, but handle missing gracefully
       return existingTerm || {
         _id: `placeholder-${order}`,
-        name,
+        academicYear: openAcademicYear?._id || "",
         order,
-        startDate: undefined,
-        endDate: undefined,
-        isActive: false,
+        isOpen: false,
+        isClosed: false,
+        startDate: null,
+        endDate: null,
       };
     });
-  }, [terms]);
+  }, [terms, openAcademicYear]);
 
-  const activateTermMutation = useMutation({
-    mutationFn: activateTerm,
+  const openTermMutation = useMutation({
+    mutationFn: ({ academicYearId, order }: { academicYearId: string; order: number }) =>
+      termsApi.open(academicYearId, order),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["terms"] });
-      toast.success("Term activated successfully");
-      setIsActivateDialogOpen(false);
-      setTermToActivate(null);
+      queryClient.invalidateQueries({ queryKey: ["terms", "academic-year", openAcademicYear?._id] });
+      toast.success("Term opened successfully");
+      setIsOpenTermDialogOpen(false);
+      setTermToOpen(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to activate term");
+      toast.error(error?.response?.data?.message || "Failed to open term");
     },
   });
 
   const closeTermMutation = useMutation({
-    mutationFn: ({ id }: { id: string }) => updateTerm(id, { isActive: false }),
+    mutationFn: ({ academicYearId, order }: { academicYearId: string; order: number }) =>
+      termsApi.close(academicYearId, order),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["terms"] });
+      queryClient.invalidateQueries({ queryKey: ["terms", "academic-year", openAcademicYear?._id] });
       toast.success("Term closed successfully");
+      setIsCloseTermDialogOpen(false);
+      setTermToClose(null);
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to close term");
     },
   });
 
-  const handleActivateTerm = (term: Term) => {
-    setTermToActivate({ id: term._id, name: term.name });
-    setIsActivateDialogOpen(true);
+  const handleOpenTerm = (order: number, name: string) => {
+    if (!openAcademicYear) {
+      toast.error("No open academic year found");
+      return;
+    }
+    setTermToOpen({ order, name });
+    setIsOpenTermDialogOpen(true);
   };
 
-  const confirmActivateTerm = () => {
-    if (termToActivate) {
-      activateTermMutation.mutate(termToActivate.id);
+  const confirmOpenTerm = () => {
+    if (termToOpen && openAcademicYear) {
+      openTermMutation.mutate({
+        academicYearId: openAcademicYear._id,
+        order: termToOpen.order,
+      });
     }
   };
 
-  const handleCloseTerm = (term: Term) => {
-    closeTermMutation.mutate({ id: term._id });
+  const handleCloseTerm = (order: number, name: string) => {
+    if (!openAcademicYear) {
+      toast.error("No open academic year found");
+      return;
+    }
+    setTermToClose({ order, name });
+    setIsCloseTermDialogOpen(true);
   };
 
-  // Check if term is active
-  const isTermActive = (term: Term) => {
-    if (term._id.startsWith("placeholder-")) return false;
-    const existingTerm = terms.find(t => t._id === term._id);
-    return existingTerm?.isActive === true;
+  const confirmCloseTerm = () => {
+    if (termToClose && openAcademicYear) {
+      closeTermMutation.mutate({
+        academicYearId: openAcademicYear._id,
+        order: termToClose.order,
+      });
+    }
   };
 
-  if (isLoadingActiveYear || isLoadingTerms) {
+  // Check if term can be opened (all previous terms must be closed)
+  const canOpenTerm = (term: Term | typeof normalizedTerms[0]) => {
+    if (!openAcademicYear || term._id.startsWith("placeholder-")) return false;
+    if (term.isOpen) return false; // Already open
+    if (term.isClosed) return false; // Cannot reopen closed terms
+    
+    // Check if all previous terms are closed
+    for (let i = 1; i < term.order; i++) {
+      const prevTerm = terms.find(t => t.order === i);
+      if (!prevTerm || !prevTerm.isClosed) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (isLoadingOpenYear || isLoadingTerms) {
     return (
       <Card className="shadow-none border-none bg-transparent p-0">
         <CardHeader>
@@ -108,13 +146,13 @@ export function Terms() {
     );
   }
 
-  if (!activeAcademicYear) {
+  if (!openAcademicYear) {
     return (
       <Card className="shadow-none border-none bg-transparent p-0">
         <CardHeader>
           <CardTitle>Term Management</CardTitle>
           <CardDescription>
-            No active academic year found. Please activate an academic year first.
+            No open academic year found. Please open an academic year first.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -128,57 +166,79 @@ export function Terms() {
           <div className="space-y-1">
             <CardTitle>Term Management</CardTitle>
             <CardDescription>
-              Manage academic terms for <strong>{activeAcademicYear.label}</strong>
+              Manage academic terms for <strong>{openAcademicYear.label}</strong>
             </CardDescription>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
               <Calendar className="h-4 w-4" />
-              <span>Current Academic Year: {activeAcademicYear.label}</span>
+              <span>Current Academic Year: {openAcademicYear.label}</span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4">
             {normalizedTerms.map((term) => {
-              const isActive = isTermActive(term);
               const isPlaceholder = term._id.startsWith("placeholder-");
-              const existingTerm = terms.find(t => t._id === term._id);
+              const termName = TERM_NAMES[term.order - 1];
+              const canOpen = canOpenTerm(term);
 
               return (
                 <div key={term._id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-1">
                     <Clock className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{term.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {isPlaceholder ? "Not yet created" : "Academic Term"}
-                      </p>
+                    <div className="flex-1">
+                      <p className="font-medium">{termName}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant={term.isOpen ? "default" : term.isClosed ? "secondary" : "outline"}>
+                          {term.isOpen ? "Open" : term.isClosed ? "Closed" : "Not Started"}
+                        </Badge>
+                        {term.startDate && (
+                          <span className="text-xs text-muted-foreground">
+                            Started: {new Date(term.startDate).toLocaleDateString()}
+                          </span>
+                        )}
+                        {term.endDate && (
+                          <span className="text-xs text-muted-foreground">
+                            Ended: {new Date(term.endDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <Badge variant={isActive ? "default" : "secondary"}>
-                      {isActive ? "Open" : "Closed"}
-                    </Badge>
-                    {isActive ? (
+                  <div className="flex items-center gap-2">
+                    {term.isOpen ? (
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleCloseTerm(existingTerm || term)}
-                        disabled={closeTermMutation.isPending || activateTermMutation.isPending}
+                        onClick={() => handleCloseTerm(term.order, termName)}
+                        disabled={closeTermMutation.isPending || openTermMutation.isPending}
                       >
                         Close Term
+                      </Button>
+                    ) : term.isClosed ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        title="Closed terms cannot be reopened"
+                      >
+                        Closed
                       </Button>
                     ) : (
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => {
-                          if (existingTerm) {
-                            handleActivateTerm(existingTerm);
-                          } else {
-                            toast.error("Term not found. Please ensure terms are created for this academic year.");
-                          }
-                        }}
-                        disabled={activateTermMutation.isPending || closeTermMutation.isPending || isPlaceholder}
+                        onClick={() => handleOpenTerm(term.order, termName)}
+                        disabled={
+                          openTermMutation.isPending || 
+                          closeTermMutation.isPending || 
+                          isPlaceholder ||
+                          !canOpen
+                        }
+                        title={
+                          !canOpen 
+                            ? "Previous terms must be opened and closed first" 
+                            : "Open term"
+                        }
                       >
                         Open Term
                       </Button>
@@ -191,13 +251,13 @@ export function Terms() {
         </CardContent>
       </Card>
 
-      {/* Activate Term Confirmation Dialog */}
+      {/* Open Term Confirmation Dialog */}
       <AlertDialog 
-        open={isActivateDialogOpen} 
+        open={isOpenTermDialogOpen} 
         onOpenChange={(open) => {
-          setIsActivateDialogOpen(open);
+          setIsOpenTermDialogOpen(open);
           if (!open) {
-            setTermToActivate(null);
+            setTermToOpen(null);
           }
         }}
       >
@@ -205,22 +265,55 @@ export function Terms() {
           <AlertDialogHeader>
             <AlertDialogTitle>Open Term</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to open <strong>{termToActivate?.name}</strong> for the academic year <strong>{activeAcademicYear?.label}</strong>? 
-              This will make this term active and available for new activities. 
-              {terms.some(t => t.isActive && t._id !== termToActivate?.id) && (
-                " Any other currently open term will be closed."
+              Are you sure you want to open <strong>{termToOpen?.name}</strong> for the academic year <strong>{openAcademicYear?.label}</strong>? 
+              This will make this term open and available for new activities. 
+              {terms.some(t => t.isOpen && t.order !== termToOpen?.order) && (
+                " Any other currently open term will be closed automatically."
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={activateTermMutation.isPending}>
+            <AlertDialogCancel disabled={openTermMutation.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmActivateTerm}
-              disabled={activateTermMutation.isPending}
+              onClick={confirmOpenTerm}
+              disabled={openTermMutation.isPending}
             >
-              {activateTermMutation.isPending ? "Opening..." : "Open Term"}
+              {openTermMutation.isPending ? "Opening..." : "Open Term"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Close Term Confirmation Dialog */}
+      <AlertDialog 
+        open={isCloseTermDialogOpen} 
+        onOpenChange={(open) => {
+          setIsCloseTermDialogOpen(open);
+          if (!open) {
+            setTermToClose(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close Term</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to close <strong>{termToClose?.name}</strong> for the academic year <strong>{openAcademicYear?.label}</strong>? 
+              Once closed, this term cannot be reopened. All term activities will be finalized.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={closeTermMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmCloseTerm}
+              disabled={closeTermMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {closeTermMutation.isPending ? "Closing..." : "Close Term"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

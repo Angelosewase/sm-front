@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Calendar, Plus, CheckCircle2, Star } from "lucide-react";
-import { useAcademicYears, useActiveAcademicYear } from "@/hooks/use-academic-terms";
-import { createAcademicYear, endAcademicYear, activateAcademicYear } from "@/lib/api/academic-terms";
+import { useAcademicYears, useOpenAcademicYear } from "@/hooks/use-academic-terms";
+import { academicYearsApi } from "@/lib/api/academic-terms";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -34,12 +34,12 @@ import {
 export function AcademicYear() {
   const queryClient = useQueryClient();
   const { data: academicYears = [], isLoading } = useAcademicYears();
-  const { data: activeAcademicYear, isLoading: isLoadingActive } = useActiveAcademicYear();
+  const { data: openAcademicYear, isLoading: isLoadingOpen } = useOpenAcademicYear();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEndYearDialogOpen, setIsEndYearDialogOpen] = useState(false);
-  const [isActivateYearDialogOpen, setIsActivateYearDialogOpen] = useState(false);
-  const [yearToEnd, setYearToEnd] = useState<{ id: string; label: string } | null>(null);
-  const [yearToActivate, setYearToActivate] = useState<{ id: string; label: string } | null>(null);
+  const [isCloseYearDialogOpen, setIsCloseYearDialogOpen] = useState(false);
+  const [isOpenYearDialogOpen, setIsOpenYearDialogOpen] = useState(false);
+  const [yearToClose, setYearToClose] = useState<{ id: string; label: string } | null>(null);
+  const [yearToOpen, setYearToOpen] = useState<{ id: string; label: string } | null>(null);
   const [newAcademicYear, setNewAcademicYear] = useState({
     label: "",
     startDate: "",
@@ -47,10 +47,10 @@ export function AcademicYear() {
   });
 
   const createMutation = useMutation({
-    mutationFn: createAcademicYear,
+    mutationFn: academicYearsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["academic-years"] });
-      queryClient.invalidateQueries({ queryKey: ["academic-year", "active"] });
+      queryClient.invalidateQueries({ queryKey: ["academic-year", "open"] });
       toast.success("Academic year created successfully");
       setIsCreateDialogOpen(false);
       setNewAcademicYear({ label: "", startDate: "", endDate: "" });
@@ -60,31 +60,31 @@ export function AcademicYear() {
     },
   });
 
-  const endYearMutation = useMutation({
-    mutationFn: endAcademicYear,
+  const closeYearMutation = useMutation({
+    mutationFn: (id: string) => academicYearsApi.close(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["academic-years"] });
-      queryClient.invalidateQueries({ queryKey: ["academic-year", "active"] });
-      toast.success("Academic year marked as ended");
-      setIsEndYearDialogOpen(false);
-      setYearToEnd(null);
+      queryClient.invalidateQueries({ queryKey: ["academic-year", "open"] });
+      toast.success("Academic year closed successfully");
+      setIsCloseYearDialogOpen(false);
+      setYearToClose(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to end academic year");
+      toast.error(error?.response?.data?.message || "Failed to close academic year");
     },
   });
 
-  const activateYearMutation = useMutation({
-    mutationFn: activateAcademicYear,
+  const openYearMutation = useMutation({
+    mutationFn: (id: string) => academicYearsApi.open(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["academic-years"] });
-      queryClient.invalidateQueries({ queryKey: ["academic-year", "active"] });
-      toast.success("Academic year activated successfully");
-      setIsActivateYearDialogOpen(false);
-      setYearToActivate(null);
+      queryClient.invalidateQueries({ queryKey: ["academic-year", "open"] });
+      toast.success("Academic year opened successfully");
+      setIsOpenYearDialogOpen(false);
+      setYearToOpen(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to activate academic year");
+      toast.error(error?.response?.data?.message || "Failed to open academic year");
     },
   });
 
@@ -106,31 +106,30 @@ export function AcademicYear() {
 
     createMutation.mutate({
       label: newAcademicYear.label,
-      startDate: newAcademicYear.startDate,
-      endDate: newAcademicYear.endDate,
-      isActive: true,
+      startDate: newAcademicYear.startDate || undefined,
+      endDate: newAcademicYear.endDate || undefined,
     });
   };
 
-  const handleEndAcademicYear = (id: string, label: string) => {
-    setYearToEnd({ id, label });
-    setIsEndYearDialogOpen(true);
+  const handleCloseAcademicYear = (id: string, label: string) => {
+    setYearToClose({ id, label });
+    setIsCloseYearDialogOpen(true);
   };
 
-  const confirmEndAcademicYear = () => {
-    if (yearToEnd) {
-      endYearMutation.mutate(yearToEnd.id);
+  const confirmCloseAcademicYear = () => {
+    if (yearToClose) {
+      closeYearMutation.mutate(yearToClose.id);
     }
   };
 
-  const handleActivateAcademicYear = (id: string, label: string) => {
-    setYearToActivate({ id, label });
-    setIsActivateYearDialogOpen(true);
+  const handleOpenAcademicYear = (id: string, label: string) => {
+    setYearToOpen({ id, label });
+    setIsOpenYearDialogOpen(true);
   };
 
-  const confirmActivateAcademicYear = () => {
-    if (yearToActivate) {
-      activateYearMutation.mutate(yearToActivate.id);
+  const confirmOpenAcademicYear = () => {
+    if (yearToOpen) {
+      openYearMutation.mutate(yearToOpen.id);
     }
   };
 
@@ -224,10 +223,10 @@ export function AcademicYear() {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Current Academic Year Section */}
-        {!isLoadingActive && activeAcademicYear && (
+        {/* Currently Open Academic Year Section */}
+        {!isLoadingOpen && openAcademicYear && (
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">Current Academic Year</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">Currently Open Academic Year</h3>
             <div className="p-6 border-2 border-primary/20 rounded-lg bg-primary/5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
@@ -236,24 +235,24 @@ export function AcademicYear() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <p className="text-xl font-semibold">{activeAcademicYear.label}</p>
+                      <p className="text-xl font-semibold">{openAcademicYear.label}</p>
                       <Badge variant="default" className="text-sm">
-                        Currently Active
+                        Currently Open
                       </Badge>
                     </div>
                     <div className="grid grid-cols-3 gap-6 text-sm">
                       <div>
                         <p className="text-muted-foreground mb-1">Start Date</p>
-                        <p className="font-medium text-base">{formatDate(activeAcademicYear.startDate)}</p>
+                        <p className="font-medium text-base">{formatDate(openAcademicYear.startDate)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground mb-1">End Date</p>
-                        <p className="font-medium text-base">{formatDate(activeAcademicYear.endDate)}</p>
+                        <p className="font-medium text-base">{formatDate(openAcademicYear.endDate)}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground mb-1">Duration</p>
                         <p className="font-medium text-base">
-                          {calculateDays(activeAcademicYear.startDate, activeAcademicYear.endDate)} days
+                          {calculateDays(openAcademicYear.startDate, openAcademicYear.endDate)} days
                         </p>
                       </div>
                     </div>
@@ -263,10 +262,10 @@ export function AcademicYear() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleEndAcademicYear(activeAcademicYear._id, activeAcademicYear.label)}
-                    disabled={endYearMutation.isPending}
+                    onClick={() => handleCloseAcademicYear(openAcademicYear._id, openAcademicYear.label)}
+                    disabled={closeYearMutation.isPending}
                   >
-                    Mark as Ended
+                    Close Academic Year
                   </Button>
                 </div>
               </div>
@@ -277,7 +276,7 @@ export function AcademicYear() {
         {/* All Academic Years Section */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-muted-foreground">
-            {activeAcademicYear ? "All Academic Years" : "Academic Years"}
+            {openAcademicYear ? "All Academic Years" : "Academic Years"}
           </h3>
           {isLoading ? (
             <div className="text-center py-8 text-muted-foreground">Loading academic years...</div>
@@ -288,7 +287,7 @@ export function AcademicYear() {
           ) : (
             <div className="grid gap-4">
               {academicYears
-                .filter((year) => !activeAcademicYear || year._id !== activeAcademicYear._id)
+                .filter((year) => !openAcademicYear || year._id !== openAcademicYear._id)
                 .map((year) => (
                   <div
                     key={year._id}
@@ -299,8 +298,8 @@ export function AcademicYear() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium">{year.label}</p>
-                          <Badge variant={year.isActive ? "default" : "secondary"}>
-                            {year.isActive ? "Active" : "Ended"}
+                          <Badge variant={year.isOpen ? "default" : "secondary"}>
+                            {year.isOpen ? "Open" : "Closed"}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
@@ -322,26 +321,26 @@ export function AcademicYear() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {!year.isActive && (
+                      {!year.isOpen && (
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => handleActivateAcademicYear(year._id, year.label)}
-                          disabled={activateYearMutation.isPending || endYearMutation.isPending}
+                          onClick={() => handleOpenAcademicYear(year._id, year.label)}
+                          disabled={openYearMutation.isPending || closeYearMutation.isPending}
                           className="flex items-center gap-2"
                         >
                           <Star className="h-4 w-4" />
-                          Mark as Active
+                          Open Academic Year
                         </Button>
                       )}
-                      {year.isActive && (
+                      {year.isOpen && (
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleEndAcademicYear(year._id, year.label)}
-                          disabled={endYearMutation.isPending || activateYearMutation.isPending}
+                          onClick={() => handleCloseAcademicYear(year._id, year.label)}
+                          disabled={closeYearMutation.isPending || openYearMutation.isPending}
                         >
-                          Mark as Ended
+                          Close Academic Year
                         </Button>
                       )}
                     </div>
@@ -352,72 +351,73 @@ export function AcademicYear() {
         </div>
       </CardContent>
 
-      {/* End Academic Year Confirmation Dialog */}
+      {/* Close Academic Year Confirmation Dialog */}
       <AlertDialog 
-        open={isEndYearDialogOpen} 
+        open={isCloseYearDialogOpen} 
         onOpenChange={(open) => {
-          setIsEndYearDialogOpen(open);
+          setIsCloseYearDialogOpen(open);
           if (!open) {
-            setYearToEnd(null);
+            setYearToClose(null);
           }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>End Academic Year</AlertDialogTitle>
+            <AlertDialogTitle>Close Academic Year</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark <strong>{yearToEnd?.label}</strong> as ended? 
-              This action will deactivate the academic year and it will no longer be available 
-              for new activities. You can still view historical data for this academic year.
+              Are you sure you want to close <strong>{yearToClose?.label}</strong>? 
+              This action will close the academic year and it will no longer be available 
+              for new activities. You cannot close an academic year if any of its terms are currently open.
+              You can still view historical data for this academic year.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={endYearMutation.isPending}>
+            <AlertDialogCancel disabled={closeYearMutation.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmEndAcademicYear}
-              disabled={endYearMutation.isPending}
+              onClick={confirmCloseAcademicYear}
+              disabled={closeYearMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {endYearMutation.isPending ? "Ending..." : "Mark as Ended"}
+              {closeYearMutation.isPending ? "Closing..." : "Close Academic Year"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Activate Academic Year Confirmation Dialog */}
+      {/* Open Academic Year Confirmation Dialog */}
       <AlertDialog 
-        open={isActivateYearDialogOpen} 
+        open={isOpenYearDialogOpen} 
         onOpenChange={(open) => {
-          setIsActivateYearDialogOpen(open);
+          setIsOpenYearDialogOpen(open);
           if (!open) {
-            setYearToActivate(null);
+            setYearToOpen(null);
           }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Activate Academic Year</AlertDialogTitle>
+            <AlertDialogTitle>Open Academic Year</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark <strong>{yearToActivate?.label}</strong> as the current active academic year? 
-              {activeAcademicYear && (
+              Are you sure you want to open <strong>{yearToOpen?.label}</strong>? 
+              {openAcademicYear && (
                 <>
-                  {" "}This will deactivate <strong>{activeAcademicYear.label}</strong> and make it no longer active.
+                  {" "}This will close <strong>{openAcademicYear.label}</strong> and make it no longer open.
                 </>
               )}
-              {" "}The newly activated academic year will become the default for all new activities.
+              {" "}The newly opened academic year will become the default for all new activities.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={activateYearMutation.isPending}>
+            <AlertDialogCancel disabled={openYearMutation.isPending}>
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={confirmActivateAcademicYear}
-              disabled={activateYearMutation.isPending}
+              onClick={confirmOpenAcademicYear}
+              disabled={openYearMutation.isPending}
             >
-              {activateYearMutation.isPending ? "Activating..." : "Mark as Active"}
+              {openYearMutation.isPending ? "Opening..." : "Open Academic Year"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
