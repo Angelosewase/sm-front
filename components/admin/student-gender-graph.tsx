@@ -14,8 +14,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useSchool } from "@/contexts/school-context";
+import { registrationMappers, useRegistrationAnalytics } from "@/hooks/use-analytics";
 
-const chartData = [
+const fallbackChartData = [
   { gender: "male", students: 45, fill: "var(--color-male)" },
   { gender: "female", students: 55, fill: "var(--color-female)" },
 ];
@@ -35,9 +37,18 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function StudentGenderChart() {
+  const { school } = useSchool();
+  const schoolId = school?.id;
+  const { data } = useRegistrationAnalytics(schoolId);
+
+  const chartData = React.useMemo(() => {
+    if (!data) return fallbackChartData;
+    return registrationMappers.toGenderPieData(data.genderDistribution);
+  }, [data]);
+
   const totalStudents = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.students, 0);
-  }, []);
+    return chartData.reduce((acc, curr) => acc + (curr.students || 0), 0);
+  }, [chartData]);
 
   return (
     <Card className="h-full flex flex-col">

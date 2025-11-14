@@ -1,7 +1,10 @@
+'use client'
 import StatCard, { IStatCardDataItem } from "../stat-card";
+import { useSchool } from "@/contexts/school-context";
+import { useAdminAnalytics } from "@/hooks/use-analytics";
 
-// Sample admin metrics data over time
-const adminMetricsData = [
+// Fallback sample admin metrics data over time
+const fallbackMetricsData = [
   {
     date: "Week 1",
     "Total Students": 1180,
@@ -53,7 +56,7 @@ const adminMetricsData = [
   },
 ];
 
-const adminStats: Array<Omit<IStatCardDataItem, "data">> = [
+const fallbackCards: Array<Omit<IStatCardDataItem, "data">> = [
   {
     name: "Total Students",
     icon: "🧍‍♂️",
@@ -93,11 +96,20 @@ const adminStats: Array<Omit<IStatCardDataItem, "data">> = [
 ];
 
 export function AdminStatCards() {
+  const { school } = useSchool();
+  const schoolId = school?.id;
+
+  const { data, isLoading, isError, cards, series } = useAdminAnalytics(schoolId);
+
+
+  const dataSeries = series ?? fallbackMetricsData;
+  const items: Array<Omit<IStatCardDataItem, "data">> = cards ?? fallbackCards;
+
   return (
     <div className="w-full">
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
-        {adminStats.map((item, idx) => (
-          <StatCard key={idx} data={adminMetricsData} {...item} />
+        {items.map((item, idx) => (
+          <StatCard key={idx} data={dataSeries} {...item} />
         ))}
       </dl>
     </div>
