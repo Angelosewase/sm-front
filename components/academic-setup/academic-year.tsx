@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { Calendar, Plus, CheckCircle2, Star } from "lucide-react";
 import { useAcademicYears, useOpenAcademicYear } from "@/hooks/use-academic-terms";
 import { academicYearsApi } from "@/lib/api/academic-terms";
@@ -33,8 +33,27 @@ import {
 
 export function AcademicYear() {
   const queryClient = useQueryClient();
-  const { data: academicYears = [], isLoading } = useAcademicYears();
-  const { data: openAcademicYear, isLoading: isLoadingOpen } = useOpenAcademicYear();
+  const { data: academicYears = [], isLoading, error: academicYearsError } = useAcademicYears();
+  const { data: openAcademicYear, isLoading: isLoadingOpen, error: openYearError } = useOpenAcademicYear();
+  
+  // Handle query errors
+  useEffect(() => {
+    if (academicYearsError) {
+      toast.error(
+        (academicYearsError as any)?.response?.data?.message || 
+        "Failed to load academic years. Please refresh the page."
+      );
+    }
+  }, [academicYearsError]);
+  
+  useEffect(() => {
+    if (openYearError) {
+      toast.error(
+        (openYearError as any)?.response?.data?.message || 
+        "Failed to load open academic year. Please refresh the page."
+      );
+    }
+  }, [openYearError]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCloseYearDialogOpen, setIsCloseYearDialogOpen] = useState(false);
   const [isOpenYearDialogOpen, setIsOpenYearDialogOpen] = useState(false);
@@ -56,7 +75,9 @@ export function AcademicYear() {
       setNewAcademicYear({ label: "", startDate: "", endDate: "" });
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to create academic year");
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to create academic year";
+      toast.error(errorMessage);
+      console.error("Create academic year error:", error);
     },
   });
 
@@ -70,7 +91,9 @@ export function AcademicYear() {
       setYearToClose(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to close academic year");
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to close academic year";
+      toast.error(errorMessage);
+      console.error("Close academic year error:", error);
     },
   });
 
@@ -84,7 +107,9 @@ export function AcademicYear() {
       setYearToOpen(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to open academic year");
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to open academic year";
+      toast.error(errorMessage);
+      console.error("Open academic year error:", error);
     },
   });
 
@@ -104,11 +129,15 @@ export function AcademicYear() {
       return;
     }
 
-    createMutation.mutate({
-      label: newAcademicYear.label,
-      startDate: newAcademicYear.startDate || undefined,
-      endDate: newAcademicYear.endDate || undefined,
-    });
+    try {
+      createMutation.mutate({
+        label: newAcademicYear.label,
+        startDate: newAcademicYear.startDate || undefined,
+        endDate: newAcademicYear.endDate || undefined,
+      });
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to create academic year. Please try again.");
+    }
   };
 
   const handleCloseAcademicYear = (id: string, label: string) => {
@@ -118,18 +147,34 @@ export function AcademicYear() {
 
   const confirmCloseAcademicYear = () => {
     if (yearToClose) {
-      closeYearMutation.mutate(yearToClose.id);
+      try {
+        closeYearMutation.mutate(yearToClose.id);
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to close academic year. Please try again.");
+      }
+    } else {
+      toast.error("No academic year selected to close");
     }
   };
 
   const handleOpenAcademicYear = (id: string, label: string) => {
+    if (!id) {
+      toast.error("Invalid academic year. Please try again.");
+      return;
+    }
     setYearToOpen({ id, label });
     setIsOpenYearDialogOpen(true);
   };
 
   const confirmOpenAcademicYear = () => {
     if (yearToOpen) {
-      openYearMutation.mutate(yearToOpen.id);
+      try {
+        openYearMutation.mutate(yearToOpen.id);
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to open academic year. Please try again.");
+      }
+    } else {
+      toast.error("No academic year selected to open");
     }
   };
 

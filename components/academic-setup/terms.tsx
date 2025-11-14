@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
 import { Clock, Calendar } from "lucide-react";
 import { useTermsByAcademicYear } from "@/hooks/use-academic-terms";
 import { useOpenAcademicYear } from "@/hooks/use-academic-terms";
@@ -26,8 +26,27 @@ const TERM_NAMES = ["Term 1", "Term 2", "Term 3"];
 
 export function Terms() {
   const queryClient = useQueryClient();
-  const { data: openAcademicYear, isLoading: isLoadingOpenYear } = useOpenAcademicYear();
-  const { data: terms = [], isLoading: isLoadingTerms } = useTermsByAcademicYear(openAcademicYear?._id);
+  const { data: openAcademicYear, isLoading: isLoadingOpenYear, error: openYearError } = useOpenAcademicYear();
+  const { data: terms = [], isLoading: isLoadingTerms, error: termsError } = useTermsByAcademicYear(openAcademicYear?._id);
+  
+  // Handle query errors
+  useEffect(() => {
+    if (openYearError) {
+      toast.error(
+        (openYearError as any)?.response?.data?.message || 
+        "Failed to load open academic year. Please refresh the page."
+      );
+    }
+  }, [openYearError]);
+  
+  useEffect(() => {
+    if (termsError) {
+      toast.error(
+        (termsError as any)?.response?.data?.message || 
+        "Failed to load terms. Please refresh the page."
+      );
+    }
+  }, [termsError]);
   const [isOpenTermDialogOpen, setIsOpenTermDialogOpen] = useState(false);
   const [isCloseTermDialogOpen, setIsCloseTermDialogOpen] = useState(false);
   const [termToOpen, setTermToOpen] = useState<{ order: number; name: string } | null>(null);
@@ -64,7 +83,9 @@ export function Terms() {
       setTermToOpen(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to open term");
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to open term";
+      toast.error(errorMessage);
+      console.error("Open term error:", error);
     },
   });
 
@@ -79,7 +100,9 @@ export function Terms() {
       setTermToClose(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to close term");
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to close term";
+      toast.error(errorMessage);
+      console.error("Close term error:", error);
     },
   });
 
@@ -94,16 +117,30 @@ export function Terms() {
 
   const confirmOpenTerm = () => {
     if (termToOpen && openAcademicYear) {
-      openTermMutation.mutate({
-        academicYearId: openAcademicYear._id,
-        order: termToOpen.order,
-      });
+      if (!termToOpen.order || termToOpen.order < 1 || termToOpen.order > 3) {
+        toast.error("Invalid term order. Term order must be 1, 2, or 3.");
+        return;
+      }
+      try {
+        openTermMutation.mutate({
+          academicYearId: openAcademicYear._id,
+          order: termToOpen.order,
+        });
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to open term. Please try again.");
+      }
+    } else {
+      toast.error("Unable to open term. Missing required information.");
     }
   };
 
   const handleCloseTerm = (order: number, name: string) => {
     if (!openAcademicYear) {
-      toast.error("No open academic year found");
+      toast.error("No open academic year found. Please open an academic year first.");
+      return;
+    }
+    if (!order || order < 1 || order > 3) {
+      toast.error("Invalid term order. Term order must be 1, 2, or 3.");
       return;
     }
     setTermToClose({ order, name });
@@ -112,10 +149,20 @@ export function Terms() {
 
   const confirmCloseTerm = () => {
     if (termToClose && openAcademicYear) {
-      closeTermMutation.mutate({
-        academicYearId: openAcademicYear._id,
-        order: termToClose.order,
-      });
+      if (!termToClose.order || termToClose.order < 1 || termToClose.order > 3) {
+        toast.error("Invalid term order. Term order must be 1, 2, or 3.");
+        return;
+      }
+      try {
+        closeTermMutation.mutate({
+          academicYearId: openAcademicYear._id,
+          order: termToClose.order,
+        });
+      } catch (error: any) {
+        toast.error(error?.message || "Failed to close term. Please try again.");
+      }
+    } else {
+      toast.error("Unable to close term. Missing required information.");
     }
   };
 
@@ -133,6 +180,31 @@ export function Terms() {
       }
     }
     return true;
+  };
+
+  // Show toast when trying to open term that cannot be opened
+  const handleOpenTermClick = (order: number, name: string, term: Term | typeof normalizedTerms[0]) => {
+    if (!canOpenTerm(term)) {
+      // Find which previous term is not closed
+      for (let i = 1; i < term.order; i++) {
+        const prevTerm = terms.find(t => t.order === i);
+        if (!prevTerm) {
+          toast.error(`Term ${i} must be created and closed before opening ${name}.`);
+          return;
+        }
+        if (!prevTerm.isClosed) {
+          toast.error(`Term ${i} must be opened and closed before opening ${name}.`);
+          return;
+        }
+      }
+      if (term.isClosed) {
+        toast.error(`${name} has been closed and cannot be reopened.`);
+        return;
+      }
+      toast.error(`${name} cannot be opened at this time. Please check that all previous terms are closed.`);
+      return;
+    }
+    handleOpenTerm(order, name);
   };
 
   if (isLoadingOpenYear || isLoadingTerms) {
@@ -227,12 +299,11 @@ export function Terms() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => handleOpenTerm(term.order, termName)}
+                        onClick={() => handleOpenTermClick(term.order, termName, term)}
                         disabled={
                           openTermMutation.isPending || 
                           closeTermMutation.isPending || 
-                          isPlaceholder ||
-                          !canOpen
+                          isPlaceholder
                         }
                         title={
                           !canOpen 
