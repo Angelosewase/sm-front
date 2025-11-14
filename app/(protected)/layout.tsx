@@ -11,7 +11,7 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
-      <SidebarProvider defaultOpen={false}>
+      <SidebarProvider>
         <div className="relative flex h-screen w-full">
           <DashboardSidebar />
           <SidebarInset className="flex flex-col">

@@ -84,7 +84,7 @@ import {
   UpdateStudentDto,
 } from "@/types/students.dto";
 import { toast } from "react-toastify";
-
+import { useRouter } from "next/navigation";
 const GRADE_LEVELS = [
   "Grade 1",
   "Grade 2",
@@ -133,10 +133,15 @@ const STATUS_ICON: Record<StudentStatus, React.ReactNode> = {
   active: <IconCircleCheckFilled className="mr-1 h-3 w-3 text-green-500" />,
   suspended: <IconCircleDashed className="mr-1 h-3 w-3 text-orange-500" />,
   transferred: <IconCircleDashed className="mr-1 h-3 w-3 text-blue-500" />,
-  graduated: <IconCircleCheckFilled className="mr-1 h-3 w-3 text-emerald-500" />,
+  graduated: (
+    <IconCircleCheckFilled className="mr-1 h-3 w-3 text-emerald-500" />
+  ),
 };
 
-const STATUS_BADGE_VARIANT: Record<StudentStatus, "default" | "secondary" | "outline" | "destructive"> = {
+const STATUS_BADGE_VARIANT: Record<
+  StudentStatus,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
   active: "default",
   suspended: "destructive",
   transferred: "secondary",
@@ -190,13 +195,15 @@ export function StudentDataTable() {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [selectedGrade, setSelectedGrade] = React.useState("");
   const [selectedClassId, setSelectedClassId] = React.useState("");
-  const [selectedStatus, setSelectedStatus] = React.useState<"" | StudentStatus>(
-    ""
-  );
+  const [selectedStatus, setSelectedStatus] = React.useState<
+    "" | StudentStatus
+  >("");
   const [selectedRows, setSelectedRows] = React.useState<StudentRow[]>([]);
 
   const debouncedSearch = useDebouncedValue(searchTerm);
   const isTrashView = activeTab === "trashed";
+
+  const router = useRouter();
 
   const queryParams = React.useMemo(
     () => ({
@@ -209,7 +216,14 @@ export function StudentDataTable() {
       status: (selectedStatus || undefined) as StudentStatus | undefined,
       onlyTrashed: activeTab === "trashed" ? true : undefined,
     }),
-    [schoolId, debouncedSearch, selectedGrade, selectedClassId, selectedStatus, activeTab]
+    [
+      schoolId,
+      debouncedSearch,
+      selectedGrade,
+      selectedClassId,
+      selectedStatus,
+      activeTab,
+    ]
   );
 
   const studentsQuery = useStudents(queryParams, {
@@ -246,7 +260,8 @@ export function StudentDataTable() {
   const permanentlyDeleteStudentMutation = usePermanentlyDeleteStudent();
   const bulkTrashStudentsMutation = useBulkTrashStudents();
   const bulkRestoreStudentsMutation = useBulkRestoreStudents();
-  const bulkPermanentlyDeleteStudentsMutation = useBulkPermanentlyDeleteStudents();
+  const bulkPermanentlyDeleteStudentsMutation =
+    useBulkPermanentlyDeleteStudents();
 
   const [confirmState, setConfirmState] = React.useState<{
     open: boolean;
@@ -468,7 +483,9 @@ export function StudentDataTable() {
           }
           return (
             <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{student.guardianName}</span>
+              <span className="text-sm font-medium">
+                {student.guardianName}
+              </span>
               {student.guardianPhoneNumber && (
                 <span className="text-xs text-muted-foreground">
                   {student.guardianPhoneNumber}
@@ -511,6 +528,20 @@ export function StudentDataTable() {
             variant: "destructive",
             onClick: () => openConfirmation("trash", student),
             disabled: trashStudentMutation.isPending,
+          },
+          {
+            label: "View Performance",
+            onClick: () =>
+              router.push(
+                `/head-teacher/students/${student._id}?activeTab=performance`
+              ),
+          },
+          {
+            label: "View Report Card",
+            onClick: () =>
+              router.push(
+                `/head-teacher/students/${student._id}?activeTab=report`
+              ),
           },
         ];
       }),
@@ -582,9 +613,7 @@ export function StudentDataTable() {
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue
-                placeholder={
-                  selectedGrade ? "Class" : "Select grade first"
-                }
+                placeholder={selectedGrade ? "Class" : "Select grade first"}
               />
             </SelectTrigger>
             <SelectContent>
@@ -640,7 +669,9 @@ export function StudentDataTable() {
                   bulkTrashStudentsMutation.isPending
                 }
               >
-                {bulkTrashStudentsMutation.isPending ? "Moving..." : "Move to Trash"}
+                {bulkTrashStudentsMutation.isPending
+                  ? "Moving..."
+                  : "Move to Trash"}
               </Button>
             )}
             {isTrashView && (
@@ -656,7 +687,9 @@ export function StudentDataTable() {
                     bulkRestoreStudentsMutation.isPending
                   }
                 >
-                  {bulkRestoreStudentsMutation.isPending ? "Restoring..." : "Restore"}
+                  {bulkRestoreStudentsMutation.isPending
+                    ? "Restoring..."
+                    : "Restore"}
                 </Button>
                 <Button
                   type="button"
@@ -691,7 +724,12 @@ export function StudentDataTable() {
 
   const dialogCopy: Record<
     StudentActionType,
-    { title: string; description: string; actionLabel: string; destructive?: boolean }
+    {
+      title: string;
+      description: string;
+      actionLabel: string;
+      destructive?: boolean;
+    }
   > = {
     trash: {
       title: "Move Student to Trash",
@@ -974,7 +1012,9 @@ function StudentDetailViewer({ student }: { student: Student }) {
                 <Label className="text-xs text-muted-foreground">
                   Enrollment Date
                 </Label>
-                <p className="font-medium">{formatDate(student.enrollmentDate)}</p>
+                <p className="font-medium">
+                  {formatDate(student.enrollmentDate)}
+                </p>
               </div>
             </div>
           </section>
@@ -998,7 +1038,9 @@ function StudentDetailViewer({ student }: { student: Student }) {
                   <Label className="text-xs text-muted-foreground">
                     Current Class
                   </Label>
-                  <p className="font-medium">{student.class?.name ?? "Unassigned"}</p>
+                  <p className="font-medium">
+                    {student.class?.name ?? "Unassigned"}
+                  </p>
                 </div>
                 <Badge variant="outline">{assignedGrade}</Badge>
               </div>
@@ -1361,15 +1403,14 @@ function ClassAssignmentDialog({
   disabled?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
-  const initialGrade =
-    student.gradeLevel ?? student.class?.gradeLevel ?? "";
+  const initialGrade = student.gradeLevel ?? student.class?.gradeLevel ?? "";
   const initialClassId = student.classId ?? student.class?._id ?? "";
   const [selectedGrade, setSelectedGrade] = React.useState(initialGrade);
   const [selectedClassId, setSelectedClassId] = React.useState(
     initialClassId || ""
   );
 
-  const { data: classesResponse } = useClasses({ limit:100 });
+  const { data: classesResponse } = useClasses({ limit: 100 });
   const classes = React.useMemo(
     () => classesResponse?.data ?? [],
     [classesResponse?.data]
@@ -1554,4 +1595,3 @@ function formatDate(value?: string | null) {
     day: "numeric",
   });
 }
-

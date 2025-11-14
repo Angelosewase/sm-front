@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 // --- HELPER COMPONENTS (ICONS) ---
 
@@ -70,7 +71,10 @@ export const SignInPage: React.FC<SignInPageProps> = ({
       <section className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="flex flex-col gap-4">
-            <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">
+            <div className="animate-element animate-delay-50 flex justify-center mb-4">
+              <Logo className="h-32 w-32" />
+            </div>
+            <h1 className="animate-element animate-delay-100 text-2xl md:text-3xl font-bold leading-tight">
               {title}
             </h1>
             <p className="animate-element animate-delay-200 text-muted-foreground">
@@ -168,10 +172,14 @@ export const SignInPage: React.FC<SignInPageProps> = ({
       {/* Right column: hero image + testimonials */}
       {heroImageSrc && (
         <section className="hidden md:block flex-1 relative p-4">
-          <div
-            className="animate-slide-right animate-delay-300 absolute inset-4 rounded-3xl bg-cover bg-center"
-            style={{ backgroundImage: `url(${heroImageSrc})` }}
-          ></div>
+          <div className="animate-slide-right animate-delay-300 absolute inset-4 rounded-3xl shadow overflow-hidden">
+            <img
+              src={heroImageSrc}
+              alt="Authentication background"
+              className="w-full h-full object-cover object-center"
+              style={{ display: "block" }}
+            />
+          </div>
         </section>
       )}
     </div>
