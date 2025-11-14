@@ -36,7 +36,7 @@ const getCommonRoutes = (role: string): Route[] => [
   {
     id: "home",
     title: "Home",
-    icon: <Home className="size-10" />,
+    icon: <Home className="size-5" />,
     link: `/${role}`,
   },
   // {
@@ -51,31 +51,31 @@ const getAdminRoutes = (): Route[] => [
   {
     id: "classes",
     title: "Classes",
-    icon: <BookOpen className="size-10" />,
+    icon: <BookOpen className="size-5" />,
     link: `/admin/classes`,
   },
   {
     id: "teachers",
     title: "Teachers",
-    icon: <GraduationCap className="size-10" />,
+    icon: <GraduationCap className="size-5" />,
     link: `/admin/teachers`,
   },
   // {
   //   id: "head-teachers",
   //   title: "Head Teachers",
-  //   icon: <GraduationCap className="size-10" />,
+  //   icon: <GraduationCap className="size-5" />,
   //   link: `/admin/head-teachers`,
   // },
   {
     id: "students",
     title: "Students",
-    icon: <Users className="size-10" />,
+    icon: <Users className="size-5" />,
     link: `/admin/students`,
   },
   {
     id: "staff",
     title: "Staff",
-    icon: <UserCog className="size-10" />,
+    icon: <UserCog className="size-5" />,
     link: `/admin/staff`,
   },
 ];
@@ -84,37 +84,37 @@ const getHeaderTeacherRoutes = (): Route[] => [
   {
     id: "classes",
     title: "Classes",
-    icon: <BookOpen className="size-10" />,
+    icon: <BookOpen className="size-5" />,
     link: `/head-teacher/classes`,
   },
   {
     id: "teachers",
     title: "Teachers",
-    icon: <GraduationCap className="size-10" />,
+    icon: <GraduationCap className="size-5" />,
     link: `/head-teacher/teachers`,
   },
   {
     id: "students",
     title: "Students",
-    icon: <Users className="size-10" />,
+    icon: <Users className="size-5" />,
     link: `/head-teacher/students`,
   },
   {
     id: "reports",
     title: "Reports",
-    icon: <BookOpenCheck className="size-10" />,
+    icon: <BookOpenCheck className="size-5" />,
     link: "/head-teacher/reports",
   },
   {
     id: "subjects",
     title: "Subjects",
-    icon: <BookOpen className="size-10" />,
+    icon: <BookOpen className="size-5" />,
     link: "/head-teacher/subjects",
   },
   {
     id: "academic-settings",
     title: "Academic Setup",
-    icon: <FileCog className="size-10" />,
+    icon: <FileCog className="size-5" />,
     link: "/head-teacher/academic-settings",
   },
 ];
@@ -123,13 +123,13 @@ const getTeacherRoutes = (): Route[] => [
   {
     id: "classes",
     title: "My Classes",
-    icon: <BookOpen className="size-10" />,
+    icon: <BookOpen className="size-5" />,
     link: `/teacher/classes`,
   },
   {
     id: "students",
     title: "My Students",
-    icon: <Users className="size-10" />,
+    icon: <Users className="size-5" />,
     link: `/teacher/students`,
   },
 ];
@@ -172,13 +172,14 @@ export function DashboardSidebar() {
             : "flex-row items-center justify-between"
         )}
       >
-        <a href="#" className="flex items-center gap-2">
-          <Logo className="h-8 w-8" />
-          {!isCollapsed && (
-            <span className="font-semibold text-black dark:text-white">
-              Acme
-            </span>
-          )}
+        <a href="#" className="flex items-center justify-center gap-2">
+          <Logo
+            className={cn(
+              isCollapsed
+                ? "h-8 w-8 rounded-none"
+                : "h-24 w-24 ml-4 rounded"
+            )}
+          />
         </a>
 
         <motion.div
