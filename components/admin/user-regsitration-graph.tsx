@@ -2,7 +2,7 @@
 
 import { TrendingUp } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   Card,
   CardContent,
@@ -18,11 +18,13 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useSchool } from "@/contexts/school-context"
+import { registrationMappers, type RegistrationPeriod, useRegistrationAnalytics } from "@/hooks/use-analytics"
 
 // ----------------------------------------
-// Chart Data (example — replace with API data later)
+// Fallback sample data
 // ----------------------------------------
-const chartData = [
+const fallbackChartData = [
   { month: "January", students: 186, teachers: 45, staff: 22 },
   { month: "February", students: 305, teachers: 60, staff: 28 },
   { month: "March", students: 237, teachers: 40, staff: 30 },
@@ -41,20 +43,32 @@ const chartConfig = {
 // Component
 // ----------------------------------------
 export function UserRegistrationBarChart() {
-  const [period, setPeriod] = useState("6m")
+  const [period, setPeriod] = useState<RegistrationPeriod>("6m")
+  const { school } = useSchool()
+  const schoolId = school?.id
+
+  const { data } = useRegistrationAnalytics(schoolId)
+
+  const periodLabel = period === "3m" ? "Last 3 months" : period === "6m" ? "Last 6 months" : "Last 12 months"
+
+  const chartData = useMemo(() => {
+    if (!data) return fallbackChartData
+    const series = registrationMappers.selectSeriesByPeriod(data, period)
+    return registrationMappers.toBarChartData(series)
+  }, [data, period])
+
+  const trendLabel = data?.trend?.label ?? "Trending up by 8.7% this period"
 
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
           <CardTitle>User Registration Trends</CardTitle>
-          <CardDescription>
-            {period === "6m" ? "Last 6 months" : period === "12m" ? "Last 12 months" : "Custom period"}
-          </CardDescription>
+          <CardDescription>{periodLabel}</CardDescription>
         </div>
 
         {/* Time Period Filter */}
-        <Select value={period} onValueChange={setPeriod}>
+        <Select value={period} onValueChange={(v) => setPeriod(v as RegistrationPeriod)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
@@ -66,7 +80,7 @@ export function UserRegistrationBarChart() {
         </Select>
       </CardHeader>
 
-      <CardContent className="flex-1  max-h-[250px]  p-0">
+      <CardContent className="flex-1 max-h-[250px] p-0">
         <ChartContainer config={chartConfig} className="h-[250px] w-full mb-0 ">
           <BarChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -75,7 +89,7 @@ export function UserRegistrationBarChart() {
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
+              tickFormatter={(value) => String(value).slice(0, 3)}
             />
             <ChartTooltip
               cursor={false}
@@ -88,9 +102,9 @@ export function UserRegistrationBarChart() {
         </ChartContainer>
       </CardContent>
 
-      <CardFooter className="flex-col items-start gap-2 text-sm  mt-0 pt-0 ">
+      <CardFooter className="flex-col items-start gap-2 text-sm mt-0 pt-0 ">
         <div className="flex gap-2 leading-none font-medium">
-          Trending up by 8.7% this period <TrendingUp className="h-4 w-4" />
+          {trendLabel} <TrendingUp className="h-4 w-4" />
         </div>
         <div className="text-muted-foreground leading-none">
           Showing total registered users by month (students, teachers, staff)
