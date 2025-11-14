@@ -99,12 +99,12 @@ const getHeaderTeacherRoutes = (): Route[] => [
     icon: <Users className="size-5" />,
     link: `/head-teacher/students`,
   },
-  {
-    id: "reports",
-    title: "Reports",
-    icon: <BookOpenCheck className="size-5" />,
-    link: "/head-teacher/reports",
-  },
+  // {
+  //   id: "reports",
+  //   title: "Reports",
+  //   icon: <BookOpenCheck className="size-5" />,
+  //   link: "/head-teacher/reports",
+  // },
   {
     id: "subjects",
     title: "Subjects",
