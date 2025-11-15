@@ -25,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { useAssignSubjectBulk } from "@/hooks/use-subjects";
 import { useTeachers, useAssignSubjectsToTeacher } from "@/hooks/use-teachers";
 import { useAssignSubjectToClass, useClasses } from "@/hooks/use-classes";
-import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
+import { useAcademicYears, useTermsByAcademicYear, useOpenAcademicYear } from "@/hooks/use-academic-terms";
 import { useSubjects } from "@/hooks/use-subjects";
 
 interface AssignSubjectDialogProps {
@@ -69,7 +69,7 @@ export function AssignSubjectDialog({
   const { data: teachersData } = useTeachers();
   const { data: availableClassesData } = useClasses();
   const { data: subjectsData } = useSubjects();
-
+  const { data: openAcademicYear } = useOpenAcademicYear(); 
   const availableClasses = availableClassesData?.data ?? [];
   const availableTeachers = teachersData?.items ?? [];
   const availableSubjects = subjectsData?.items ?? [];

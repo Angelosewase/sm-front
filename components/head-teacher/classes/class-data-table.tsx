@@ -245,7 +245,7 @@ export function ClassDataTable({
       <AssignSubjectDialog
         open={assignOpen}
         onOpenChange={setAssignOpen}
-        classId={activeClass ? String(activeClass.id) : undefined}
+
       />
     </>
   );

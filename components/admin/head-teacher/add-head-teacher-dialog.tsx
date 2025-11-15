@@ -28,7 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/auth-context";
 import { useCreateHeadTeacher } from "@/hooks/use-head-teacher";
 import { useSubjects } from "@/hooks/use-subjects";
-
+import { useSchool } from "@/contexts/school-context";
 
 const schema = z.object({
   name: z.string().min(2, "Name is too short"),
@@ -49,12 +49,13 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-
 export function AddHeadTeacherDialog() {
   const [open, setOpen] = React.useState(false);
-  const { userSchool } = useAuth();
+  const { school: userSchool } = useSchool();
   const { mutateAsync, isPending } = useCreateHeadTeacher();
-  const { data: subjectsData, isLoading: subjectsLoading } = useSubjects({ school: userSchool?.id });
+  const { data: subjectsData, isLoading: subjectsLoading } = useSubjects({
+    school: userSchool?.id,
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -65,7 +66,9 @@ export function AddHeadTeacherDialog() {
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     if (!userSchool?.id) {
-      return form.setError("root", { message: "No school selected in session" });
+      return form.setError("root", {
+        message: "No school selected in session",
+      });
     }
 
     const payload = {
@@ -94,12 +97,20 @@ export function AddHeadTeacherDialog() {
       setOpen(false);
       form.reset();
     } catch (e: any) {
-      form.setError("root", { message: e?.response?.data?.message ?? "Failed to add head teacher" });
+      form.setError("root", {
+        message: e?.response?.data?.message ?? "Failed to add head teacher",
+      });
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) form.reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) form.reset();
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" className="mr-4">
           Add Head Teacher
@@ -116,26 +127,46 @@ export function AddHeadTeacherDialog() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" {...form.register("name")} placeholder="e.g., John Smith" />
+              <Input
+                id="name"
+                {...form.register("name")}
+                placeholder="e.g., John Smith"
+              />
               {form.formState.errors.name && (
-                <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.name.message}
+                </p>
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="john.smith@school.edu" {...form.register("email")} />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john.smith@school.edu"
+                  {...form.register("email")}
+                />
                 {form.formState.errors.email && (
-                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.email.message}
+                  </p>
                 )}
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" type="tel" placeholder="+1 (555) 123-4567" {...form.register("phone")} />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  {...form.register("phone")}
+                />
                 {form.formState.errors.phone && (
-                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.phone.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -151,15 +182,21 @@ export function AddHeadTeacherDialog() {
                     <SelectItem value="Mathematics">Mathematics</SelectItem>
                     <SelectItem value="Science">Science</SelectItem>
                     <SelectItem value="English">English</SelectItem>
-                    <SelectItem value="Social Studies">Social Studies</SelectItem>
+                    <SelectItem value="Social Studies">
+                      Social Studies
+                    </SelectItem>
                     <SelectItem value="Languages">Languages</SelectItem>
                     <SelectItem value="Technology">Technology</SelectItem>
                     <SelectItem value="Arts">Arts</SelectItem>
-                    <SelectItem value="Physical Education">Physical Education</SelectItem>
+                    <SelectItem value="Physical Education">
+                      Physical Education
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 {form.formState.errors.department && (
-                  <p className="text-sm text-destructive">{form.formState.errors.department.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.department.message}
+                  </p>
                 )}
               </div>
 
@@ -167,7 +204,13 @@ export function AddHeadTeacherDialog() {
                 <Label htmlFor="subject">Subject/Specialization</Label>
                 <Select onValueChange={(v) => form.setValue("subject", v)}>
                   <SelectTrigger id="subject" className="w-full">
-                    <SelectValue placeholder={subjectsLoading ? "Loading subjects..." : "Select subject"} />
+                    <SelectValue
+                      placeholder={
+                        subjectsLoading
+                          ? "Loading subjects..."
+                          : "Select subject"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {subjectsData?.items?.length ? (
@@ -177,12 +220,16 @@ export function AddHeadTeacherDialog() {
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem disabled value="__no_subjects__">No subjects available</SelectItem>
+                      <SelectItem disabled value="__no_subjects__">
+                        No subjects available
+                      </SelectItem>
                     )}
                   </SelectContent>
                 </Select>
                 {form.formState.errors.subject && (
-                  <p className="text-sm text-destructive">{form.formState.errors.subject.message}</p>
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.subject.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -190,12 +237,19 @@ export function AddHeadTeacherDialog() {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="experience">Years of Experience</Label>
-                <Input id="experience" placeholder="5" {...form.register("experience")} />
+                <Input
+                  id="experience"
+                  placeholder="5"
+                  {...form.register("experience")}
+                />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="status">Status</Label>
-                <Select defaultValue="Active" onValueChange={(v) => form.setValue("status", v as any)}>
+                <Select
+                  defaultValue="Active"
+                  onValueChange={(v) => form.setValue("status", v as any)}
+                >
                   <SelectTrigger id="status" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -210,23 +264,39 @@ export function AddHeadTeacherDialog() {
 
             <div className="grid gap-2">
               <Label htmlFor="qualifications">Qualifications</Label>
-              <Input id="qualification" placeholder="e.g., M.Ed. in Mathematics Education" {...form.register("qualification")} />
+              <Input
+                id="qualification"
+                placeholder="e.g., M.Ed. in Mathematics Education"
+                {...form.register("qualification")}
+              />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="address">Address</Label>
-              <Input id="address" placeholder="Street address" {...form.register("address")} />
+              <Input
+                id="address"
+                placeholder="Street address"
+                {...form.register("address")}
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="city">City</Label>
-                <Input id="city" placeholder="City" {...form.register("city")} />
+                <Input
+                  id="city"
+                  placeholder="City"
+                  {...form.register("city")}
+                />
               </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="state">State</Label>
-                <Input id="state" placeholder="State" {...form.register("state")} />
+                <Input
+                  id="state"
+                  placeholder="State"
+                  {...form.register("state")}
+                />
               </div>
 
               <div className="grid gap-2">
@@ -237,24 +307,41 @@ export function AddHeadTeacherDialog() {
 
             <div className="grid gap-2">
               <Label htmlFor="emergencyContact">Emergency Contact</Label>
-              <Input id="emergencyContact" placeholder="Name and phone number" {...form.register("emergencyContact")} />
+              <Input
+                id="emergencyContact"
+                placeholder="Name and phone number"
+                {...form.register("emergencyContact")}
+              />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea id="notes" rows={3} placeholder="Any additional information..." {...form.register("notes")} />
+              <Textarea
+                id="notes"
+                rows={3}
+                placeholder="Any additional information..."
+                {...form.register("notes")}
+              />
             </div>
           </div>
 
           {form.formState.errors.root?.message && (
-            <div className="text-sm text-destructive">{form.formState.errors.root.message}</div>
+            <div className="text-sm text-destructive">
+              {form.formState.errors.root.message}
+            </div>
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>{isPending ? "Adding..." : "Add Head Teacher"}</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Adding..." : "Add Head Teacher"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
