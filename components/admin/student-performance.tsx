@@ -4,7 +4,7 @@ import * as React from "react"
 import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useSchool } from "@/contexts/school-context"
-import { useAcademicYears, useActiveAcademicYear, useTerms } from "@/hooks/use-academic-terms"
+import { useAcademicYears, useActiveAcademicYear, useTermsByAcademicYear, useOpenAcademicYear } from "@/hooks/use-academic-terms"
 import { usePerformanceAnalytics, type PerformanceScope } from "@/hooks/use-analytics"
 import {
   Card,
@@ -66,9 +66,11 @@ export function StudentPerformanceChart() {
   const [selectedTermId, setSelectedTermId] = React.useState<string | undefined>(undefined)
   const [selectedClassId, setSelectedClassId] = React.useState<string | undefined>(undefined)
 
+
   const { data: academicYearsData } = useAcademicYears()
   const { data: activeAcademicYear } = useActiveAcademicYear()
-  const { data: termsData } = useTerms()
+  const { data: openAcademicYear } = useOpenAcademicYear()
+  const { data: termsData } = useTermsByAcademicYear(openAcademicYear?._id ?? undefined)
 
   React.useEffect(() => {
     if (!selectedAcademicYear && (activeAcademicYear || academicYearsData?.length)) {
@@ -204,7 +206,7 @@ export function StudentPerformanceChart() {
               <SelectContent className="rounded-xl max-h-64">
                 {availableTerms.map((t) => (
                   <SelectItem key={t._id} value={t._id}>
-                    {t.name}
+                    {t.order.toString()}
                   </SelectItem>
                 ))}
               </SelectContent>
