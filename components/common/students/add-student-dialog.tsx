@@ -28,21 +28,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PlusIcon } from "lucide-react";
+import { gradeLevels } from "@/lib/constants/grade-levels";
 
-const GRADE_LEVELS = [
-  "Grade 1",
-  "Grade 2",
-  "Grade 3",
-  "Grade 4",
-  "Grade 5",
-  "Grade 6",
-  "Grade 7",
-  "Grade 8",
-  "Grade 9",
-  "Grade 10",
-  "Grade 11",
-  "Grade 12",
-];
 
 const GUARDIAN_RELATIONSHIPS = ["father", "mother", "guardian", "other"] as const;
 
@@ -194,8 +182,9 @@ export function AddStudentDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" className="mr-4">
-          Add Student
+        <Button variant="default" className="mr-4">
+          <PlusIcon className="size-4" />
+          Enroll Student
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto">
@@ -375,9 +364,9 @@ export function AddStudentDialog() {
                         <SelectValue placeholder="Select grade" />
                       </SelectTrigger>
                       <SelectContent>
-                        {GRADE_LEVELS.map((grade) => (
-                          <SelectItem key={grade} value={grade}>
-                            {grade}
+                        {gradeLevels.map((grade) => (
+                          <SelectItem key={grade.value} value={grade.value}>
+                            {grade.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

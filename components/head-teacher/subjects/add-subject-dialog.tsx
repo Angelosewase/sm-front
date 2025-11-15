@@ -26,6 +26,7 @@ import { toast } from "react-toastify";
 import { useCreateSubject } from "@/hooks/use-subjects";
 import { CreateSubjectDto } from "@/types/subjects.dto";
 import { useSchool } from "@/contexts/school-context";
+import { gradeLevels } from "@/lib/constants/grade-levels";
 
 export function AddSubjectDialog() {
   const { school } = useSchool();
@@ -197,11 +198,11 @@ export function AddSubjectDialog() {
                   <SelectValue placeholder="Select grade level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Grade 9">Grade 9</SelectItem>
-                  <SelectItem value="Grade 10">Grade 10</SelectItem>
-                  <SelectItem value="Grade 11">Grade 11</SelectItem>
-                  <SelectItem value="Grade 12">Grade 12</SelectItem>
-                  <SelectItem value="All Grades">All Grades</SelectItem>
+                  {gradeLevels.map((grade) => (
+                    <SelectItem key={grade.value} value={grade.value}>
+                      {grade.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
