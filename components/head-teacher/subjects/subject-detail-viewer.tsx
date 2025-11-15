@@ -46,7 +46,8 @@ import { AssignSubjectDialog } from "./assign-subject-dialog";
 import type { DataTableConfig } from "@/components/datatable";
 import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment } from "@/hooks/use-subjects";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAcademicYears, useTerms } from "@/hooks/use-academic-terms";
+import { useOpenAcademicYear } from "@/hooks/use-academic-terms";
+import { gradeLevels } from "@/lib/constants/grade-levels";
 
 export const subjectSchema = z.object({
     id: z.number(),
@@ -67,28 +68,7 @@ export const subjectSchema = z.object({
 
 export default function SubjectDetailViewer({ item }: { item: z.infer<typeof subjectSchema> }) {
     const isMobile = useIsMobile();
-
-    const { data: years } = useAcademicYears();
-    const { data: terms } = useTerms();
-
-    const computeYearLabel = () => {
-        const now = new Date();
-        const startMonth = 8;
-        const y = now.getFullYear();
-        const m = now.getMonth();
-        const from = m >= startMonth ? y : y - 1;
-        const to = from + 1;
-        return `${from}/${to}`;
-    };
-
-    const [academicYear, setAcademicYear] = React.useState<string | undefined>(undefined);
-    const [term, setTerm] = React.useState<string | undefined>(undefined);
-
-    React.useEffect(() => {
-        if (!academicYear) {
-            setAcademicYear(computeYearLabel());
-        }
-    }, [academicYear]);
+    const { data: openAcademicYear } = useOpenAcademicYear();
 
     const { mutate: updateSubject } = useUpdateSubject();
     const deleteAssignment = useDeleteAssignment();
@@ -136,37 +116,10 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
                     <DrawerDescription>Subject details, assignments, and analytics</DrawerDescription>
                 </DrawerHeader>
                 <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="filter-year">Academic Year</Label>
-                            <Select value={academicYear} onValueChange={setAcademicYear}>
-                                <SelectTrigger id="filter-year">
-                                    <SelectValue placeholder="Select year" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {(years ?? []).map((y: any) => (
-                                        <SelectItem key={y._id ?? y.label} value={y.label}>
-                                            {y.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor="filter-term">Term (optional)</Label>
-                            <Select defaultValue={"Term 1"} value={term} onValueChange={setTerm}>
-                                <SelectTrigger id="filter-term">
-                                    <SelectValue placeholder="All terms" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {(terms ?? []).map((t: any) => (
-                                        <SelectItem key={t._id ?? t.name} value={t.name}>
-                                            {t.name}
-                                        </SelectItem>
-                                    ))}
-                                    <SelectItem value="#">All terms</SelectItem>
-                                </SelectContent>
-                            </Select>
+                    <div className="flex flex-col gap-2">
+                        <Label htmlFor="filter-year">Academic Year</Label>
+                        <div className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                            {openAcademicYear?.label || "No academic year open"}
                         </div>
                     </div>
                     {!isMobile && (
@@ -270,11 +223,11 @@ export default function SubjectDetailViewer({ item }: { item: z.infer<typeof sub
                                             <SelectValue placeholder="Select grade level" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Grade 9">Grade 9</SelectItem>
-                                            <SelectItem value="Grade 10">Grade 10</SelectItem>
-                                            <SelectItem value="Grade 11">Grade 11</SelectItem>
-                                            <SelectItem value="Grade 12">Grade 12</SelectItem>
-                                            <SelectItem value="All Grades">All Grades</SelectItem>
+                                            {gradeLevels.map((grade) => (
+                                                <SelectItem key={grade.value} value={grade.value}>
+                                                    {grade.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>

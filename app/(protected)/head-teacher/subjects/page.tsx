@@ -5,7 +5,7 @@ import { SubjectDataTable, AddSubjectDialog } from "@/components/head-teacher/su
 import { useSubjects } from "@/hooks/use-subjects";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";import { gradeLevels } from "@/lib/constants/grade-levels";
 
 export default function HeadTeacherSubjects() {
   const [q, setQ] = useState<string>("");
@@ -63,11 +63,11 @@ export default function HeadTeacherSubjects() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="#">Any Grade</SelectItem>
-              <SelectItem value="Grade 9">Grade 9</SelectItem>
-              <SelectItem value="Grade 10">Grade 10</SelectItem>
-              <SelectItem value="Grade 11">Grade 11</SelectItem>
-              <SelectItem value="Grade 12">Grade 12</SelectItem>
-              <SelectItem value="All Grades">All Grades</SelectItem>
+              {gradeLevels.map((grade) => (
+                <SelectItem key={grade.value} value={grade.value}>
+                  {grade.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
