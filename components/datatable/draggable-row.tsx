@@ -4,6 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { TableCell, TableRow } from "../ui/table";
 import { flexRender } from "@tanstack/react-table";
+import { UniqueIdentifier } from "@dnd-kit/core";
 
 interface DraggableRowProps<T extends BaseEntity> {
   row: Row<T>;
@@ -15,7 +16,7 @@ export function DraggableRow<T extends BaseEntity>({
   enableDragDrop,
 }: DraggableRowProps<T>) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original.id,
+    id: row.original.id as UniqueIdentifier,
   });
 
   const rowProps = enableDragDrop

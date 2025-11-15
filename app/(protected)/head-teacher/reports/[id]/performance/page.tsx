@@ -22,7 +22,7 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      <StudentPerformanceView />
+      {/* <StudentPerformanceView /> */}
     </div>
   );
 }
