@@ -107,7 +107,7 @@ export default function AssignedClassesSection({
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant="default"
               disabled={isTrashed}
             >
               <IconPlus className="mr-1 h-4 w-4" />
@@ -173,7 +173,7 @@ export default function AssignedClassesSection({
         </Dialog>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         {(teacher.assignedClasses?.length ?? 0) === 0 ? (
           <p className="text-sm text-muted-foreground">
             No classes assigned yet.

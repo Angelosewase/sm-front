@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateClass } from "@/hooks/use-classes";
 import { useTeachers } from "@/hooks/use-teachers";
 import { PlusIcon } from "lucide-react";
+import { gradeLevels } from "@/lib/constants/grade-levels";
 
 export function AddClassDialog() {
   const [open, setOpen] = React.useState(false);
@@ -61,7 +62,7 @@ export function AddClassDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="mr-4">
+        <Button variant="default" className="mr-4">
         <PlusIcon className="w-4 h-4 mr-2" /> Add Class
         </Button>
       </DialogTrigger>
@@ -97,18 +98,11 @@ export function AddClassDialog() {
                     <SelectValue placeholder="Select grade" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Grade 1">Grade 1</SelectItem>
-                    <SelectItem value="Grade 2">Grade 2</SelectItem>
-                    <SelectItem value="Grade 3">Grade 3</SelectItem>
-                    <SelectItem value="Grade 4">Grade 4</SelectItem>
-                    <SelectItem value="Grade 5">Grade 5</SelectItem>
-                    <SelectItem value="Grade 6">Grade 6</SelectItem>
-                    <SelectItem value="Grade 7">Grade 7</SelectItem>
-                    <SelectItem value="Grade 8">Grade 8</SelectItem>
-                    <SelectItem value="Grade 9">Grade 9</SelectItem>
-                    <SelectItem value="Grade 10">Grade 10</SelectItem>
-                    <SelectItem value="Grade 11">Grade 11</SelectItem>
-                    <SelectItem value="Grade 12">Grade 12</SelectItem>
+                    {gradeLevels.map((grade) => (
+                        <SelectItem key={grade.value} value={grade.value}>
+                          {grade.label}
+                        </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

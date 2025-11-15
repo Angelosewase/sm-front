@@ -48,9 +48,20 @@ export default function AdminClassesPage() {
 
   return (
     <div className="py-4">
-      <div className="flex items-center justify-between px-4">
-        <h2 className="text-3xl font-semibold text-primary">Manage Classes</h2>
-        <AddClassDialog />
+      <div className="flex  justify-between gap-1 ">
+        <div className="flex flex-col gap-1 px-4">
+          <h2 className="text-3xl font-semibold text-primary">
+            Manage Classes
+          </h2>
+          <span className="text-muted-foreground text-base font-normal">
+            View and organize all of your school's classes here.
+          </span>
+        </div>
+        <div className="flex items-center justify-between px-4">
+          <div />
+          {/* Button will render at the end */}
+          <AddClassDialog />
+        </div>
       </div>
       {isLoading ? (
         <>
