@@ -193,12 +193,12 @@ export function StudentDataTable({ students }: StudentDataTableProps) {
           {
             label: "View Profile",
             onClick: () =>
-              router.push(`/teacher/students/${student.recordId}`),
+              router.push(`/teacher/students/${student.recordId}?activeTab=overview`),
           },
           {
             label: "Performance",
             onClick: () =>
-              router.push(`/teacher/students/${student.recordId}/performance`),
+              router.push(`/teacher/students/${student.recordId}?activeTab=performance`),
           },
         ];
       }),

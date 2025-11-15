@@ -137,7 +137,7 @@ export default function TeacherDetailViewer({ item }: TeacherDetailViewerProps) 
             )}
           </DrawerTitle>
           <DrawerDescription>
-            Teacher profile, assignments, and contact details.
+            Teacher profile and contact details.
           </DrawerDescription>
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 pb-4 text-sm">

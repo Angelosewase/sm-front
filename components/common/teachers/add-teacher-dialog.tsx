@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PlusIcon } from "lucide-react";
 
 const departments = [
   "Mathematics",
@@ -149,8 +150,8 @@ export function AddTeacherDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" className="mr-4">
-          Add Teacher
+        <Button variant="default" className="mr-4">
+          <PlusIcon className="size-4" /> Add Teacher
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[520px]">
