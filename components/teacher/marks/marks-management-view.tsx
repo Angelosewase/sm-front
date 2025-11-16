@@ -34,7 +34,7 @@ interface SubjectData {
   name: string
   className: string
   studentCount: number
-  currentTerm: string
+  currentTerm?: string
   terms: Term[]
   assessments: Assessment[]
 }
@@ -43,7 +43,7 @@ interface MarksManagementViewProps {
   subjectData: SubjectData
   onAssessmentClick: (assessmentId: string) => void
   onBackClick: () => void
-  onTermChange: (termId: string) => void
+  onTermChange: (termId: string | undefined) => void
   context?: { subjectId: string; classId: string; termId?: string; academicYearId?: string }
 }
 
@@ -56,7 +56,7 @@ export function MarksManagementView({
   onTermChange,
   context,
 }: MarksManagementViewProps) {
-  const [selectedTerm, setSelectedTerm] = useState(subjectData.currentTerm)
+  const [selectedTerm, setSelectedTerm] = useState(subjectData.currentTerm ?? "all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -109,18 +109,24 @@ export function MarksManagementView({
     })
   }
 
-  const handleTermSelect = (termId: string) => {
-    setSelectedTerm(termId)
-    onTermChange(termId)
+  const handleTermSelect = (termOrAll: string) => {
+    setSelectedTerm(termOrAll)
+    onTermChange(termOrAll === "all" ? undefined : termOrAll)
     setSearchQuery("") // Clear search when changing terms
     setCurrentPage(1) // Reset pagination
   }
 
   const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0)
+  const remainingWeight = Math.max(0, 100 - totalWeight)
   const completedAssessments = assessments.filter(a => a.status === 'completed').length
   const averageScore = assessments.length > 0
     ? assessments.reduce((sum, a) => sum + (a.averageScore / a.maxScore) * 100, 0) / assessments.length
     : 0
+
+  // Only allow creating assessments in an open term
+  const selectedTermObj = terms.find(t => t.id === selectedTerm)
+  const canCreateAssessment =
+    selectedTerm !== "all" && !!selectedTermObj?.isActive && remainingWeight > 0
 
   return (
     <div className="space-y-6">
@@ -147,6 +153,9 @@ export function MarksManagementView({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem key="all" value="all">
+              All Terms
+            </SelectItem>
             {terms.map((term) => (
               <SelectItem key={term.id} value={term.id}>
                 {term.name}
@@ -217,11 +226,28 @@ export function MarksManagementView({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Assessments</h2>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            disabled={!canCreateAssessment}
+            title={
+              !canCreateAssessment
+                ? selectedTerm === "all" || !selectedTermObj?.isActive
+                  ? "Select an open term to create assessments"
+                  : "Total assessment weight has reached 100%"
+                : undefined
+            }
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Assessment
           </Button>
         </div>
+        {!canCreateAssessment && (
+          <div className="text-xs text-muted-foreground">
+            {selectedTerm === "all" || !selectedTermObj?.isActive
+              ? "You can only create assessments in an open term. Select an open term above."
+              : "Total assessment weight has reached 100%. You cannot add more weight."}
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative">
@@ -249,7 +275,17 @@ export function MarksManagementView({
               <div className="text-muted-foreground text-sm mb-4">
                 Create your first assessment to start recording marks.
               </div>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                disabled={!canCreateAssessment}
+                title={
+                  !canCreateAssessment
+                    ? selectedTerm === "all" || !selectedTermObj?.isActive
+                      ? "Select an open term to create assessments"
+                      : "Total assessment weight has reached 100%"
+                    : undefined
+                }
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Assessment
               </Button>
@@ -310,8 +346,9 @@ export function MarksManagementView({
         onOpenChange={setIsCreateDialogOpen}
         subjectId={context?.subjectId ?? subjectData.id}
         classId={context?.classId ?? ''}
-        termId={context?.termId ?? subjectData.currentTerm}
+        termId={selectedTerm !== "all" ? selectedTerm : undefined}
         academicYearId={context?.academicYearId}
+        remainingWeight={remainingWeight}
         onAssessmentCreated={() => {
           // dialog will close itself on success; list will refetch via invalidation
           setIsCreateDialogOpen(false)

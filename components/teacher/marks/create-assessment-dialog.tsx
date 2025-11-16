@@ -34,6 +34,7 @@ interface CreateAssessmentDialogProps {
   classId: string;
   termId?: string;
   academicYearId?: string;
+  remainingWeight?: number;
   onAssessmentCreated?: (id: string) => void;
 }
 
@@ -41,8 +42,8 @@ interface NewAssessmentForm {
   title: string;
   category: string;
   date: string;
-  weight: number;
-  maxScore: number;
+  weight: string; // store as string to avoid defaulting to 0
+  maxScore: string; // store as string to avoid defaulting to 0
   description?: string;
   academicYear: string;
   term: string;
@@ -63,14 +64,15 @@ export function CreateAssessmentDialog({
   classId,
   termId,
   academicYearId,
+  remainingWeight,
   onAssessmentCreated,
 }: CreateAssessmentDialogProps) {
   const [formData, setFormData] = useState<NewAssessmentForm>({
     title: "",
     category: "",
     date: new Date().toISOString().split("T")[0],
-    weight: 10,
-    maxScore: 20,
+    weight: "",
+    maxScore: "",
     description: "",
     academicYear: academicYearId ?? "",
     term: termId ?? "",
@@ -85,6 +87,7 @@ export function CreateAssessmentDialog({
   const { data: terms, isLoading: termsLoading } = useTermsByAcademicYear(
     activeAcademicYear?._id
   );
+  const openTerms = (terms ?? []).filter((t: any) => !!t.isOpen);
 
   // Default academic year to active one if none set
   useEffect(() => {
@@ -96,16 +99,16 @@ export function CreateAssessmentDialog({
     }
   }, [activeAcademicYear?._id]);
 
-  // Default term to provided prop or first available
+  // Default term to provided prop (if open) or first open term
   useEffect(() => {
     if (!formData.term) {
-      if (termId) {
+      if (termId && openTerms.some((t: any) => t._id === termId)) {
         setFormData((prev) => ({ ...prev, term: termId }));
-      } else if (terms && terms.length > 0) {
-        setFormData((prev) => ({ ...prev, term: terms[0]._id }));
+      } else if (openTerms.length > 0) {
+        setFormData((prev) => ({ ...prev, term: openTerms[0]._id }));
       }
     }
-  }, [termId, terms]);
+  }, [termId, openTerms]);
 
   const validateForm = (): boolean => {
     const newErrors: any = {};
@@ -113,13 +116,26 @@ export function CreateAssessmentDialog({
     if (!formData.title.trim()) newErrors.title = "Title is required";
     if (!formData.category) newErrors.category = "Category is required";
     if (!formData.date) newErrors.date = "Date is required";
-    if (formData.weight <= 0 || formData.weight > 100)
-      newErrors.weight = "Weight must be between 1 and 100";
-    if (formData.maxScore <= 0)
+    const weightNum = formData.weight ? Number(formData.weight) : NaN;
+    if (!formData.weight || isNaN(weightNum) || weightNum <= 0) {
+      newErrors.weight = "Weight must be greater than 0";
+    } else {
+      const cap = typeof remainingWeight === "number" ? remainingWeight : 100;
+      if (weightNum > cap) {
+        newErrors.weight = `Weight cannot exceed remaining ${cap}%`;
+      }
+    }
+    const maxScoreNum = formData.maxScore ? Number(formData.maxScore) : NaN;
+    if (!formData.maxScore || isNaN(maxScoreNum) || maxScoreNum <= 0) {
       newErrors.maxScore = "Max score must be greater than 0";
+    }
     if (!formData.academicYear)
       newErrors.academicYear = "Academic Year ID is required";
     if (!formData.term) newErrors.term = "Term ID is required";
+    // Enforce open term only
+    if (formData.term && !openTerms.some((t: any) => t._id === formData.term)) {
+      newErrors.term = "Only open terms can be used for creating assessments";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -137,10 +153,10 @@ export function CreateAssessmentDialog({
         class: classId,
         title: formData.title,
         description: formData.description || undefined,
-        weight: formData.weight,
+        weight: Number(formData.weight),
         AssessmentType: formData.category, // enum string expected by backend
         deadline: new Date(formData.date).toISOString(),
-        maxScore: formData.maxScore,
+        maxScore: Number(formData.maxScore),
       },
       {
         onSuccess: (res: any) => {
@@ -151,8 +167,8 @@ export function CreateAssessmentDialog({
             title: "",
             category: "",
             date: new Date().toISOString().split("T")[0],
-            weight: 10,
-            maxScore: 20,
+            weight: "",
+            maxScore: "",
             description: "",
           }));
           onOpenChange(false);
@@ -165,7 +181,12 @@ export function CreateAssessmentDialog({
     field: keyof NewAssessmentForm,
     value: string | number
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value as any }));
+    // Keep numeric fields as strings to avoid defaulting to 0 on empty
+    if (field === "weight" || field === "maxScore") {
+      setFormData((prev) => ({ ...prev, [field]: String(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value as any }));
+    }
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
@@ -251,10 +272,13 @@ export function CreateAssessmentDialog({
                 id="weight"
                 type="number"
                 min="1"
-                max="100"
+                max={typeof remainingWeight === "number" ? remainingWeight : 100}
                 value={formData.weight}
-                onChange={(e) =>
-                  handleInputChange("weight", parseInt(e.target.value) || 0)
+                onChange={(e) => handleInputChange("weight", e.target.value)}
+                placeholder={
+                  typeof remainingWeight === "number"
+                    ? `Max ${remainingWeight}%`
+                    : "Enter weight"
                 }
                 className={errors.weight ? "border-red-500" : ""}
               />
@@ -270,9 +294,8 @@ export function CreateAssessmentDialog({
                 type="number"
                 min="1"
                 value={formData.maxScore}
-                onChange={(e) =>
-                  handleInputChange("maxScore", parseInt(e.target.value) || 0)
-                }
+                onChange={(e) => handleInputChange("maxScore", e.target.value)}
+                placeholder="e.g., 20"
                 className={errors.maxScore ? "border-red-500" : ""}
               />
               {errors.maxScore && (
@@ -317,17 +340,23 @@ export function CreateAssessmentDialog({
               <Select
                 value={formData.term}
                 onValueChange={(value) => handleInputChange("term", value)}
-                disabled={termsLoading}
+                disabled={termsLoading || openTerms.length === 0}
               >
                 <SelectTrigger className={errors.term ? "border-red-500" : ""}>
                   <SelectValue
-                    placeholder={termsLoading ? "Loading..." : "Select Term"}
+                    placeholder={
+                      termsLoading
+                        ? "Loading..."
+                        : openTerms.length === 0
+                        ? "No open term"
+                        : "Select Term"
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {(terms ?? []).map((t: any) => (
+                  {openTerms.map((t: any) => (
                     <SelectItem key={t._id} value={t._id}>
-                      {t.name || t.label || t.title || t._id}
+                      {t.name || t.label || t.title || `Term ${t.order}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -360,7 +389,18 @@ export function CreateAssessmentDialog({
           <Button
             type="submit"
             onClick={handleSubmit}
-            disabled={createMutation.isPending}
+            disabled={
+              createMutation.isPending ||
+              openTerms.length === 0 ||
+              (!!formData.term && !openTerms.some((t: any) => t._id === formData.term))
+            }
+            title={
+              openTerms.length === 0
+                ? "No open term available"
+                : !!formData.term && !openTerms.some((t: any) => t._id === formData.term)
+                ? "Select an open term"
+                : undefined
+            }
           >
             {createMutation.isPending ? "Creating..." : "Create Assessment"}
           </Button>

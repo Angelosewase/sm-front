@@ -20,8 +20,10 @@ export interface SubjectPerformanceSummary {
 }
 
 export type StudentPerformanceSummaryQuery = {
-  academicYear?: string;
-  term?: string;
+  academicYear?: string; // legacy
+  term?: string; // legacy
+  academicYearId?: string;
+  termId?: string;
   subjectId?: string;
   classId?: string;
   assessmentId?: string;
@@ -29,8 +31,10 @@ export type StudentPerformanceSummaryQuery = {
 };
 
 export type SubjectAssessmentPerformanceQuery = {
-  term?: string;
-  year?: string;
+  term?: string; // legacy
+  year?: string; // legacy
+  termId?: string;
+  academicYearId?: string;
   studentId?: string;
 };
 
