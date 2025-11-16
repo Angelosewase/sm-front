@@ -5,20 +5,26 @@ import { useRouter, useParams } from 'next/navigation'
 import { ClassSubjectsView } from '@/components/teacher'
 import { useClass, useClassSubjects } from '@/hooks/use-classes'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useAuth } from '@/contexts/auth-context'
+import { useGetTeacherByUserId } from '@/hooks/use-teachers'
 
 export default function ClassDetailPage() {
   const router = useRouter()
   const params = useParams()
   const classId = params.id as string
+  const { user } = useAuth()
+  const { data: teacher } = useGetTeacherByUserId(user?.id ?? '')
+  const teacherId = teacher?._id
 
   const { data: classInfo, isLoading: classLoading, error: classError } = useClass(classId)
-  const { data: subjects, isLoading: subjectsLoading, error: subjectsError } = useClassSubjects(classId)
+  const { data: subjects, isLoading: subjectsLoading, error: subjectsError } = useClassSubjects(classId, teacherId ? { teacher: teacherId } : undefined)
 
   const isLoading = classLoading || subjectsLoading
   const isError = classError || subjectsError
 
   const handleSubjectClick = (subjectId: string) => {
-    router.push(`/teacher/classes/${classId}/subjects/${subjectId}`)
+    const query = teacherId ? `?teacher=${encodeURIComponent(teacherId)}` : ''
+    router.push(`/teacher/classes/${classId}/subjects/${subjectId}${query}`)
   }
 
   const handleBackClick = () => {

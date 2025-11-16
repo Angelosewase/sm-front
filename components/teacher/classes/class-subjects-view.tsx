@@ -241,7 +241,7 @@ export function ClassSubjectsView({
                       </div> */}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">ag
+                  <div className="flex items-center gap-2">
                     {/* <Badge className={completionBadge.color}>
                       {completionBadge.text}
                     </Badge> */}
