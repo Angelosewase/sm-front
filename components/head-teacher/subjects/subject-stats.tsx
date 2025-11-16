@@ -9,6 +9,7 @@ interface SubjectStatsProps {
   activeSubjects?: number;
   totalTeachers?: number;
   averageClassSize?: number;
+  schoolId?: string;
 }
 
 export function SubjectStats({
@@ -16,6 +17,7 @@ export function SubjectStats({
   activeSubjects = 12,
   totalTeachers = 18,
   averageClassSize = 28,
+  schoolId
 }: SubjectStatsProps) {
   const stats = [
     {

@@ -43,12 +43,14 @@ import { Separator } from "@/components/ui/separator";
 import { DataTable as GenericDataTable } from "@/components/datatable/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { DataTableConfig } from "@/components/datatable";
-import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment } from "@/hooks/use-subjects";
+import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubjectStatus, useUpdateSubject, useDeleteAssignment, useRestoreSubject, usePermanentlyDeleteSubject } from "@/hooks/use-subjects";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import SubjectDetailViewer from "./subject-detail-viewer";
+import { deleteSubject } from "@/features/subjects.mutations";
 
 export const subjectSchema = z.object({
-  id: z.number(),
+  id: z.string(),
+  _id: z.string().optional(),
   subjectName: z.string(),
   subjectCode: z.string(),
   department: z.string(),
@@ -62,34 +64,56 @@ export const subjectSchema = z.object({
   creditHours: z.string(),
   level: z.string(),
   prerequisites: z.string(),
+  isTrashed: z.boolean().optional(),
 });
 
 const SubjectActionsColumn = (
   toggleStatus: (id: string, currentStatus: string) => void,
-  handleDelete: (id: string) => void,
+  handleTrash: (id: string) => void,
   onAssignClass: (item: z.infer<typeof subjectSchema>) => void,
   onAssignTeacher: (item: z.infer<typeof subjectSchema>) => void,
   onDuplicate: (item: z.infer<typeof subjectSchema>) => void,
+  restoreSubject: (id: string) => void,
+  permanentlyDeleteSubject: (id: string) => void,
 ): ColumnDef<z.infer<typeof subjectSchema>> => {
   const handleToggleStatus = (item: z.infer<typeof subjectSchema>) => {
-    const id = String(item.id);
+    const id = (item._id as string) || String(item.id);
     const next = item.status.toLowerCase() === "active" ? "inactive" : "active";
     toggleStatus(id, next);
   };
 
-  return createActionsColumn<z.infer<typeof subjectSchema>>([
-    { label: "Duplicate", onClick: onDuplicate },
-    {
-      label: (item) => (item.status === "Active" ? "Deactivate" : "Activate"),
-      onClick: handleToggleStatus,
-      variant: "destructive",
-    },
-    {
-      label: "Delete",
-      onClick: (item) => handleDelete(String(item.id)),
-      variant: "destructive",
-    },
-  ]);
+  return createActionsColumn<z.infer<typeof subjectSchema>>((item) => {
+    const id = (item._id as string) || String(item.id);
+
+    if (item.isTrashed) {
+      return [
+        {
+          label: "Restore",
+          onClick: () => restoreSubject(id),
+        },
+        {
+          label: "Delete Permanently",
+          onClick: () => permanentlyDeleteSubject(id),
+          variant: "destructive",
+        },
+      ];
+    }
+
+    return [
+      { label: "Duplicate", onClick: onDuplicate },
+      {
+        label: (row) =>
+          row.status === "Active" ? "Deactivate" : "Activate",
+        onClick: handleToggleStatus,
+        variant: "destructive",
+      },
+      {
+        label: "Move to Trash",
+        onClick: () => handleTrash(id),
+        variant: "destructive",
+      },
+    ];
+  });
 };
 
 const columns = (
@@ -98,6 +122,9 @@ const columns = (
   onAssignClass: (item: z.infer<typeof subjectSchema>) => void,
   onAssignTeacher: (item: z.infer<typeof subjectSchema>) => void,
   onDuplicate: (item: z.infer<typeof subjectSchema>) => void,
+  restoreSubject: (id: string) => void,
+  permanentlyDeleteSubject: (id: string) => void,
+  onDeleteSubject: (id: string) => void,
 ): ColumnDef<z.infer<typeof subjectSchema>>[] => [
     createDragColumn<z.infer<typeof subjectSchema>>(),
     createSelectColumn<z.infer<typeof subjectSchema>>(),
@@ -156,18 +183,35 @@ const columns = (
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
-        // console.log("the status is: ", row.original.status)
-        return <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.status.toLowerCase() === "active" ? (
-            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-          ) : (
-            <IconCircleDashed />
-          )}
-          {row.original.status.charAt(0).toUpperCase() + row.original.status.slice(1)}
-        </Badge>
+        const isTrashed = !!row.original.isTrashed;
+        return (
+          <Badge
+            variant="outline"
+            className={`text-muted-foreground px-1.5 ${isTrashed ? "text-destructive border-destructive/40" : ""}`}
+          >
+            {isTrashed ? (
+              <>Trashed</>
+            ) : row.original.status.toLowerCase() === "active" ? (
+              <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+            ) : (
+              <IconCircleDashed />
+            )}
+            {!isTrashed &&
+              row.original.status.charAt(0).toUpperCase() +
+              row.original.status.slice(1)}
+          </Badge>
+        );
       },
     },
-    SubjectActionsColumn(toggleStatus, handleDelete, onAssignClass, onAssignTeacher, onDuplicate),
+    SubjectActionsColumn(
+      toggleStatus,
+      onDeleteSubject,
+      onAssignClass,
+      onAssignTeacher,
+      onDuplicate,
+      restoreSubject,
+      permanentlyDeleteSubject,
+    ),
   ];
 
 
@@ -182,6 +226,8 @@ export function SubjectDataTable({
 }) {
   const toggleStatus = useToggleSubjectStatus();
   const deleteSubjectMutation = useDeleteSubject();
+  const restoreSubjectMutation = useRestoreSubject();
+  const permanentlyDeleteSubjectMutation = usePermanentlyDeleteSubject();
   const { mutate: updateSubject } = useUpdateSubject();
   const { mutate: createSubject } = useCreateSubject();
 
@@ -258,6 +304,9 @@ export function SubjectDataTable({
           openAssignClass,
           openAssignTeacher,
           handleDuplicate,
+          restoreSubjectMutation.mutate,
+          permanentlyDeleteSubjectMutation.mutate,
+          deleteSubjectMutation.mutate,
         )}
         tabs={tabs}
         defaultTab="all-subjects"

@@ -48,7 +48,7 @@ export default function AdminClassesPage() {
 
   return (
     <div className="py-4">
-      <div className="flex  justify-between gap-1 ">
+      <div className="flex justify-between gap-1 ">
         <div className="flex flex-col gap-1 px-4">
           <h2 className="text-3xl font-semibold text-primary">
             Manage Classes

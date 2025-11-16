@@ -1,27 +1,41 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { SubjectDataTable, AddSubjectDialog } from "@/components/head-teacher/subjects";
+import { SubjectDataTable, AddSubjectDialog, SubjectStats } from "@/components/head-teacher/subjects";
 import { useSubjects } from "@/hooks/use-subjects";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";import { gradeLevels } from "@/lib/constants/grade-levels";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; import { gradeLevels } from "@/lib/constants/grade-levels";
+import { useSchool } from "@/contexts/school-context";
 
 export default function HeadTeacherSubjects() {
+  const { school } = useSchool()
   const [q, setQ] = useState<string>("");
   const [page, setPage] = useState<number>(1); // 1-based
   const [limit, setLimit] = useState<number>(10);
   const [category, setCategory] = useState<string | undefined>(undefined);
   const [gradeLevel, setGradeLevel] = useState<string | undefined>(undefined);
+  const [viewMode, setViewMode] = useState<"active" | "trashed">("active");
   const sortBy = "createdAt";
   const order: "asc" | "desc" = "desc";
 
-  const { data, isLoading, isError, refetch, isFetching } = useSubjects({ q, page, limit, sortBy, order, subjectType: category?.toLowerCase(), gradeLevel: gradeLevel !== '#' ? gradeLevel : undefined });
+  const { data, isLoading, isError, refetch, isFetching } = useSubjects({
+    q,
+    page,
+    limit,
+    sortBy,
+    order,
+    subjectType: category?.toLowerCase(),
+    gradeLevel: gradeLevel !== "#" ? gradeLevel : undefined,
+    includeTrashed: viewMode === "trashed",
+    onlyTrashed: viewMode === "trashed",
+  });
 
   const tableData = useMemo(() => {
     const items = data?.items || [];
     return items.map((s, idx) => ({
-      id: (s as any)._id || idx + 1,
+      id: String((s as any)._id || idx + 1),
+      _id: (s as any)._id,
       subjectName: (s as any).name ?? "",
       subjectCode: (s as any).code ?? "",
       department: (s as any).department ?? "",
@@ -31,6 +45,7 @@ export default function HeadTeacherSubjects() {
       classes: "0",
       students: "0",
       status: (s as any).status ?? "Active",
+      isTrashed: (s as any).isTrashed ?? false,
       subjectType: (s as any).subjectType ?? "",
       creditHours: String((s as any).creditHours ?? ""),
       level: (s as any).level ?? "",
@@ -44,9 +59,16 @@ export default function HeadTeacherSubjects() {
   return (
     <div className="mx-auto py-4 space-y-4">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Subject Management</h1>
-        <p className="text-muted-foreground">Manage subjects, assign them to classes, and track performance</p>
+        <div className="flex flex-col gap-1 px-4">
+          <h1 className="text-3xl font-semibold text-primary">Subject Management</h1>
+          <p className="text-muted-foreground">Manage subjects, assign them to classes, and track performance</p>
+        </div>
       </div>
+
+      {/* Data Table Section */}
+      <section className="p-4 space-y-4">
+        <SubjectStats schoolId={school?.id} />
+      </section>
 
       {/* Controls */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-2 md:px-4">
@@ -72,12 +94,26 @@ export default function HeadTeacherSubjects() {
           </Select>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === "active" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("active")}
+          >
+            Active Subjects
+          </Button>
+          <Button
+            variant={viewMode === "trashed" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("trashed")}
+          >
+            Trash
+          </Button>
           <AddSubjectDialog />
         </div>
       </div>
 
-      {/* Data Table Section */}
-      <section className="space-y-4">
+
+      <section className="p-4 space-y-4">
         {isError && (
           <div className="text-sm text-red-500">Failed to load subjects.</div>
         )}

@@ -48,23 +48,24 @@ import { useClassesOfSubject, useCreateSubject, useDeleteSubject, useToggleSubje
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useOpenAcademicYear } from "@/hooks/use-academic-terms";
 import { gradeLevels } from "@/lib/constants/grade-levels";
+import { subjectSchema } from "./subject-data-table";
 
-export const subjectSchema = z.object({
-    id: z.number(),
-    subjectName: z.string(),
-    subjectCode: z.string(),
-    department: z.string(),
-    category: z.string(),
-    gradeLevel: z.string(),
-    teachers: z.any(),
-    classes: z.any(),
-    students: z.string(),
-    status: z.string(),
-    subjectType: z.string(),
-    creditHours: z.string(),
-    level: z.string(),
-    prerequisites: z.string(),
-});
+// export const subjectSchema = z.object({
+//     id: z.number(),
+//     subjectName: z.string(),
+//     subjectCode: z.string(),
+//     department: z.string(),
+//     category: z.string(),
+//     gradeLevel: z.string(),
+//     teachers: z.any(),
+//     classes: z.any(),
+//     students: z.string(),
+//     status: z.string(),
+//     subjectType: z.string(),
+//     creditHours: z.string(),
+//     level: z.string(),
+//     prerequisites: z.string(),
+// });
 
 export default function SubjectDetailViewer({ item }: { item: z.infer<typeof subjectSchema> }) {
     const isMobile = useIsMobile();

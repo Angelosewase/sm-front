@@ -104,9 +104,56 @@ export const subjectsApi = {
     return data;
   },
 
-  // Delete a subject
+  // Move a subject to trash (soft delete)
   deleteSubject: async (id: string): Promise<void> => {
     const { data } = await axiosInstance.delete<void>(`${API_BASE_URL}/${id}`);
+    return data;
+  },
+
+  // Restore a trashed subject
+  restoreSubject: async (id: string): Promise<Subject> => {
+    const { data } = await axiosInstance.patch<Subject>(
+      `${API_BASE_URL}/${id}/restore`,
+      {}
+    );
+    return data;
+  },
+
+  // Permanently delete a trashed subject
+  permanentlyDeleteSubject: async (id: string): Promise<void> => {
+    await axiosInstance.delete(`${API_BASE_URL}/${id}/permanent`);
+  },
+
+  // Bulk move subjects to trash
+  bulkTrashSubjects: async (
+    ids: string[]
+  ): Promise<{ modifiedCount: number }> => {
+    const { data } = await axiosInstance.post<{ modifiedCount: number }>(
+      `${API_BASE_URL}/bulk/trash`,
+      { ids }
+    );
+    return data;
+  },
+
+  // Bulk restore trashed subjects
+  bulkRestoreSubjects: async (
+    ids: string[]
+  ): Promise<{ modifiedCount: number }> => {
+    const { data } = await axiosInstance.post<{ modifiedCount: number }>(
+      `${API_BASE_URL}/bulk/restore`,
+      { ids }
+    );
+    return data;
+  },
+
+  // Bulk permanently delete trashed subjects
+  bulkPermanentlyDeleteSubjects: async (
+    ids: string[]
+  ): Promise<{ deletedCount: number }> => {
+    const { data } = await axiosInstance.post<{ deletedCount: number }>(
+      `${API_BASE_URL}/bulk/permanent`,
+      { ids }
+    );
     return data;
   },
 

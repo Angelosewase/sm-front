@@ -32,6 +32,8 @@ export interface ListSubjectsFilter {
   limit?: number;
   sortBy?: string;
   order?: "asc" | "desc";
+  includeTrashed?: boolean;
+  onlyTrashed?: boolean;
   subjectType?: string;
   gradeLevel?: string;
 }
@@ -69,10 +71,8 @@ export interface Subject {
   prerequisites: string;
   createdAt?: string; // If your API returns timestamps
   updatedAt?: string;
-}
-
-export interface ListSubjectsFilter {
-  school?: string;
+  isTrashed?: boolean;
+  trashedAt?: string | null;
 }
 
 export type AssignTeacherDto = {

@@ -260,12 +260,94 @@ export const useDeleteSubject = () => {
   return useMutation<void, Error, string>({
     mutationFn: (id) => subjectsApi.deleteSubject(id),
     onSuccess: (_, id) => {
-      toast.success(`Subject deleted successfully.`);
+      toast.success(`Subject moved to trash.`);
       // Invalidate the specific subject and all subjects queries
       queryClient.invalidateQueries({ queryKey: ["subject", id] });
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) => toast.error(err.message || "Failed to delete subject"),
+    onError: (err) =>
+      toast.error(err.message || "Failed to move subject to trash"),
+  });
+};
+
+export const useRestoreSubject = () => {
+  const queryClient = useQueryClient();
+  return useMutation<any, Error, string>({
+    mutationFn: (id) => subjectsApi.restoreSubject(id),
+    onSuccess: (_, id) => {
+      toast.success(`Subject restored successfully.`);
+      queryClient.invalidateQueries({ queryKey: ["subject", id] });
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+    },
+    onError: (err) => toast.error(err.message || "Failed to restore subject"),
+  });
+};
+
+export const usePermanentlyDeleteSubject = () => {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (id) => subjectsApi.permanentlyDeleteSubject(id),
+    onSuccess: (_, id) => {
+      toast.success(`Subject permanently deleted.`);
+      queryClient.invalidateQueries({ queryKey: ["subject", id] });
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+    },
+    onError: (err) =>
+      toast.error(err.message || "Failed to permanently delete subject"),
+  });
+};
+
+export const useBulkTrashSubjects = () => {
+  const queryClient = useQueryClient();
+  return useMutation<{ modifiedCount: number }, Error, string[]>({
+    mutationFn: (ids) => subjectsApi.bulkTrashSubjects(ids),
+    onSuccess: ({ modifiedCount }) => {
+      toast.success(
+        modifiedCount
+          ? `${modifiedCount} subject${
+              modifiedCount > 1 ? "s" : ""
+            } moved to trash.`
+          : "No subjects were moved to trash."
+      );
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+    },
+    onError: (err) =>
+      toast.error(err.message || "Failed to move subjects to trash"),
+  });
+};
+
+export const useBulkRestoreSubjects = () => {
+  const queryClient = useQueryClient();
+  return useMutation<{ modifiedCount: number }, Error, string[]>({
+    mutationFn: (ids) => subjectsApi.bulkRestoreSubjects(ids),
+    onSuccess: ({ modifiedCount }) => {
+      toast.success(
+        modifiedCount
+          ? `${modifiedCount} subject${modifiedCount > 1 ? "s" : ""} restored.`
+          : "No subjects were restored."
+      );
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+    },
+    onError: (err) => toast.error(err.message || "Failed to restore subjects"),
+  });
+};
+
+export const useBulkPermanentlyDeleteSubjects = () => {
+  const queryClient = useQueryClient();
+  return useMutation<{ deletedCount: number }, Error, string[]>({
+    mutationFn: (ids) => subjectsApi.bulkPermanentlyDeleteSubjects(ids),
+    onSuccess: ({ deletedCount }) => {
+      toast.success(
+        deletedCount
+          ? `${deletedCount} subject${
+              deletedCount > 1 ? "s" : ""
+            } permanently deleted.`
+          : "No subjects were permanently deleted."
+      );
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+    },
+    onError: (err) =>
+      toast.error(err.message || "Failed to permanently delete subjects"),
   });
 };
 
