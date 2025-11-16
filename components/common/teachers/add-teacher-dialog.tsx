@@ -253,6 +253,7 @@ export function AddTeacherDialog() {
                         <SelectItem value="Active">Active</SelectItem>
                         <SelectItem value="On Leave">On Leave</SelectItem>
                         <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="Resigned">Resigned</SelectItem>
                       </SelectContent>
                     </Select>
                     {errors.status && (
