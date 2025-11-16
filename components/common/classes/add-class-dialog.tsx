@@ -24,7 +24,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateClass } from "@/hooks/use-classes";
 import { useTeachers } from "@/hooks/use-teachers";
 import { PlusIcon } from "lucide-react";
-import { gradeLevels } from "@/lib/constants/grade-levels";
+import { gradeLevels } from "@/lib/constants/grade-levels"; 
+import { useSchool } from "@/contexts/school-context";
 
 export function AddClassDialog() {
   const [open, setOpen] = React.useState(false);
@@ -34,6 +35,8 @@ export function AddClassDialog() {
 
   const createClassMutation = useCreateClass();
   const { data: teachersData, isLoading: isLoadingTeachers } = useTeachers({ limit: 100 });
+
+  const {school} = useSchool();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,6 +48,7 @@ export function AddClassDialog() {
       capacity: Number(formData.get("capacity")),
       description: formData.get("description") as string || undefined,
       status: selectedStatus as 'active' | 'inactive',
+      school: school?.id,
       classTeacher: selectedTeacher,
     };
 

@@ -74,12 +74,78 @@ export interface ClassListResponse {
   totalPages: number;
 }
 
+export type ClassPerformanceGroupBy =
+  | "academicYear"
+  | "term"
+  | "assessmentType";
+
+export interface ClassPerformanceByAcademicYearRow {
+  academicYear: string;
+  average: number;
+  marksCount: number;
+  totalScore: number;
+  totalPossible: number;
+}
+
+export interface ClassPerformanceByTermRow {
+  term: string;
+  average: number;
+  marksCount: number;
+  totalScore: number;
+  totalPossible: number;
+}
+
+export interface ClassPerformanceWeeklyPoint {
+  week: number;
+  year: number;
+  average: number;
+  count: number;
+}
+
+export interface ClassPerformanceByAssessmentTypeRow {
+  assessmentType: string;
+  average: number;
+  marksCount: number;
+  totalScore: number;
+  totalPossible: number;
+  assessments: {
+    assessmentId: string;
+    title: string;
+    date: string;
+    maxScore: number;
+  }[];
+  weekly?: ClassPerformanceWeeklyPoint[];
+}
+
+export interface ClassPerformanceBase {
+  classId: string;
+  className: string;
+  academicYear?: string;
+  term?: string;
+  groupBy: ClassPerformanceGroupBy;
+}
+
+export type ClassPerformanceResponse =
+  | (ClassPerformanceBase & {
+      groupBy: "academicYear";
+      results: ClassPerformanceByAcademicYearRow[];
+    })
+  | (ClassPerformanceBase & {
+      groupBy: "term";
+      results: ClassPerformanceByTermRow[];
+    })
+  | (ClassPerformanceBase & {
+      groupBy: "assessmentType";
+      results: ClassPerformanceByAssessmentTypeRow[];
+    });
+
 export interface CreateClassData {
   name: string;
   gradeLevel: string;
   capacity: number;
   description?: string;
   status?: "active" | "inactive";
+  school?: string;
   classTeacher?: string;
 }
 
@@ -244,6 +310,17 @@ export const classesApi = {
   listClassSubjects: async (classId: string): Promise<SubjectSummary[]> => {
     const { data } = await axiosInstance.get<SubjectSummary[]>(
       `${classesApiUrl}/${classId}/subjects`
+    );
+    return data;
+  },
+
+  getClassPerformance: async (
+    classId: string,
+    params?: Record<string, unknown>
+  ): Promise<ClassPerformanceResponse> => {
+    const { data } = await axiosInstance.get<ClassPerformanceResponse>(
+      `${classesApiUrl}/${classId}/performance`,
+      { params }
     );
     return data;
   },

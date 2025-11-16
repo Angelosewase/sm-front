@@ -33,10 +33,12 @@ export function AddSubjectDialog() {
   const [open, setOpen] = React.useState(false);
   const createSubjectMutation = useCreateSubject();
 
+  const [selectedGradeLevels, setSelectedGradeLevels] = React.useState<string[]>([]);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
     const subjectData: CreateSubjectDto = {
       subjectName: formData.get("subjectName") as string,
       subjectCode: formData.get("subjectCode") as string | undefined,
@@ -48,7 +50,7 @@ export function AddSubjectDialog() {
       department: formData.get("department") as string | undefined,
       creditHours: formData.get("creditHours") ? Number(formData.get("creditHours")) : undefined,
       level: formData.get("level") as string | undefined,
-      gradeLevel: formData.get("gradeLevel") as string | undefined,
+      gradeLevels: selectedGradeLevels.length ? selectedGradeLevels : undefined,
       status: formData.get("status") as string | undefined,
       prerequisites: formData.get("prerequisites") as string | undefined,
     };
@@ -190,58 +192,70 @@ export function AddSubjectDialog() {
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="gradeLevel">Grade Level (Optional)</Label>
-              <Select name="gradeLevel">
-                <SelectTrigger id="gradeLevel" className="w-full">
-                  <SelectValue placeholder="Select grade level" />
-                </SelectTrigger>
-                <SelectContent>
+           
+              <div className="flex flex-col gap-3">
+                <Label>Grade Levels</Label>
+                <div className="grid grid-cols-2 gap-2">
                   {gradeLevels.map((grade) => (
-                    <SelectItem key={grade.value} value={grade.value}>
-                      {grade.label}
-                    </SelectItem>
+                    <label
+                      key={grade.value}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        name="gradeLevels"
+                        value={grade.value}
+                        className="h-4 w-4"
+                        defaultChecked={selectedGradeLevels.includes(grade.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedGradeLevels((prev) => [...prev, grade.value]);
+                          } else {
+                            setSelectedGradeLevels((prev) => prev.filter((item) => item !== grade.value));
+                          }
+                        }}
+                      />
+                      <span>{grade.label}</span>
+                    </label>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status (Optional)</Label>
+                <Select name="status" defaultValue="Active">
+                  <SelectTrigger id="status" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="prerequisites">Prerequisites (Optional)</Label>
+                <Input
+                  id="prerequisites"
+                  name="prerequisites"
+                  placeholder="e.g., Basic Mathematics"
+                />
+              </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="status">Status (Optional)</Label>
-              <Select name="status" defaultValue="Active">
-                <SelectTrigger id="status" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="prerequisites">Prerequisites (Optional)</Label>
-              <Input
-                id="prerequisites"
-                name="prerequisites"
-                placeholder="e.g., Basic Mathematics"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createSubjectMutation.isPending}>
-              {createSubjectMutation.isPending ? "Adding..." : "Add Subject"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createSubjectMutation.isPending}>
+                {createSubjectMutation.isPending ? "Adding..." : "Add Subject"}
+              </Button>
+            </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

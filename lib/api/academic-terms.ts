@@ -13,6 +13,7 @@ export interface AcademicYear {
 
 export interface Term {
   _id: string;
+  name: string;
   academicYear: string;
   order: number; // 1, 2, or 3
   isOpen: boolean;

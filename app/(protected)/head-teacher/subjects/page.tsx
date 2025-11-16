@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; import { gradeLevels } from "@/lib/constants/grade-levels";
 import { useSchool } from "@/contexts/school-context";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function HeadTeacherSubjects() {
   const { school } = useSchool()
@@ -19,140 +20,96 @@ export default function HeadTeacherSubjects() {
   const sortBy = "createdAt";
   const order: "asc" | "desc" = "desc";
 
-  const { data, isLoading, isError, refetch, isFetching } = useSubjects({
-    q,
+  const { data, isLoading, isError, error, refetch, isFetching } = useSubjects({
     page,
-    limit,
-    sortBy,
-    order,
-    subjectType: category?.toLowerCase(),
-    gradeLevel: gradeLevel !== "#" ? gradeLevel : undefined,
-    includeTrashed: viewMode === "trashed",
-    onlyTrashed: viewMode === "trashed",
+    limit: 100,
+    gradeLevel,
   });
 
-  const tableData = useMemo(() => {
-    const items = data?.items || [];
-    return items.map((s, idx) => ({
-      id: String((s as any)._id || idx + 1),
-      _id: (s as any)._id,
-      subjectName: (s as any).name ?? "",
-      subjectCode: (s as any).code ?? "",
-      department: (s as any).department ?? "",
-      category: (s as any).subjectType ?? "",
-      gradeLevel: (s as any).gradeLevels ? (s as any).gradeLevels.join(", ") : "",
-      teachers: "0",
-      classes: "0",
-      students: "0",
-      status: (s as any).status ?? "Active",
-      isTrashed: (s as any).isTrashed ?? false,
-      subjectType: (s as any).subjectType ?? "",
-      creditHours: String((s as any).creditHours ?? ""),
-      level: (s as any).level ?? "",
-      prerequisites: (s as any).prerequisites ?? "",
-    }));
-  }, [data]);
+  // const tableData = useMemo(() => {
+  //   const items = data?.items || [];
+  //   return items.map((s, idx) => ({
+  //     id: String((s as any)._id || idx + 1),
+  //     _id: (s as any)._id,
+  //     subjectName: (s as any).name ?? "",
+  //     subjectCode: (s as any).code ?? "",
+  //     department: (s as any).department ?? "",
+  //     category: (s as any).subjectType ?? "",
+  //     gradeLevel: (s as any).gradeLevels ? (s as any).gradeLevels.join(", ") : "",
+  //     teachers: "0",
+  //     classes: "0",
+  //     students: "0",
+  //     status: (s as any).status ?? "Active",
+  //     isTrashed: (s as any).isTrashed ?? false,
+  //     subjectType: (s as any).subjectType ?? "",
+  //     creditHours: String((s as any).creditHours ?? ""),
+  //     level: (s as any).level ?? "",
+  //     prerequisites: (s as any).prerequisites ?? "",
+  //   }));
+  // }, [data]);
 
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  return (
-    <div className="mx-auto py-4 space-y-4">
-      <div className="space-y-2">
-        <div className="flex flex-col gap-1 px-4">
-          <h1 className="text-3xl font-semibold text-primary">Subject Management</h1>
-          <p className="text-muted-foreground">Manage subjects, assign them to classes, and track performance</p>
+
+  if (error) {
+    return (
+      <div className="py-4">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-destructive">
+              Error loading subjects
+            </h3>
+            <p className="text-sm text-muted-foreground mt-2">
+              {(error as any)?.response?.data?.message ||
+                "Failed to fetch classes. Please try again later."}
+            </p>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Data Table Section */}
-      <section className="p-4 space-y-4">
-        <SubjectStats schoolId={school?.id} />
-      </section>
 
-      {/* Controls */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-2 md:px-4">
-        <div className="flex items-center gap-2">
-          <Select
-            value={gradeLevel ?? ""}
-            onValueChange={(v) => {
-              setGradeLevel(v || undefined);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by grade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="#">Any Grade</SelectItem>
-              {gradeLevels.map((grade) => (
-                <SelectItem key={grade.value} value={grade.value}>
-                  {grade.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+  return (
+    <div className="py-4">
+      <div className="flex justify-between gap-1 ">
+        <div className="flex flex-col gap-1 px-4">
+          <h2 className="text-3xl font-semibold text-primary">
+            Manage Subjects
+          </h2>
+          <span className="text-muted-foreground text-base font-normal">
+            View and organize all of you school subjects here
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={viewMode === "active" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("active")}
-          >
-            Active Subjects
-          </Button>
-          <Button
-            variant={viewMode === "trashed" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("trashed")}
-          >
-            Trash
-          </Button>
+        <div className="flex items-center justify-between px-4">
+          <div />
+          {/* Button will render at the end */}
           <AddSubjectDialog />
         </div>
       </div>
-
-
-      <section className="p-4 space-y-4">
-        {isError && (
-          <div className="text-sm text-red-500">Failed to load subjects.</div>
-        )}
-        <SubjectDataTable
-          data={tableData}
-          // Disable internal pagination since we use server-side pagination above
-          // @ts-ignore - component supports config prop
-          config={{ enablePagination: false }}
-          onTabChange={(value) => {
-            const map: Record<string, string | undefined> = {
-              "all-subjects": undefined,
-              core: "Core",
-              elective: "Elective",
-              optional: "Optional",
-            };
-            setCategory(map[value]);
-            setPage(1);
-          }}
-        />
-        <div className="flex flex-row gap-4 items-center">
-          <span className="text-sm text-muted-foreground">Rows per page </span>
-          <Select value={String(limit)} onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}>
-            <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="30">30</SelectItem>
-              <SelectItem value="40">40</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1 || isFetching}>Prev</Button>
-            <span className="text-sm">Page {page} of {totalPages}</span>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages || isFetching}>Next</Button>
+      {isLoading ? (
+        <>
+          <div className="flex items-center justify-center p-4 w-full">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
           </div>
-        </div>
-        {isLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
-      </section>
+          <div className="px-4">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        </>
+      ) : (
+        <>
+          <SubjectStats schoolId={school?.id} />
+          <SubjectDataTable
+            data={data?.items || []}
+            isLoading={isLoading}
+          />
+        </>
+      )}
     </div>
   );
 }

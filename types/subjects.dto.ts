@@ -11,6 +11,7 @@ export interface CreateSubjectDto {
   creditHours?: number;
   level?: string;
   gradeLevel?: string;
+  gradeLevels?: string[];
   status?: string;
   prerequisites?: string;
 }
@@ -49,15 +50,16 @@ export interface UpdateSubjectDto {
   department?: string;
   creditHours?: number;
   level?: string;
-  gradeLevel?: string;
+  gradeLevels?: string[];
   status?: string;
   prerequisites?: string;
+  description?: string;
 }
 
 export interface Subject {
   _id: string;
   name: string;
-  subjectCode: string;
+  code: string;
   shortName: string;
   maxScore: number;
   category: string;
@@ -66,8 +68,10 @@ export interface Subject {
   department: string;
   creditHours: number;
   level: string;
-  gradeLevel: string;
+  gradeLevels: string[];
+  subjectType: string;
   status: string;
+  description: string;
   prerequisites: string;
   createdAt?: string; // If your API returns timestamps
   updatedAt?: string;
@@ -125,7 +129,7 @@ export interface AssessmentSubjectSummary {
   name: string;
   shortName: string;
   department: string;
-  subjectType: "core" | "elective" | string;
+  subjectType: "core" | "elective" | "optional";
   maxScore: number;
   minPassingScore: number;
   creditHours: number;

@@ -95,6 +95,15 @@ export interface GenderDistributionItem {
   percentage: string;
 }
 
+export interface HeadTeacherSubjectStatsDto {
+  totalSubjects: number;
+  totalTeachers: number;
+  averageClassSize: number;
+  averagePerformance: number; // 0-100 (percentage)
+  performanceGrade: string;
+  schoolId: string;
+}
+
 export interface RegistrationAnalyticsDto {
   timeSeries: {
     last3Months: TimeSeriesItem[];
@@ -160,10 +169,24 @@ export const dashbaordApi = {
     if (params.scope) searchParams.set("scope", params.scope);
 
     const queryString = searchParams.toString();
-    const url = `/api/dashboard/performance${queryString ? `?${queryString}` : ""}`;
+    const url = `/api/dashboard/performance${
+      queryString ? `?${queryString}` : ""
+    }`;
 
     const { data } = await axiosInstance.get<SchoolPerformanceAnalyticsDto>(
       url
+    );
+    return data;
+  },
+
+  fetchHeadTeacherSubjectStats: async (
+    schoolId: string
+  ): Promise<HeadTeacherSubjectStatsDto> => {
+    const { data } = await axiosInstance.get<HeadTeacherSubjectStatsDto>(
+      `/api/dashboard/subject-stats`,
+      {
+        params: { schoolId },
+      }
     );
     return data;
   },

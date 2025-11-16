@@ -10,6 +10,7 @@ import {
   UpdateClassData,
   ClassQueryParams,
   SubjectSummary,
+  ClassPerformanceResponse,
 } from "@/lib/api/classes";
 import { toast } from "react-toastify";
 import {
@@ -273,24 +274,6 @@ export function useClassesForSubjects(subjectId: string) {
     enabled: !!subjectId,
   });
 }
-// export const useCreateClass = () => {
-//   const qc = useQueryClient();
-//   return useMutation<ClassLite, Error, CreateClassDto>({
-//     mutationFn: createClass,
-//     onSuccess: () => {
-//       toast.success("Class created");
-//       qc.invalidateQueries({ queryKey: ["classes"] });
-//     },
-//     onError: (err) => toast.error(err.message || "Failed to create class"),
-//   });
-// };
-
-// export const useClasses = (filter: IQueryClasses = {}) => {
-//   return useQuery<PaginatedClassesResponse, Error>({
-//     queryKey: ["classes", filter],
-//     queryFn: () => classesApi.listClasses(filter),
-//   });
-// };
 
 export const useClassById = (id?: string) => {
   return useQuery<any, Error>({
@@ -334,6 +317,20 @@ export function useClassStats(
     queryKey: ["class-stats", schoolId],
     queryFn: () => dashbaordApi.fetchClassStats(schoolId),
     enabled: !!schoolId,
+    staleTime: 60_000,
+    ...options,
+  });
+}
+
+export function useClassPerformance(
+  classId: string,
+  params?: Record<string, unknown>,
+  options?: UseQueryOptions<ClassPerformanceResponse>
+) {
+  return useQuery<ClassPerformanceResponse>({
+    queryKey: ["class-performance", classId],
+    queryFn: () => classesApi.getClassPerformance(classId, params),
+    enabled: !!classId,
     staleTime: 60_000,
     ...options,
   });

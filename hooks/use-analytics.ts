@@ -6,6 +6,7 @@ import {
   type TimeSeriesItem,
   type GenderDistributionItem,
   type SchoolPerformanceAnalyticsDto,
+  type HeadTeacherSubjectStatsDto,
 } from "@/lib/api/dashboard";
 import type { ReactNode } from "react";
 
@@ -259,6 +260,32 @@ export function usePerformanceAnalytics(
       return dashbaordApi.fetchPerformanceAnalytics(params);
     },
     enabled: hasSchool,
+    staleTime: 60_000,
+    ...options,
+  });
+}
+
+export const headTeacherSubjectStatsKeys = {
+  all: ["head-teacher-subject-stats"] as const,
+  detail: (schoolId?: string) =>
+    [...headTeacherSubjectStatsKeys.all, schoolId ?? "unknown"] as const,
+};
+
+export type HeadTeacherSubjectStatsKey = ReturnType<
+  typeof headTeacherSubjectStatsKeys.detail
+>;
+
+export function useHeadTeacherSubjectStats(
+  schoolId?: string,
+  options?: UseQueryOptions<HeadTeacherSubjectStatsDto>
+) {
+  return useQuery<HeadTeacherSubjectStatsDto>({
+    queryKey: headTeacherSubjectStatsKeys.detail(schoolId),
+    queryFn: () => {
+      if (!schoolId) throw new Error("schoolId is required");
+      return dashbaordApi.fetchHeadTeacherSubjectStats(schoolId);
+    },
+    enabled: !!schoolId,
     staleTime: 60_000,
     ...options,
   });
