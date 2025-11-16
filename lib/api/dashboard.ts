@@ -104,6 +104,23 @@ export interface HeadTeacherSubjectStatsDto {
   schoolId: string;
 }
 
+export interface TeacherStatCardDto {
+  name: string;
+  value: string;
+  change: string;
+  percentageChange: string;
+  changeType: "positive" | "negative" | "neutral";
+  dataKey: string;
+}
+
+export interface TeacherStatsDto {
+  cards: TeacherStatCardDto[];
+  series: Array<{
+    date: string;
+    [key: string]: number | string;
+  }>;
+}
+
 export interface RegistrationAnalyticsDto {
   timeSeries: {
     last3Months: TimeSeriesItem[];
@@ -186,6 +203,16 @@ export const dashbaordApi = {
       `/api/dashboard/subject-stats`,
       {
         params: { schoolId },
+      }
+    );
+    return data;
+  },
+
+  fetchTeacherStats: async (schoolId?: string): Promise<TeacherStatsDto> => {
+    const { data } = await axiosInstance.get<TeacherStatsDto>(
+      `/api/teachers/metrics/teachers-stats`,
+      {
+        params: schoolId ? { schoolId } : undefined,
       }
     );
     return data;
