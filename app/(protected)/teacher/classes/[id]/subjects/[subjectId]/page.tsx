@@ -22,6 +22,16 @@ export default function SubjectMarksPage() {
   const { data: stats, isLoading: statsLoading } = useSubjectStats(subjectId, { classId, term })
   const { data: assessments, isLoading: assessmentsLoading } = useSubjectAssessments(subjectId, { classId, term })
 
+  // Default to the currently open term when available
+  React.useEffect(() => {
+    if (!term && terms.length > 0) {
+      const openTerm = terms.find(t => t.isOpen)
+      if (openTerm?._id) {
+        setTerm(openTerm._id)
+      }
+    }
+  }, [terms, term])
+
   const isLoading = statsLoading || assessmentsLoading
 
   const handleAssessmentClick = (assessmentId: string) => {
