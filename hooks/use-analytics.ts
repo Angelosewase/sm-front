@@ -7,6 +7,7 @@ import {
   type GenderDistributionItem,
   type SchoolPerformanceAnalyticsDto,
   type HeadTeacherSubjectStatsDto,
+  type TeacherStatsDto,
 } from "@/lib/api/dashboard";
 import type { ReactNode } from "react";
 
@@ -286,6 +287,19 @@ export function useHeadTeacherSubjectStats(
       return dashbaordApi.fetchHeadTeacherSubjectStats(schoolId);
     },
     enabled: !!schoolId,
+    staleTime: 60_000,
+    ...options,
+  });
+}
+
+export function useTeacherStats(
+  schoolId?: string,
+  options?: UseQueryOptions<TeacherStatsDto>
+) {
+  return useQuery<TeacherStatsDto>({
+    queryKey: ["teacher-stats", schoolId ?? "unknown"],
+    queryFn: () => dashbaordApi.fetchTeacherStats(schoolId),
+    enabled: true,
     staleTime: 60_000,
     ...options,
   });
