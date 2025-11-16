@@ -65,6 +65,7 @@ import {
 } from "@/lib/api/student-performance";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "../ui/sidebar";
+import { useAcademicYears, useTermsByAcademicYear } from "@/hooks/use-academic-terms";
 
 type StudentPerformanceViewProps = {
   studentId: string;
@@ -151,8 +152,8 @@ export default function StudentPerformanceView({
 }: StudentPerformanceViewProps) {
   const { open: isSidebarOpen } = useSidebar();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTerm, setSelectedTerm] = useState<string>(ALL_FILTER);
-  const [selectedYear, setSelectedYear] = useState<string>(ALL_FILTER);
+  const [selectedTermId, setSelectedTermId] = useState<string>(ALL_FILTER);
+  const [selectedYearId, setSelectedYearId] = useState<string>(ALL_FILTER);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [activeSubject, setActiveSubject] =
@@ -163,8 +164,27 @@ export default function StudentPerformanceView({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const activeTerm = selectedTerm !== ALL_FILTER ? selectedTerm : undefined;
-  const activeYear = selectedYear !== ALL_FILTER ? selectedYear : undefined;
+  // Fetch academic years and dependent terms
+  const { data: academicYears = [] } = useAcademicYears();
+  const activeYearId = selectedYearId !== ALL_FILTER ? selectedYearId : undefined;
+  const { data: terms = [] } = useTermsByAcademicYear(activeYearId);
+
+  // Keep term selection in sync with selected year
+  useEffect(() => {
+    if (!activeYearId) {
+      setSelectedTermId(ALL_FILTER);
+      return;
+    }
+    if (
+      selectedTermId !== ALL_FILTER &&
+      terms.length > 0 &&
+      !terms.some((t) => t._id === selectedTermId)
+    ) {
+      setSelectedTermId(ALL_FILTER);
+    }
+  }, [activeYearId, terms, selectedTermId]);
+
+  const activeTermId = selectedTermId !== ALL_FILTER ? selectedTermId : undefined;
 
   const {
     data: assessmentsData = [],
@@ -174,13 +194,13 @@ export default function StudentPerformanceView({
     queryKey: [
       "student-assessments",
       studentId,
-      activeTerm ?? ALL_FILTER,
-      activeYear ?? ALL_FILTER,
+      activeTermId ?? ALL_FILTER,
+      activeYearId ?? ALL_FILTER,
     ],
     queryFn: () =>
       studentPerformanceApi.getStudentAssessments(studentId, {
-        term: activeTerm,
-        year: activeYear,
+        termId: activeTermId,
+        academicYearId: activeYearId,
       }),
     enabled: Boolean(studentId),
   });
@@ -193,13 +213,13 @@ export default function StudentPerformanceView({
     queryKey: [
       "student-subject-performance",
       studentId,
-      activeTerm ?? ALL_FILTER,
-      activeYear ?? ALL_FILTER,
+      activeTermId ?? ALL_FILTER,
+      activeYearId ?? ALL_FILTER,
     ],
     queryFn: () =>
       studentPerformanceApi.getSubjectAssessmentPerformances(studentId, {
-        term: activeTerm,
-        year: activeYear,
+        termId: activeTermId,
+        academicYearId: activeYearId,
       }),
     enabled: Boolean(studentId),
   });
@@ -225,47 +245,22 @@ export default function StudentPerformanceView({
     return Array.from(unique.values());
   }, [assessmentsData]);
 
-  const availableYears = useMemo(() => {
-    const years = new Set<string>();
-    assessmentsData.forEach((assessment) => {
-      if (assessment.academicYear) {
-        years.add(assessment.academicYear);
-      }
-    });
-    return Array.from(years).sort((a, b) => b.localeCompare(a));
-  }, [assessmentsData]);
-
-  const availableTerms = useMemo(() => {
-    const terms = new Set<string>();
-    assessmentsData.forEach((assessment) => {
-      if (assessment.term) {
-        terms.add(assessment.term);
-      }
-    });
-    return Array.from(terms).sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-    );
-  }, [assessmentsData]);
+  const availableYears = academicYears;
+  const availableTerms = terms;
 
   useEffect(() => {
-    if (
-      selectedYear !== ALL_FILTER &&
-      availableYears.length > 0 &&
-      !availableYears.includes(selectedYear)
-    ) {
-      setSelectedYear(ALL_FILTER);
+    if (selectedYearId !== ALL_FILTER && availableYears.length > 0) {
+      const exists = availableYears.some((y) => y._id === selectedYearId);
+      if (!exists) setSelectedYearId(ALL_FILTER);
     }
-  }, [availableYears, selectedYear]);
+  }, [availableYears, selectedYearId]);
 
   useEffect(() => {
-    if (
-      selectedTerm !== ALL_FILTER &&
-      availableTerms.length > 0 &&
-      !availableTerms.includes(selectedTerm)
-    ) {
-      setSelectedTerm(ALL_FILTER);
+    if (selectedTermId !== ALL_FILTER && availableTerms.length > 0) {
+      const exists = availableTerms.some((t) => t._id === selectedTermId);
+      if (!exists) setSelectedTermId(ALL_FILTER);
     }
-  }, [availableTerms, selectedTerm]);
+  }, [availableTerms, selectedTermId]);
 
   const subjectPerformances = subjectPerformancesData;
 
@@ -420,12 +415,13 @@ export default function StudentPerformanceView({
   };
 
   const handleTermChange = (term: string) => {
-    setSelectedTerm(term);
+    setSelectedTermId(term);
     setCurrentPage(1);
   };
 
   const handleYearChange = (year: string) => {
-    setSelectedYear(year);
+    setSelectedYearId(year);
+    setSelectedTermId(ALL_FILTER);
     setCurrentPage(1);
   };
 
@@ -449,8 +445,8 @@ export default function StudentPerformanceView({
 
   const handleResetFilters = () => {
     setSearchTerm("");
-    setSelectedYear(ALL_FILTER);
-    setSelectedTerm(ALL_FILTER);
+    setSelectedYearId(ALL_FILTER);
+    setSelectedTermId(ALL_FILTER);
     setItemsPerPage(10);
     setCurrentPage(1);
     setActiveTab("table");
@@ -523,28 +519,28 @@ export default function StudentPerformanceView({
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                <Select value={selectedYear} onValueChange={handleYearChange}>
+                <Select value={selectedYearId} onValueChange={handleYearChange}>
                   <SelectTrigger className="w-28 rounded border-border/60 bg-background/90 sm:w-32">
                     <SelectValue placeholder="Year" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL_FILTER}>All Years</SelectItem>
                     {availableYears.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
+                      <SelectItem key={year._id} value={year._id}>
+                        {year.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={selectedTerm} onValueChange={handleTermChange}>
+                <Select value={selectedTermId} onValueChange={handleTermChange} disabled={!activeYearId}>
                   <SelectTrigger className="w-28 rounded border-border/60 bg-background/90 sm:w-32">
                     <SelectValue placeholder="Term" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL_FILTER}>All Terms</SelectItem>
                     {availableTerms.map((term) => (
-                      <SelectItem key={term} value={term}>
-                        {formatTermLabel(term)}
+                      <SelectItem key={term._id} value={term._id}>
+                        {formatTermLabel(String(term.order))}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -583,14 +579,14 @@ export default function StudentPerformanceView({
             <Badge variant="outline" className="rounded border-dashed">
               {assessmentColumns.length} assessments
             </Badge>
-            {selectedYear !== ALL_FILTER && (
+            {selectedYearId !== ALL_FILTER && (
               <Badge variant="secondary" className="rounded">
-                Year: {selectedYear}
+                Year: {availableYears.find((y) => y._id === selectedYearId)?.label}
               </Badge>
             )}
-            {selectedTerm !== ALL_FILTER && (
+            {selectedTermId !== ALL_FILTER && (
               <Badge variant="secondary" className="rounded">
-                Term: {formatTermLabel(selectedTerm)}
+                Term: {formatTermLabel(String(availableTerms.find((t) => t._id === selectedTermId)?.order))}
               </Badge>
             )}
             {searchTerm && (

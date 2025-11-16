@@ -56,10 +56,10 @@ export function useClass(id: string) {
 /**
  * Hook to list subjects assigned to a class
  */
-export function useClassSubjects(classId: string) {
+export function useClassSubjects(classId: string, params?: { teacher?: string }) {
   return useQuery<SubjectSummary[]>({
-    queryKey: [...classesKeys.detail(classId), "subjects"],
-    queryFn: () => classesApi.listClassSubjects(classId),
+    queryKey: [...classesKeys.detail(classId), "subjects", params],
+    queryFn: () => classesApi.listClassSubjects(classId, params),
     enabled: !!classId,
   });
 }

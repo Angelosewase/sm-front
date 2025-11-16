@@ -85,6 +85,7 @@ import {
 } from "@/types/students.dto";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { gradeLevels } from "@/lib/constants/grade-levels";
 const GRADE_LEVELS = [
   "Grade 1",
   "Grade 2",
@@ -1495,9 +1496,9 @@ function ClassAssignmentDialog({
               </SelectTrigger>
               <SelectContent>
                 {/* <SelectItem value="_">Select grade</SelectItem> */}
-                {GRADE_LEVELS.map((grade) => (
-                  <SelectItem key={grade} value={grade}>
-                    {grade}
+                {gradeLevels.map((grade) => (
+                  <SelectItem key={grade.value} value={grade.value}>
+                    {grade.label}
                   </SelectItem>
                 ))}
               </SelectContent>

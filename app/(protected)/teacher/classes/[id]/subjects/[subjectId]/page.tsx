@@ -6,6 +6,7 @@ import { MarksManagementView } from '@/components/teacher/marks/marks-management
 import { useSubjectAssessments, useSubjectStats } from '@/hooks/use-subjects'
 import { useClass } from '@/hooks/use-classes'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useOpenAcademicYear, useTermsByAcademicYear } from '@/hooks/use-academic-terms'
 
 export default function SubjectMarksPage() {
   const router = useRouter()
@@ -16,8 +17,20 @@ export default function SubjectMarksPage() {
   const [term, setTerm] = React.useState<string | undefined>(undefined)
 
   const { data: classInfo } = useClass(classId)
+  const { data: openAcademicYear } = useOpenAcademicYear()
+  const { data: terms = [] } = useTermsByAcademicYear(openAcademicYear?._id)
   const { data: stats, isLoading: statsLoading } = useSubjectStats(subjectId, { classId, term })
   const { data: assessments, isLoading: assessmentsLoading } = useSubjectAssessments(subjectId, { classId, term })
+
+  // Default to the currently open term when available
+  React.useEffect(() => {
+    if (!term && terms.length > 0) {
+      const openTerm = terms.find(t => t.isOpen)
+      if (openTerm?._id) {
+        setTerm(openTerm._id)
+      }
+    }
+  }, [terms, term])
 
   const isLoading = statsLoading || assessmentsLoading
 
@@ -30,7 +43,8 @@ export default function SubjectMarksPage() {
   }
 
   const handleTermChange = (termId: string) => {
-    setTerm(termId)
+    // Accept 'all' handled in child; here we receive undefined for all-terms
+    setTerm(termId as any)
   }
 
   if (isLoading) {
@@ -53,11 +67,12 @@ export default function SubjectMarksPage() {
     name: assessments?.[0]?.class ? undefined : '', // placeholder; subject name not from this endpoint
     className: classInfo?.name ?? 'Class',
     studentCount: classInfo?.studentCount ?? 0,
-    currentTerm: term ?? 'default-term',
-    terms: [
-      // If you have a terms API, replace this with live data
-      { id: 'First Term 2024', name: 'First Term 2024', isActive: !term || term === 'First Term 2024' },
-    ],
+    currentTerm: term, // undefined means "All Terms" in the child component
+    terms: (terms ?? []).map(t => ({
+      id: t._id,
+      name: `Term ${t.order}`,
+      isActive: !!t.isOpen,
+    })),
     assessments: (assessments ?? []).map((a) => ({
       id: a.assessmentId,
       title: a.title,
@@ -77,8 +92,8 @@ export default function SubjectMarksPage() {
         subjectData={subjectData as any}
         onAssessmentClick={handleAssessmentClick}
         onBackClick={handleBackClick}
-        onTermChange={handleTermChange}
-        context={{ subjectId, classId, termId: term }}
+        onTermChange={(t) => setTerm(t)}
+        context={{ subjectId, classId, termId: term, academicYearId: openAcademicYear?._id }}
       />
     </div>
   )

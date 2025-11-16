@@ -307,9 +307,13 @@ export const classesApi = {
   /**
    * List subjects assigned to a class
    */
-  listClassSubjects: async (classId: string): Promise<SubjectSummary[]> => {
+  listClassSubjects: async (
+    classId: string,
+    params?: { teacher?: string }
+  ): Promise<SubjectSummary[]> => {
     const { data } = await axiosInstance.get<SubjectSummary[]>(
-      `${classesApiUrl}/${classId}/subjects`
+      `${classesApiUrl}/${classId}/subjects`,
+      { params }
     );
     return data;
   },

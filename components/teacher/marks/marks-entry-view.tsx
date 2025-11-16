@@ -388,7 +388,14 @@ export function MarksEntryView({
                 <TableHead className="w-12">#</TableHead>
                 <TableHead>Admission No.</TableHead>
                 <TableHead>Student Name</TableHead>
-                <TableHead className="w-24">Score</TableHead>
+                <TableHead className="w-24">
+                  Score
+                  {maxScore > 0 && (
+                    <span className="block text-xs text-muted-foreground">
+                      Max: {maxScore}
+                    </span>
+                  )}
+                </TableHead>
                 <TableHead className="w-16">Grade</TableHead>
                 <TableHead className="w-16">%</TableHead>
                 <TableHead className="min-w-48">Remarks</TableHead>
@@ -428,7 +435,7 @@ export function MarksEntryView({
                             "w-20 text-center",
                             !validation.isValid && "border-red-500 focus-visible:border-red-500"
                           )}
-                          placeholder="0"
+                          placeholder={maxScore > 0 ? `0 - ${maxScore}` : "0"}
                           disabled={isSubmitted}
                         />
                         {!validation.isValid && (

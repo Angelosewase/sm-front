@@ -7,57 +7,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { reportsApi } from "@/lib/api/reports";
 import { Component as PdfViewer } from "@/components/pdf-viewer";
 import { toast } from "sonner";
+import { useAcademicYears, useTermsByAcademicYear } from "@/hooks/use-academic-terms";
 
 type ReportScope = "year" | "term";
-
-type AcademicYearOption = {
-  label: string;
-  value: string;
-};
-
-type TermOption = {
-  label: string;
-  value: string;
-};
-
-const academicYears: AcademicYearOption[] = [
-  { label: "2025/2026", value: "2025/2026" },
-  { label: "2024/2025", value: "2024/2025" },
-  { label: "2023/2024", value: "2023/2024" },
-];
-
-const terms: TermOption[] = [
-  { label: "Term 1", value: "Term 1" },
-  { label: "Term 2", value: "Term 2" },
-  { label: "Term 3", value: "Term 3" },
-];
 
 type StudentResultsViewProps = {
   studentId: string;
 };
 
 export default function StudentResultsView({ studentId }: StudentResultsViewProps) {
-  const [selectedYear, setSelectedYear] = useState<string>(academicYears[0]?.value ?? "");
+  const { data: academicYears = [], isLoading: isYearsLoading, error: yearsError } = useAcademicYears();
+  const [selectedYearId, setSelectedYearId] = useState<string>("");
   const [reportScope, setReportScope] = useState<ReportScope>("year");
-  const [selectedTerm, setSelectedTerm] = useState<string>(terms[0]?.value ?? "");
+  const { data: terms = [], isLoading: isTermsLoading, error: termsError } = useTermsByAcademicYear(selectedYearId || undefined);
+  const [selectedTermId, setSelectedTermId] = useState<string>("");
   const [pdfData, setPdfData] = useState<{ blob: Blob; fileName: string } | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (reportScope === "term" && !selectedTerm && terms.length > 0) {
-      setSelectedTerm(terms[0].value);
+    if (!selectedYearId && academicYears.length > 0) {
+      setSelectedYearId(academicYears[0]._id);
     }
-  }, [reportScope, selectedTerm]);
+  }, [selectedYearId, academicYears]);
+
+  useEffect(() => {
+    if (reportScope === "term" && !selectedTermId && terms.length > 0) {
+      setSelectedTermId(terms[0]._id);
+    }
+  }, [reportScope, selectedTermId, terms]);
 
   const selectedYearOption = useMemo(
-    () => academicYears.find((year) => year.value === selectedYear) ?? null,
-    [selectedYear]
+    () => academicYears.find((year) => year._id === selectedYearId) ?? null,
+    [selectedYearId, academicYears]
   );
 
   const selectedTermOption = useMemo(
-    () => terms.find((term) => term.value === selectedTerm) ?? null,
-    [selectedTerm]
+    () => terms.find((term) => term._id === selectedTermId) ?? null,
+    [selectedTermId, terms]
   );
 
   const filterSummary = useMemo(() => {
@@ -69,7 +56,7 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
       return `Displaying annual report card for ${selectedYearOption.label}.`;
     }
 
-    const termLabel = selectedTermOption?.label;
+    const termLabel = selectedTermOption ? `Term ${selectedTermOption.order}` : undefined;
 
     if (!termLabel) {
       return `Displaying term report card for ${selectedYearOption.label}.`;
@@ -103,8 +90,8 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
     try {
       const response = await reportsApi.downloadStudentReport({
         studentId,
-        academicYear: selectedYearOption.value,
-        term: isTermScope ? selectedTermOption?.value : undefined,
+        academicYearId: selectedYearOption._id,
+        termId: isTermScope ? selectedTermOption?._id : undefined,
       });
 
       const blob = response.data;
@@ -120,8 +107,8 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
       const inferredFileName =
         extractFilenameFromDisposition(response.headers?.["content-disposition"]) ||
         `student-${normalizeSegment(studentId)}-${normalizeSegment(
-          selectedTermOption?.label && isTermScope ? selectedTermOption.label : "year"
-        )}-${normalizeSegment(selectedYearOption.value)}.pdf`;
+          selectedTermOption && isTermScope ? `term-${selectedTermOption.order}` : "year"
+        )}-${normalizeSegment(selectedYearOption.label)}.pdf`;
 
       // Clean up previous blob URL if it exists
       if (pdfUrl) {
@@ -182,7 +169,7 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
       setPdfData(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, reportScope, selectedTerm]);
+  }, [selectedYearId, reportScope, selectedTermId]);
 
   return (
     <div className="space-y-6">
@@ -191,13 +178,13 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-medium text-gray-700 whitespace-nowrap">Year:</span>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <Select value={selectedYearId} onValueChange={setSelectedYearId} disabled={isYearsLoading || !!yearsError}>
                 <SelectTrigger className="h-8 w-32 text-xs shadow-sm focus-visible:ring-primary-200">
                   <SelectValue placeholder="Select a year" />
                 </SelectTrigger>
                 <SelectContent>
-                  {academicYears.map((year) => (
-                    <SelectItem key={year.value} value={year.value}>
+                  {academicYears.map((year: any) => (
+                    <SelectItem key={year._id} value={year._id}>
                       {year.label}
                     </SelectItem>
                   ))}
@@ -222,7 +209,7 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
               <div className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-gray-700 whitespace-nowrap">Term:</span>
                 <div className="flex ">
-                  {terms.map((term, idx) => {
+                  {terms.map((term: any, idx: number) => {
                     const isFirst = idx === 0;
                     const isLast = idx === terms.length - 1;
                     let roundedClass = "";
@@ -232,14 +219,14 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
 
                     return (
                       <Button
-                        key={term.value}
+                        key={term._id}
                         type="button"
-                        variant={selectedTerm === term.value ? "default" : "outline"}
+                        variant={selectedTermId === term._id ? "default" : "outline"}
                         size="sm"
                         className={`h-8 px-3 text-xs rounded-none ${roundedClass} -ml-[1px]`}
-                        onClick={() => setSelectedTerm(term.value)}
+                        onClick={() => setSelectedTermId(term._id)}
                       >
-                        {term.label}
+                        {`Term ${term.order}`}
                       </Button>
                     );
                   })}
@@ -253,7 +240,7 @@ export default function StudentResultsView({ studentId }: StudentResultsViewProp
               type="button"
               className="flex-1 md:flex-initial h-9 text-xs"
               onClick={handleLoadReport}
-              disabled={isLoadDisabled}
+              disabled={isLoadDisabled || isYearsLoading || (!!yearsError) || (isTermScope && (isTermsLoading || !!termsError))}
             >
               {isLoading ? (
                 <>
