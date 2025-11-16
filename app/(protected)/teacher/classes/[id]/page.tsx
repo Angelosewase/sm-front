@@ -62,10 +62,10 @@ export default function ClassDetailPage() {
     subjects: (subjects ?? []).map(s => ({
       id: s._id,
       name: s.name,
-      assessmentCount: s.totalAssessments,
-      completedAssessments: s.assessmentsDone,
-      averageScore: s.averageMark ?? 0,
-      lastUpdated: s.latestMarkDate ?? ''
+      assessmentCount: s.assessments?.length ?? 0,
+      // completedAssessments: s.assessmentsDone,
+      // averageScore: s.averageMark ?? 0,
+      // lastUpdated: s.updatedAt ?? ''
     }))
   }
 

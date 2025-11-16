@@ -2,22 +2,22 @@ import { axiosInstance } from "../axios";
 
 export type StudentReportDownloadParams = {
   studentId: string;
-  academicYear: string;
-  term?: string;
+  academicYearId: string;
+  termId?: string;
 };
 
 export const reportsApi = {
   downloadStudentReport: async ({
     studentId,
-    academicYear,
-    term,
+    academicYearId,
+    termId,
   }: StudentReportDownloadParams) => {
     const response = await axiosInstance.get<Blob>(
       `/reports/students/${studentId}/report`,
       {
         params: {
-          academicYear,
-          ...(term ? { term } : {}),
+          academicYearId,
+          ...(termId ? { termId } : {}),
         },
         responseType: "blob",
         headers: {

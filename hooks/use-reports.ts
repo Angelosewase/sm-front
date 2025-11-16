@@ -1,9 +1,14 @@
 import { useCallback, useState } from "react";
 import { isAxiosError } from "axios";
 import { toast } from "sonner";
-import { reportsApi, StudentReportDownloadParams } from "@/lib/api/reports";
+import { reportsApi } from "@/lib/api/reports";
 
-type DownloadStudentReportOptions = StudentReportDownloadParams & {
+type DownloadStudentReportOptions = {
+  studentId: string;
+  academicYearId: string;
+  termId?: string;
+  // Optional labels purely for filename friendliness
+  academicYearLabel?: string;
   termLabel?: string;
 };
 
@@ -47,8 +52,8 @@ export const useReports = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const downloadStudentReport = useCallback(
-    async ({ studentId, academicYear, term, termLabel }: DownloadStudentReportOptions) => {
-      if (!studentId || !academicYear) {
+    async ({ studentId, academicYearId, termId, termLabel, academicYearLabel }: DownloadStudentReportOptions) => {
+      if (!studentId || !academicYearId) {
         toast.error("Sélectionnez un étudiant et une année académique.");
         return;
       }
@@ -58,8 +63,8 @@ export const useReports = () => {
       try {
         const response = await reportsApi.downloadStudentReport({
           studentId,
-          academicYear,
-          term,
+          academicYearId,
+          termId,
         });
 
         const blob = response.data;
@@ -70,8 +75,8 @@ export const useReports = () => {
         const inferredFileName =
           extractFilenameFromDisposition(response.headers?.["content-disposition"]) ||
           `student-${normalizeSegment(studentId)}-${normalizeSegment(
-            termLabel && term ? termLabel : "annee"
-          )}-${normalizeSegment(academicYear)}.pdf`;
+            termLabel && termId ? termLabel : "annee"
+          )}-${normalizeSegment(academicYearLabel || academicYearId)}.pdf`;
 
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
