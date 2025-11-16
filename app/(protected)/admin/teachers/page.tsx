@@ -7,10 +7,10 @@ import { AddTeacherDialog } from "@/components/common/teachers/add-teacher-dialo
 import { useTeachers } from "@/hooks/use-teachers";
 
 import { Skeleton } from "@/components/ui/skeleton";
-
+import { useSchool } from "@/contexts/school-context";
 export default function AdminTeachersPage() {
   const { data, isLoading, isError } = useTeachers();
-
+  const { school } = useSchool();
   return (
     <div className="py-4">
       <div className="flex flex-col gap-1 px-4">
@@ -36,7 +36,7 @@ export default function AdminTeachersPage() {
           </div>
         </>
       ) : (
-        <TeacherStats />
+        <TeacherStats schoolId={school?.id} />
       )}
       {isError && (
         <div className="px-4 py-8 text-destructive">Failed to load teachers</div>
