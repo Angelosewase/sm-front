@@ -32,6 +32,7 @@ import { Teacher } from "@/types/teachers.dto";
 import { useSubjects } from "@/hooks/use-subjects";
 import { useAssignSubjectToTeacher } from "@/hooks/use-subjects";
 import { cn } from "@/lib/utils";
+import { useAssignSubjectsToTeacher } from "@/hooks/use-teachers";
 
 export default function AssignedSubjectsSection({
   teacher,
@@ -42,28 +43,30 @@ export default function AssignedSubjectsSection({
   const [selectedSubject, setSelectedSubject] = React.useState("");
   const { data: subjectsResp } = useSubjects();
   const subjects = subjectsResp?.items ?? [];
-  const assignToTeacher = useAssignSubjectToTeacher();
+  const assignToTeacher = useAssignSubjectsToTeacher();
 
   const handleAddSubject = () => {
     if (!selectedSubject) return;
 
-    assignToTeacher.mutate(
-      {
-        teacherId: teacher._id,
-        subjectIds: [selectedSubject],
-      },
-      {
-        onSuccess: () => {
-          toast.success("Subject assigned successfully");
-          setSelectedSubject("");
-          setIsDialogOpen(false);
+      assignToTeacher.mutate(
+        {
+          id: teacher._id,
+          payload: {
+            subjectIds: [selectedSubject],
+          },
         },
-        onError: (err: any) => {
-          toast.error(
-            err?.response?.data?.message || "Failed to assign subject"
-          );
-        },
-      }
+        {
+          onSuccess: () => {
+            toast.success("Subject assigned successfully");
+            setSelectedSubject("");
+            setIsDialogOpen(false);
+          },
+          onError: (err: any) => {
+            toast.error(
+              err?.response?.data?.message || "Failed to assign subject"
+            );
+          },
+        }
     );
   };
 
