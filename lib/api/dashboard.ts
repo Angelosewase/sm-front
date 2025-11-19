@@ -210,7 +210,7 @@ export const dashbaordApi = {
 
   fetchTeacherStats: async (schoolId?: string): Promise<TeacherStatsDto> => {
     const { data } = await axiosInstance.get<TeacherStatsDto>(
-      `/api/teachers/metrics/teachers-stats`,
+      `/api/teachers/metrics/stats`,
       {
         params: schoolId ? { schoolId } : undefined,
       }
