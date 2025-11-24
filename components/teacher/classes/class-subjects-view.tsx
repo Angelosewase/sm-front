@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +34,10 @@ interface ClassData {
 }
 
 interface ClassSubjectsViewProps {
-  classData: ClassData;
+  classData: ClassData | null | undefined;
   onSubjectClick: (subjectId: string) => void;
   onBackClick: () => void;
+  error?: Error | null;
 }
 
 const ITEMS_PER_PAGE = 8;
@@ -45,23 +46,58 @@ export function ClassSubjectsView({
   classData,
   onSubjectClick,
   onBackClick,
+  error,
 }: ClassSubjectsViewProps) {
-  const { name, studentCount, subjects } = classData;
+  // Provide safe defaults and validate classData
+  const safeClassData = classData || {
+    id: "",
+    name: "Unknown Class",
+    studentCount: 0,
+    subjects: [],
+  };
+
+  const { name, studentCount, subjects } = safeClassData;
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredSubjects = useMemo(() => {
-    return subjects.filter((subject) =>
-      subject.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [subjects, searchQuery]);
+  // Ensure subjects is always an array
+  const safeSubjects = Array.isArray(subjects) ? subjects : [];
 
-  const totalPages = Math.ceil(filteredSubjects.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const filteredSubjects = useMemo(() => {
+    if (!Array.isArray(safeSubjects)) return [];
+    
+    try {
+      return safeSubjects.filter((subject) => {
+        if (!subject || typeof subject !== "object") return false;
+        const subjectName = subject.name;
+        if (!subjectName || typeof subjectName !== "string") return false;
+        
+        const query = searchQuery.toLowerCase().trim();
+        if (!query) return true;
+        
+        return subjectName.toLowerCase().includes(query);
+      });
+    } catch (err) {
+      console.error("Error filtering subjects:", err);
+      return [];
+    }
+  }, [safeSubjects, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubjects.length / ITEMS_PER_PAGE));
+  const startIndex = Math.max(0, (currentPage - 1) * ITEMS_PER_PAGE);
   const paginatedSubjects = filteredSubjects.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
   );
+
+  // Reset to page 1 if current page is out of bounds or if filtered results become empty
+  useEffect(() => {
+    if (filteredSubjects.length === 0) {
+      setCurrentPage(1);
+    } else if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages, filteredSubjects.length]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -69,6 +105,13 @@ export function ClassSubjectsView({
   };
 
   const getCompletionBadge = (completed: number, total: number) => {
+    if (!total || total === 0) {
+      return {
+        variant: "outline" as const,
+        text: "No Data",
+        color: "bg-gray-100 text-gray-800",
+      };
+    }
     const percentage = (completed / total) * 100;
     if (percentage === 100)
       return {
@@ -103,12 +146,90 @@ export function ClassSubjectsView({
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    try {
+      if (!dateString) return "N/A";
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid Date";
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    } catch (err) {
+      console.error("Error formatting date:", err);
+      return "N/A";
+    }
   };
+
+  // Calculate total assessments safely
+  const totalAssessments = useMemo(() => {
+    try {
+      return safeSubjects.reduce((sum, subject) => {
+        const count = subject?.assessmentCount;
+        return sum + (typeof count === "number" && !isNaN(count) ? count : 0);
+      }, 0);
+    } catch (err) {
+      console.error("Error calculating total assessments:", err);
+      return 0;
+    }
+  }, [safeSubjects]);
+
+  // Show error state if error prop is provided
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={onBackClick}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Classes
+          </Button>
+        </div>
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Class Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              {error.message || "An error occurred while loading the class information."}
+            </p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Validate that we have at least basic class data
+  // Only show "No Class Data" if classData is explicitly null/undefined
+  // (not just missing properties, as we have safe defaults)
+  if (!classData) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={onBackClick}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Classes
+          </Button>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>No Class Data Available</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Unable to load class information. Please try again later.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -121,10 +242,10 @@ export function ClassSubjectsView({
       </div>
 
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">{name}</h1>
+        <h1 className="text-3xl font-bold">{name || "Unknown Class"}</h1>
         <p className="text-muted-foreground">
-          {studentCount} students • {subjects.length} subject
-          {subjects.length !== 1 ? "s" : ""}
+          {studentCount ?? 0} students • {safeSubjects.length} subject
+          {safeSubjects.length !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -139,10 +260,7 @@ export function ClassSubjectsView({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {subjects.reduce(
-                (sum, subject) => sum + subject.assessmentCount,
-                0
-              )}
+              {totalAssessments}
             </div>
             <p className="text-xs text-muted-foreground">Across all subjects</p>
           </CardContent>
@@ -206,18 +324,45 @@ export function ClassSubjectsView({
         ) : (
           <div className="bg-card rounded-lg border">
             {paginatedSubjects.map((subject, index) => {
+              // Validate subject data
+              if (!subject || typeof subject !== "object") {
+                return null;
+              }
+
+              const subjectId = subject.id || `subject-${index}`;
+              const hasValidId = !!subject.id; // Check if we have a real ID (not a fallback)
+              const subjectName = subject.name || "Unnamed Subject";
+              const assessmentCount = typeof subject.assessmentCount === "number" 
+                ? subject.assessmentCount 
+                : 0;
+
               // const completionBadge = getCompletionBadge(
               //   subject.completedAssessments,
               //   subject.assessmentCount
               // );
 
+              const handleClick = () => {
+                // Only allow clicking if we have a valid subject ID
+                if (hasValidId && subjectId) {
+                  try {
+                    onSubjectClick(subjectId);
+                  } catch (err) {
+                    console.error("Error handling subject click:", err);
+                  }
+                }
+              };
+
               return (
                 <div
-                  key={subject.id}
-                  className={`flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
+                  key={subjectId}
+                  className={`flex items-center justify-between p-4 transition-colors ${
+                    hasValidId 
+                      ? "hover:bg-muted/50 cursor-pointer" 
+                      : "opacity-60 cursor-not-allowed"
+                  } ${
                     index !== paginatedSubjects.length - 1 ? "border-b" : ""
                   }`}
-                  onClick={() => onSubjectClick(subject.id)}
+                  onClick={handleClick}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -225,11 +370,11 @@ export function ClassSubjectsView({
                     </div>
                     <div>
                       <div className="font-medium text-foreground">
-                        {subject.name}
+                        {subjectName}
                       </div>
-                      <span>
+                      <span className="text-sm text-muted-foreground">
                         {/* {subject.completedAssessments}/ */}
-                        {subject.assessmentCount} assessments
+                        {assessmentCount} assessment{assessmentCount !== 1 ? "s" : ""}
                       </span>
                       {/* <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className={cn("font-medium", getScoreColor(subject.averageScore))}>

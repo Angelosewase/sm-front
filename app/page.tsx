@@ -6,6 +6,10 @@ function getRolePath(role: string) {
     return "/login";
   }
 
+  if (role === "super admin") {
+    return "/super-admin";
+  }
+
   const normalizedRole = role.toLowerCase().replace(/\s+/g, "-");
   return `/${normalizedRole}`;
 }
@@ -42,6 +46,11 @@ export default async function Home() {
 
   if (user.role === "admin" && !school) {
     redirect("/setup-school-profile");
+  }
+
+  // Super admin doesn't need school association
+  if (user.role === "super admin") {
+    redirect("/super-admin");
   }
 
   redirect(getRolePath(user.role));

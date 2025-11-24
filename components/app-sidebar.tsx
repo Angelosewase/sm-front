@@ -20,6 +20,8 @@ import {
   FileCog,
   Loader2,
   ArrowRight,
+  Building2,
+  Shield,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import type { Route } from "./nav-main";
@@ -131,8 +133,25 @@ const getTeacherRoutes = (): Route[] => [
   },
 ];
 
+const getSuperAdminRoutes = (): Route[] => [
+  {
+    id: "schools",
+    title: "Schools",
+    icon: <Building2 className="size-5" />,
+    link: `/super-admin/schools`,
+  },
+  {
+    id: "users",
+    title: "Users",
+    icon: <Users className="size-5" />,
+    link: `/super-admin/users`,
+  },
+];
+
 const getDashboardRoutes = (role: string): Route[] => {
   switch (role) {
+    case "super admin":
+      return [...getCommonRoutes("super-admin"), ...getSuperAdminRoutes()];
     case "admin":
       return [...getCommonRoutes(role), ...getAdminRoutes()];
     case "head-teacher":
@@ -149,9 +168,13 @@ export function DashboardSidebar() {
   const { user } = useAuth();
   const isCollapsed = state === "collapsed";
   const router = useRouter();
-  const dashboardRoutes = getDashboardRoutes(
-    user?.role == "head teacher" ? "head-teacher" : user?.role || "404" || "404"
-  );
+  const normalizedRole =
+    user?.role === "head teacher"
+      ? "head-teacher"
+      : user?.role === "super admin"
+      ? "super admin"
+      : user?.role || "404";
+  const dashboardRoutes = getDashboardRoutes(normalizedRole);
 
   const { school, isLoading: isSchoolLoading } = useSchool();
 
@@ -201,29 +224,31 @@ export function DashboardSidebar() {
       <SidebarContent className="gap-4 px-2 py-4">
         {user && <DashboardNavigation routes={dashboardRoutes} />}
       </SidebarContent>
-      <SidebarFooter className="px-2  ">
-        <div className="flex items-center justify-between">
-          <div
-            className="grid flex-1 text-left  bg-gray-100 dark:bg-card  px-4  py-2 rounded  mb-2 hover:scale-101 transition-all duration-300 hover:cursor-pointer"
-            onClick={() => {
-              if (user?.role === "admin") {
-                router.push("/setup-school-profile");
-              }
-              // Otherwise, do nothing
-            }}
-          >
-            <span className="truncate font-semibold">{school?.name}</span>
-            <span className="truncate text-xs flex not-only-of-type:">
-              school profile{" "}
-              {user?.role === "admin" ? (
-                <ArrowRight className="size-4" />
-              ) : (
-                <ArrowRight className="size-4" />
-              )}
-            </span>
+      {user?.role !== "super admin" && (
+        <SidebarFooter className="px-2  ">
+          <div className="flex items-center justify-between">
+            <div
+              className="grid flex-1 text-left  bg-gray-100 dark:bg-card  px-4  py-2 rounded  mb-2 hover:scale-101 transition-all duration-300 hover:cursor-pointer"
+              onClick={() => {
+                if (user?.role === "admin") {
+                  router.push("/setup-school-profile");
+                }
+                // Otherwise, do nothing
+              }}
+            >
+              <span className="truncate font-semibold">{school?.name}</span>
+              <span className="truncate text-xs flex not-only-of-type:">
+                school profile{" "}
+                {user?.role === "admin" ? (
+                  <ArrowRight className="size-4" />
+                ) : (
+                  <ArrowRight className="size-4" />
+                )}
+              </span>
+            </div>
           </div>
-        </div>
-      </SidebarFooter>
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }
