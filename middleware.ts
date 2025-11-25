@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
     roles.some((role) => pathname.startsWith(`/${role === "super admin" ? "super-admin" : role}`)) ||
     pathname.startsWith("/setup-school-profile");
 
-  const authRoutes = ["/login", "/reset-password"];
+  const authRoutes = ["/login", "/reset-password", "/register"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
   if (isProtectedRoute && !token) {
@@ -78,6 +78,7 @@ export const config = {
     "/setup-school-profile/:path*",
     "/login",
     "/reset-password",
+    "/register",
     "/head-teacher/:path*",
     "/super-admin/:path*",
   ],
