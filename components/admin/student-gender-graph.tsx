@@ -16,11 +16,8 @@ import {
 } from "@/components/ui/chart";
 import { useSchool } from "@/contexts/school-context";
 import { registrationMappers, useRegistrationAnalytics } from "@/hooks/use-analytics";
+import { Skeleton } from "../ui/skeleton";
 
-const fallbackChartData = [
-  { gender: "male", students: 45, fill: "var(--color-male)" },
-  { gender: "female", students: 55, fill: "var(--color-female)" },
-];
 
 const chartConfig = {
   students: {
@@ -39,11 +36,10 @@ const chartConfig = {
 export default function StudentGenderChart() {
   const { school } = useSchool();
   const schoolId = school?.id;
-  const { data } = useRegistrationAnalytics(schoolId);
+  const { data, isLoading } = useRegistrationAnalytics(schoolId);
 
   const chartData = React.useMemo(() => {
-    if (!data) return fallbackChartData;
-    return registrationMappers.toGenderPieData(data.genderDistribution);
+    return registrationMappers.toGenderPieData(data ? data.genderDistribution : []);
   }, [data]);
 
   const totalStudents = React.useMemo(() => {

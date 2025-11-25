@@ -20,18 +20,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSchool } from "@/contexts/school-context"
 import { registrationMappers, type RegistrationPeriod, useRegistrationAnalytics } from "@/hooks/use-analytics"
+import { Skeleton } from "../ui/skeleton"
 
-// ----------------------------------------
-// Fallback sample data
-// ----------------------------------------
-const fallbackChartData = [
-  { month: "January", students: 186, teachers: 45, staff: 22 },
-  { month: "February", students: 305, teachers: 60, staff: 28 },
-  { month: "March", students: 237, teachers: 40, staff: 30 },
-  { month: "April", students: 290, teachers: 50, staff: 25 },
-  { month: "May", students: 320, teachers: 70, staff: 35 },
-  { month: "June", students: 280, teachers: 55, staff: 27 },
-]
 
 const chartConfig = {
   students: { label: "Students", color: "var(--chart-1)" },
@@ -47,13 +37,15 @@ export function UserRegistrationBarChart() {
   const { school } = useSchool()
   const schoolId = school?.id
 
-  const { data } = useRegistrationAnalytics(schoolId)
+  const { data, isLoading } = useRegistrationAnalytics(schoolId)
 
   const periodLabel = period === "3m" ? "Last 3 months" : period === "6m" ? "Last 6 months" : "Last 12 months"
 
   const chartData = useMemo(() => {
-    if (!data) return fallbackChartData
-    const series = registrationMappers.selectSeriesByPeriod(data, period)
+    if(!data) {
+     return 
+    }
+    const series =  registrationMappers.selectSeriesByPeriod(data, period)
     return registrationMappers.toBarChartData(series)
   }, [data, period])
 
@@ -80,27 +72,43 @@ export function UserRegistrationBarChart() {
         </Select>
       </CardHeader>
 
-      <CardContent className="flex-1 max-h-[250px] p-0">
-        <ChartContainer config={chartConfig} className="h-[250px] w-full mb-0 ">
-          <BarChart accessibilityLayer data={chartData}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              tickMargin={10}
-              axisLine={false}
-              tickFormatter={(value) => String(value).slice(0, 3)}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="dashed" />}
-            />
-            <Bar dataKey="students" fill="var(--color-students)" radius={4} />
-            <Bar dataKey="teachers" fill="var(--color-teachers)" radius={4} />
-            <Bar dataKey="staff" fill="var(--color-staff)" radius={4} />
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
+      {isLoading ? (
+        <>
+          <div className="flex items-center justify-center p-4 w-full">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 w-full" />
+              ))}
+            </div>
+          </div>
+          <div className="px-4">
+            <Skeleton className="h-96 w-full" />
+          </div>
+        </>
+      ) : (
+        <CardContent className="flex-1 max-h-[250px] p-0">
+          <ChartContainer config={chartConfig} className="h-[250px] w-full mb-0 ">
+            <BarChart accessibilityLayer data={chartData}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                tickFormatter={(value) => String(value).slice(0, 3)}
+              />
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="dashed" />}
+              />
+              <Bar dataKey="students" fill="var(--color-students)" radius={4} />
+              <Bar dataKey="teachers" fill="var(--color-teachers)" radius={4} />
+              <Bar dataKey="staff" fill="var(--color-staff)" radius={4} />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      )}
+
 
       <CardFooter className="flex-col items-start gap-2 text-sm mt-0 pt-0 ">
         <div className="flex gap-2 leading-none font-medium">
@@ -110,6 +118,7 @@ export function UserRegistrationBarChart() {
           Showing total registered users by month (students, teachers, staff)
         </div>
       </CardFooter>
+
     </Card>
   )
 }
