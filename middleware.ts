@@ -6,9 +6,20 @@ export function middleware(request: NextRequest) {
   const userCookie = request.cookies.get("user")?.value;
   const { pathname } = request.nextUrl;
 
-  const roles = ["admin", "teacher", "head teacher", "super admin"];
+  const roles = ["admin", "teacher", "head teacher", "super admin", "school owner"];
+
   const isProtectedRoute =
-    roles.some((role) => pathname.startsWith(`/${role === "super admin" ? "super-admin" : role}`)) ||
+    roles.some((role) => {
+      const rolePath =
+        role === "head teacher"
+          ? "head-teacher"
+          : role === "super admin"
+          ? "super-admin"
+          : role === "school owner"
+          ? "admin"
+          : role;
+      return pathname.startsWith(`/${rolePath}`);
+    }) ||
     pathname.startsWith("/setup-school-profile");
 
   const authRoutes = ["/login", "/reset-password", "/register"];
@@ -23,13 +34,22 @@ export function middleware(request: NextRequest) {
     try {
       const user = JSON.parse(userCookie);
       const userRole =
-        user.role == "head teacher"
+        user.role === "head teacher"
           ? "head-teacher"
-          : user.role == "super admin"
+          : user.role === "super admin"
           ? "super-admin"
+          : user.role === "school owner"
+          ? "admin"
           : user.role;
       const accessingRole = roles.find((role) => {
-        const rolePath = role === "super admin" ? "super-admin" : role;
+        const rolePath =
+          role === "head teacher"
+            ? "head-teacher"
+            : role === "super admin"
+            ? "super-admin"
+            : role === "school owner"
+            ? "admin"
+            : role;
         return pathname.startsWith(`/${rolePath}`);
       });
 
@@ -39,7 +59,10 @@ export function middleware(request: NextRequest) {
             ? "head-teacher"
             : accessingRole === "super admin"
             ? "super-admin"
+            : accessingRole === "school owner"
+            ? "admin"
             : accessingRole;
+
         if (normalizedAccessingRole !== userRole) {
           const url = new URL(`/${userRole}`, request.url);
           return NextResponse.redirect(url);
@@ -55,16 +78,16 @@ export function middleware(request: NextRequest) {
     try {
       const user = JSON.parse(userCookie);
       const rolePath =
-        user.role == "head teacher"
+        user.role === "head teacher"
           ? "head-teacher"
-          : user.role == "super admin"
+          : user.role === "super admin"
           ? "super-admin"
+          : user.role === "school owner"
+          ? "admin"
           : user.role;
       const url = new URL(`/${rolePath}`, request.url);
       return NextResponse.redirect(url);
-    } catch {
-      // If parsing fails, let them stay on auth page
-    }
+    } catch {}
   }
 
   return NextResponse.next();

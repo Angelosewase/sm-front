@@ -53,15 +53,7 @@ export function TokenManagement() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Registration Tokens</h2>
-          <p className="text-sm text-muted-foreground">
-            Generate and manage registration tokens for teachers and head teachers
-          </p>
-        </div>
-        <GenerateTokenDialog />
-      </div>
+          <GenerateTokenDialog />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

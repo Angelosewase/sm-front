@@ -116,8 +116,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (response.user.role === "super admin") {
       router.push("/super-admin");
-    } else if (!userSchoolData && response.user.role === "admin") {
-      router.push("/setup-school-profile");
+    } else if (response.user.role === "school owner" || response.user.role === "admin") {
+      if (!userSchoolData && response.user.role === "admin") {
+        router.push("/setup-school-profile");
+      } else {
+        router.push("/admin");
+      }
     } else if (response.user.role === "head teacher") {
       router.push("/head-teacher");
     } else {

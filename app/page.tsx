@@ -9,6 +9,9 @@ function getRolePath(role: string) {
   if (role === "super admin") {
     return "/super-admin";
   }
+  if (role === "school owner") {
+    return "/admin";
+  }
 
   const normalizedRole = role.toLowerCase().replace(/\s+/g, "-");
   return `/${normalizedRole}`;

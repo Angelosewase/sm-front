@@ -173,6 +173,8 @@ const getDashboardRoutes = (role: string): Route[] => {
       return [...getCommonRoutes("super-admin"), ...getSuperAdminRoutes()];
     case "admin":
       return [...getCommonRoutes(role), ...getAdminRoutes()];
+    case "school owner":
+      return [...getCommonRoutes("admin"), ...getAdminRoutes()];
     case "head-teacher":
       return [...getCommonRoutes(role), ...getHeaderTeacherRoutes()];
     case "teacher":
@@ -249,7 +251,7 @@ export function DashboardSidebar() {
             <div
               className="grid flex-1 text-left  bg-gray-100 dark:bg-card  px-4  py-2 rounded  mb-2 hover:scale-101 transition-all duration-300 hover:cursor-pointer"
               onClick={() => {
-                if (user?.role === "admin") {
+                if (user?.role === "admin" || user?.role === " school owner") {
                   router.push("/setup-school-profile");
                 }
                 // Otherwise, do nothing

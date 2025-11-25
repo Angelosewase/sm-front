@@ -159,8 +159,8 @@ export const SignInPage: React.FC<SignInPageProps> = ({
 
             <button
               onClick={onGoogleSignIn}
-              disabled={isLoading}
-              className="animate-element animate-delay-800 w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={true}
+              className="animate-element animate-delay-800 w-full flex items-center justify-center gap-3 border border-border rounded-2xl py-4 hover:bg-secondary transition-colors disabled:opacity-50 cursor-not-allowed"
             >
               <GoogleIcon />
               Continue with Google
