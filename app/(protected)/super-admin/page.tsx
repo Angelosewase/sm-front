@@ -7,7 +7,6 @@ import { useSchools, useUsers } from "@/hooks/use-super-admin";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { TokenManagement } from "@/components/super-admin/tokens/token-management";
 
 export default function SuperAdminHomePage() {
   const { data: schoolsData, isLoading: schoolsLoading } = useSchools({
@@ -151,11 +150,6 @@ export default function SuperAdminHomePage() {
             </Link>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Registration Tokens */}
-      <div className="mt-6">
-        <TokenManagement />
       </div>
     </div>
   );

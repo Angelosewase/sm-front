@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Building2,
   Shield,
+  Key,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import type { Route } from "./nav-main";
@@ -77,6 +78,12 @@ const getAdminRoutes = (): Route[] => [
     icon: <UserCog className="size-5" />,
     link: `/admin/staff`,
   },
+  {
+    id: "tokens",
+    title: "Registration Tokens",
+    icon: <Key className="size-5" />,
+    link: `/admin/tokens`,
+  },
 ];
 
 const getHeaderTeacherRoutes = (): Route[] => [
@@ -116,6 +123,12 @@ const getHeaderTeacherRoutes = (): Route[] => [
     icon: <FileCog className="size-5" />,
     link: "/head-teacher/academic-settings",
   },
+  {
+    id: "tokens",
+    title: "Registration Tokens",
+    icon: <Key className="size-5" />,
+    link: `/head-teacher/tokens`,
+  },
 ];
 
 const getTeacherRoutes = (): Route[] => [
@@ -145,6 +158,12 @@ const getSuperAdminRoutes = (): Route[] => [
     title: "Users",
     icon: <Users className="size-5" />,
     link: `/super-admin/users`,
+  },
+  {
+    id: "tokens",
+    title: "Tokens",
+    icon: <Key className="size-5" />,
+    link: `/super-admin/tokens`,
   },
 ];
 
