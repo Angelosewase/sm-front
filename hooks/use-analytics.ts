@@ -251,6 +251,7 @@ export function usePerformanceAnalytics(
   options?: UseQueryOptions<SchoolPerformanceAnalyticsDto>
 ) {
   const hasSchool = !!params.schoolId;
+  const hasYear = !!params.academicYear;
 
   return useQuery<SchoolPerformanceAnalyticsDto>({
     queryKey: performanceKeys.detail(params),
@@ -260,7 +261,7 @@ export function usePerformanceAnalytics(
       }
       return dashbaordApi.fetchPerformanceAnalytics(params);
     },
-    enabled: hasSchool,
+    enabled: hasSchool && hasYear,
     staleTime: 60_000,
     ...options,
   });

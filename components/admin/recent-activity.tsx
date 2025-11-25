@@ -1,3 +1,4 @@
+// b:\Work\sengel\sm-front\components\admin\recent-activity.tsx
 "use client";
 
 import {
@@ -16,66 +17,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { useRecentEvents } from "@/hooks/use-events";
+import { formatDistanceToNow } from "date-fns";
 
-// Mock data for recent activities
-const recentActivities = [
-  {
-    id: 1,
-    event: "New Student Enrolled",
-    user: "John Doe",
-    timestamp: "2 hours ago",
-    type: "enrollment",
-  },
-  {
-    id: 2,
-    event: "Score Updated",
-    user: "Math Class - Grade 10",
-    timestamp: "4 hours ago",
-    type: "score",
-  },
-  {
-    id: 3,
-    event: "Teacher Added",
-    user: "Sarah Johnson",
-    timestamp: "5 hours ago",
-    type: "teacher",
-  },
-  {
-    id: 4,
-    event: "Class Created",
-    user: "Physics - Grade 11",
-    timestamp: "1 day ago",
-    type: "class",
-  },
-  {
-    id: 5,
-    event: "Staff Member Added",
-    user: "Mike Wilson",
-    timestamp: "1 day ago",
-    type: "staff",
-  },
-  {
-    id: 6,
-    event: "Student Graduated",
-    user: "Emily Brown",
-    timestamp: "2 days ago",
-    type: "graduation",
-  },
-];
-
-const getEventBadgeVariant = (type: string) => {
-  switch (type) {
-    case "enrollment":
+const getEventBadgeVariant = (eventType: string) => {
+  switch (eventType) {
+    case "create":
       return "default";
-    case "score":
+    case "update":
       return "secondary";
-    case "teacher":
+    case "delete":
+      return "destructive";
+    case "login":
       return "outline";
-    case "class":
-      return "default";
-    case "staff":
-      return "secondary";
-    case "graduation":
+    case "logout":
       return "outline";
     default:
       return "default";
@@ -83,6 +38,21 @@ const getEventBadgeVariant = (type: string) => {
 };
 
 export function RecentActivity() {
+  const { data, isLoading, error } = useRecentEvents(5);
+
+  if (isLoading) {
+    return <div>Loading recent activities...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading activities</div>;
+  }
+
+  if (!data || data.events.length === 0) {
+    return <div>No recent activities found</div>;
+  }
+
+
   return (
     <Card className="flex flex-col h-full">
       <CardHeader>
@@ -93,26 +63,24 @@ export function RecentActivity() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">#</TableHead>
               <TableHead>Event</TableHead>
-              <TableHead>User/Details</TableHead>
+              <TableHead>Details</TableHead>
               <TableHead className="text-right">Time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {recentActivities.map((activity) => (
-              <TableRow key={activity.id}>
-                <TableCell className="font-medium">{activity.id}</TableCell>
+            {data.events.map((event) => (
+              <TableRow key={event.id}>
                 <TableCell>
-                  <Badge variant={getEventBadgeVariant(activity.type)}>
-                    {activity.event}
+                  <Badge variant={getEventBadgeVariant(event.eventType)}>
+                    {event.eventType}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {activity.user}
-                </TableCell>
-                <TableCell className="text-right text-sm text-muted-foreground">
-                  {activity.timestamp}
+                <TableCell>{event.details}</TableCell>
+                <TableCell className="text-right">
+                  {formatDistanceToNow(new Date(event.occurredAt), {
+                    addSuffix: true,
+                  })}
                 </TableCell>
               </TableRow>
             ))}

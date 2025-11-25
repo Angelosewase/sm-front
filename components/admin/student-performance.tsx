@@ -65,28 +65,38 @@ export function StudentPerformanceChart() {
   const [selectedAcademicYear, setSelectedAcademicYear] = React.useState<string | undefined>(undefined)
   const [selectedTermId, setSelectedTermId] = React.useState<string | undefined>(undefined)
   const [selectedClassId, setSelectedClassId] = React.useState<string | undefined>(undefined)
-
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = React.useState<string | undefined>(undefined)
 
   const { data: academicYearsData } = useAcademicYears()
   const { data: activeAcademicYear } = useActiveAcademicYear()
   const { data: openAcademicYear } = useOpenAcademicYear()
-  const { data: termsData } = useTermsByAcademicYear(openAcademicYear?._id ?? undefined)
-
+  const { data: termsData } = useTermsByAcademicYear(selectedAcademicYearId ?? openAcademicYear?._id)
+  // Auto-select active or first academic year on mount
   React.useEffect(() => {
-    if (!selectedAcademicYear && (activeAcademicYear || academicYearsData?.length)) {
-      setSelectedAcademicYear((activeAcademicYear ?? academicYearsData?.[0])?.label)
+    if (!selectedAcademicYearId && (activeAcademicYear || academicYearsData?.length)) {
+      const defaultYear = activeAcademicYear ?? academicYearsData?.[0]
+      if (defaultYear?._id) {
+        setSelectedAcademicYearId(defaultYear._id)
+      }
     }
-  }, [activeAcademicYear, academicYearsData, selectedAcademicYear])
+  }, [activeAcademicYear, academicYearsData, selectedAcademicYearId])
+
+  const selectedAcademicYearLabel = React.useMemo(() => {
+    if (!selectedAcademicYearId || !academicYearsData) return undefined
+    return academicYearsData.find(y => y._id === selectedAcademicYearId)?.label
+  }, [selectedAcademicYearId, academicYearsData])
+
+  const shouldFetchAnalytics = !!schoolId && !!selectedAcademicYearId
 
   const performanceQueryParams = React.useMemo(
     () => ({
       schoolId: schoolId,
       classId: selectedClassId || undefined,
-      academicYear: selectedAcademicYear || undefined,
+      academicYear: selectedAcademicYearId || undefined,
       termId: selectedTermId || undefined,
       scope: scope,
     }),
-    [schoolId, selectedClassId, selectedAcademicYear, selectedTermId, scope]
+    [schoolId, selectedClassId, selectedAcademicYearId, selectedTermId, scope]
   )
 
   const { data, isLoading, isError } = usePerformanceAnalytics(performanceQueryParams)
@@ -95,7 +105,7 @@ export function StudentPerformanceChart() {
     if (!data || !data.academicYears.length) return []
 
     if (scope === "term") {
-      const year = data.academicYears.find((y) => y.academicYear === selectedAcademicYear) ?? data.academicYears[0]
+      const year = data.academicYears.find((y) => y.academicYear === selectedAcademicYearId)
       if (!year || !year.terms.length) return []
 
       const term = year.terms.find((t) => t.termId === selectedTermId) ?? year.terms[0]
@@ -113,7 +123,7 @@ export function StudentPerformanceChart() {
     }
 
     if (scope === "year") {
-      const year = data.academicYears.find((y) => y.academicYear === selectedAcademicYear) ?? data.academicYears[0]
+      const year = data.academicYears.find(y => y.academicYear === selectedAcademicYearLabel)
       if (!year) return []
 
       return year.terms.map((t) => ({
@@ -128,7 +138,7 @@ export function StudentPerformanceChart() {
       classAvg: y.overallAverage,
       topAvg: y.overallAverage,
     }))
-  }, [data, scope, selectedAcademicYear, selectedTermId, selectedClassId])
+  }, [data, scope, selectedAcademicYear, selectedAcademicYearId, selectedAcademicYearLabel, selectedTermId, selectedClassId])
 
   const availableYears = academicYearsData ?? []
   const availableTerms = React.useMemo(() => {
@@ -172,10 +182,11 @@ export function StudentPerformanceChart() {
             </SelectContent>
           </Select>
 
+
           <Select
-            value={selectedAcademicYear ?? ""}
+            value={selectedAcademicYearId ?? ""}  // ← Use ID
             onValueChange={(val) => {
-              setSelectedAcademicYear(val || undefined)
+              setSelectedAcademicYearId(val || undefined)
               setSelectedTermId(undefined)
               setSelectedClassId(undefined)
             }}
@@ -184,8 +195,8 @@ export function StudentPerformanceChart() {
               <SelectValue placeholder="Academic year" />
             </SelectTrigger>
             <SelectContent className="rounded-xl max-h-64">
-              {availableYears.map((y) => (
-                <SelectItem key={y._id} value={y.label}>
+              {academicYearsData?.map((y) => (
+                <SelectItem key={y._id} value={y._id}>
                   {y.label}
                 </SelectItem>
               ))}
