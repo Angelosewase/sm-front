@@ -95,7 +95,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response: LoginResponse = await authApi.login(credentials);
     const userSchoolData = response.school ?? null;
 
-    if (!userSchoolData && response.user.role !== "admin") {
+    if (
+      !userSchoolData &&
+      response.user.role !== "admin" &&
+      response.user.role !== "super admin"
+    ) {
       await clearAuthCookies();
       setUser(null);
       clearSchool();
@@ -110,8 +114,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       accessToken: response.accessToken,
     });
 
-    if (!userSchoolData && response.user.role === "admin") {
-      router.push("/setup-school-profile");
+    if (response.user.role === "super admin") {
+      router.push("/super-admin");
+    } else if (response.user.role === "school owner" || response.user.role === "admin") {
+      if (!userSchoolData && response.user.role === "admin") {
+        router.push("/setup-school-profile");
+      } else {
+        router.push("/admin");
+      }
     } else if (response.user.role === "head teacher") {
       router.push("/head-teacher");
     } else {
