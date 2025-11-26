@@ -30,6 +30,7 @@ import DashboardNavigation from "@/components/nav-main";
 
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
+import { useSchool as getSchool } from "@/hooks/use-school";
 import { useSchool } from "@/contexts/school-context";
 
 const getCommonRoutes = (role: string): Route[] => [
@@ -197,8 +198,8 @@ export function DashboardSidebar() {
       : user?.role || "404";
   const dashboardRoutes = getDashboardRoutes(normalizedRole);
 
-  const { school, isLoading: isSchoolLoading } = useSchool();
-
+  const { school, isLoading } = useSchool();
+  const {data: schooldata, isLoading: isSchoolLoading} = getSchool(school ? school.id : '')
   if (isSchoolLoading) {
     return (
       <Sidebar variant="sidebar" collapsible="icon">
@@ -223,8 +224,9 @@ export function DashboardSidebar() {
       >
         <a href="#" className="flex items-center justify-center gap-2">
           <Logo
+          url={schooldata?.logoUrl ? schooldata?.logoUrl : '/back-free.png'}
             className={cn(
-              isCollapsed ? "h-8 w-8 rounded-none" : "h-24 w-24 ml-4 rounded"
+              isCollapsed ? "h-8 w-8 rounded" : "h-24 w-24 ml-4 rounded"
             )}
           />
         </a>
