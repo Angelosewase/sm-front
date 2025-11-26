@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
     // Call external auth API
     const response = await axios.post(
-      `http://138.197.93.9:7000/api/auth/login`,
+      `http://sm-back:7000`,
       { email, password }
     );
 
