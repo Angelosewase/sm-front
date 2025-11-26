@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     // Set cookies using cookies-next/server
     await setCookie("accessToken", data.accessToken, {
       cookies,
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24, // 24 hours
