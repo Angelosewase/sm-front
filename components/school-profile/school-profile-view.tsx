@@ -80,6 +80,7 @@ const statusBadge: Record<string, { color: string; label: string }> = {
 };
 
 export function SchoolProfile({ school, onUpdate, isLoading = false }: SchoolProfileProps) {
+  console.log("the school is : ", school)
   const [activeTab, setActiveTab] = useState<"info" | "contact">("info");
   const [editing, setEditing] = useState<EditSection>(null);
   const [isSaving, setIsSaving] = useState(false);

@@ -58,6 +58,7 @@ const toSchoolProfile = (school: SchoolType): SchoolProfile => {
       ? String(school.studentCapacity)
       : undefined,
     status: normalizedStatus,
+    logoUrl: school.logoUrl
   };
 };
 

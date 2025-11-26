@@ -16,6 +16,7 @@ export interface School {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
+  logoUrl?: string
 }
 
 export interface CreateSchoolPayload {
@@ -71,6 +72,7 @@ const normalizeSchool = (school: any): School => {
     phoneNumber: school.phoneNumber,
     email: school.email,
     website: school.website,
+    logoUrl: school.logoUrl,
     status: school.status,
     createdAt: school.createdAt,
     updatedAt: school.updatedAt,
