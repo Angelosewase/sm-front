@@ -27,7 +27,9 @@ import {
 import type { RegistrationTokenRole } from "@/lib/api/registration-tokens";
 
 export function TokenManagement() {
-  const [roleFilter, setRoleFilter] = useState<RegistrationTokenRole | "all">("all");
+  const [roleFilter, setRoleFilter] = useState<RegistrationTokenRole | "all">(
+    "all"
+  );
   const { data: tokens, isLoading: tokensLoading } = useMyTokens(
     roleFilter !== "all" ? roleFilter : undefined
   );
@@ -54,12 +56,6 @@ export function TokenManagement() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Registration Tokens</h2>
-          <p className="text-sm text-muted-foreground">
-            Generate and manage registration tokens for new users
-          </p>
-        </div>
         <GenerateTokenDialog />
       </div>
 
@@ -249,4 +245,3 @@ export function TokenManagement() {
     </div>
   );
 }
-

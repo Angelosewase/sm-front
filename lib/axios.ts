@@ -1,51 +1,43 @@
-import axios from 'axios';
+// lib/axios.ts
+import axios from "axios";
+import { getCookie, deleteCookie } from "cookies-next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+async function getAccessToken() {
+  const token = await getCookie("accessToken");
+  if (!token) return null;
+  return token.replace(/^Bearer\s+/i, "");
+}
+
 export const axiosInstance = axios.create({
-  baseURL: "http://138.197.93.9:7000",
-  // baseURL: API_URL,
+  baseURL: API_URL,
+  withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  withCredentials: true, // Send cookies with requests
 });
 
-// Request interceptor to add token from cookie
-axiosInstance.interceptors.request.use(
-  (config) => {
-    if (typeof window !== 'undefined') {
-      const cookies = document.cookie.split(';');
-      const tokenCookie = cookies.find((c) =>
-        c.trim().startsWith('accessToken='),
-      );
-      if (tokenCookie) {
-        const rawValue = tokenCookie.trim().split('=').slice(1).join('=');
-        const decodedToken = decodeURIComponent(rawValue || '');
-        if (decodedToken) {
-          const normalizedToken = decodedToken.replace(/^Bearer\s+/i, '');
-          config.headers.Authorization = `Bearer ${normalizedToken}`;
-        }
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// REQUEST INTERCEPTOR
+axiosInstance.interceptors.request.use(async (config) => {
+  const token = await getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  return config;
+});
 
-// Response interceptor to handle 401 errors
+// RESPONSE INTERCEPTOR
 axiosInstance.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  (error) => {
     if (error.response?.status === 401) {
-      // Clear cookies and redirect to login
-      if (typeof window !== 'undefined') {
-        document.cookie = 'accessToken=; Max-Age=0; path=/;';
-        document.cookie = 'user=; Max-Age=0; path=/;';
-        document.cookie = 'school=; Max-Age=0; path=/;';
-        window.location.href = '/login';
+      deleteCookie("accessToken");
+      deleteCookie("user");
+      deleteCookie("school");
+
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);

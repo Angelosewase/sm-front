@@ -2,18 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  authApi,
-  type AuthUserSchool,
-  type LoginCredentials,
-  type LoginResponse,
-} from "@/lib/api/auth";
-import {
-  setAuthCookie,
-  setUserCookie,
-  clearAuthCookies,
-} from "@/lib/actions/auth";
-import { School, useSchool } from "@/contexts/school-context";
+import { type LoginCredentials } from "@/lib/api/auth";
+import { useSchool } from "@/contexts/school-context";
+import { getCookie, setCookie, deleteCookie } from "cookies-next";
 
 interface User {
   id: string;
@@ -28,19 +19,9 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  // refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Helper to get cookie value on client
-function getCookie(name: string): string | null {
-  if (typeof window === "undefined") return null;
-
-  const cookies = document.cookie.split(";");
-  const cookie = cookies.find((c) => c.trim().startsWith(`${name}=`));
-  return cookie ? decodeURIComponent(cookie.split("=")[1]) : null;
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -48,95 +29,110 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { setSchool, clearSchool } = useSchool();
 
+  // Load user on first render
   useEffect(() => {
-    // Check if user is logged in on mount from cookie
     const userCookie = getCookie("user");
 
-    if (userCookie) {
+    if (userCookie && typeof userCookie === "string") {
       try {
         setUser(JSON.parse(userCookie));
-      } catch (error) {
-        console.error("Failed to parse user data:", error);
+      } catch (err) {
+        console.error("Failed to parse user cookie:", err);
       }
     }
+
+    const schoolCookie = getCookie("school");
+    if (schoolCookie && typeof schoolCookie === "string") {
+      try {
+        const parsedSchool = JSON.parse(schoolCookie);
+        setSchool({ id: parsedSchool.id, name: parsedSchool.name });
+      } catch (err) {
+        console.error("Failed to parse school cookie:", err);
+      }
+    }
+
     setIsLoading(false);
   }, []);
 
-  const normalizeSchool = (school: AuthUserSchool | null): School | null =>
-    school ? { id: school.id, name: school.name } : null;
+  const login = async (credentials: LoginCredentials) => {
+    try {
+      setIsLoading(true);
 
-  const applyAuthState = async (payload: {
-    user: User;
-    school: AuthUserSchool | null;
-    accessToken?: string;
-  }) => {
-    if (payload.accessToken) {
-      const normalizedToken = payload.accessToken.replace(/^Bearer\s+/i, "");
-      await setAuthCookie(normalizedToken);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Login failed");
+      }
+
+      const { user, school } = await response.json();
+
+      // Store user cookie
+      setCookie("user", JSON.stringify(user), {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+
+      // Store school cookie if exists
+      if (school) {
+        setCookie("school", JSON.stringify(school), {
+          maxAge: 60 * 60 * 24 * 7,
+        });
+        setSchool({ id: school.id, name: school.name });
+      }
+
+      // Update UI state
+      setUser(user);
+
+      // Redirect by role
+      if (user.role === "super admin") {
+        router.push("/super-admin");
+      } else if (["school owner", "admin"].includes(user.role)) {
+        if (!school && user.role === "admin") {
+          router.push("/setup-school-profile");
+        } else {
+          router.push("/admin");
+        }
+      } else if (user.role === "head teacher") {
+        router.push("/head-teacher");
+      } else {
+        router.push(`/${user.role}`);
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-    await setUserCookie(payload.user);
-    setUser(payload.user);
-    setSchool(normalizeSchool(payload.school));
   };
 
-  // const refreshUser = async () => {
-  //   try {
-  //     const response = await authApi.getProfile();
-  //     await applyAuthState({
-  //       user: response.user,
-  //       school: response.school ?? null,
-  //     });
-  //   } catch (error) {
-  //     console.error('Failed to refresh user profile:', error);
-  //   }
-  // };
+  // -----------------------
+  // LOGOUT
+  // -----------------------
+  const logout = async () => {
+    try {
+      setIsLoading(true);
 
-  const login = async (credentials: LoginCredentials) => {
-    const response: LoginResponse = await authApi.login(credentials);
-    const userSchoolData = response.school ?? null;
+      await fetch("/api/auth/logout", { method: "POST" });
 
-    if (
-      !userSchoolData &&
-      response.user.role !== "admin" &&
-      response.user.role !== "super admin"
-    ) {
-      await clearAuthCookies();
+      deleteCookie("user");
+      deleteCookie("school");
+
       setUser(null);
       clearSchool();
-      throw new Error(
-        "Your account is not associated with a school. Please contact your administrator."
-      );
+
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    await applyAuthState({
-      user: response.user,
-      school: userSchoolData,
-      accessToken: response.accessToken,
-    });
-
-    if (response.user.role === "super admin") {
-      router.push("/super-admin");
-    } else if (response.user.role === "school owner" || response.user.role === "admin") {
-      if (!userSchoolData && response.user.role === "admin") {
-        router.push("/setup-school-profile");
-      } else {
-        router.push("/admin");
-      }
-    } else if (response.user.role === "head teacher") {
-      router.push("/head-teacher");
-    } else {
-      router.push(`/${response.user.role}`);
-    }
-
-    router.refresh(); // Refresh to update middleware
-  };
-
-  const logout = async () => {
-    await clearAuthCookies();
-    setUser(null);
-    clearSchool();
-    router.push("/login");
-    router.refresh(); // Refresh to update middleware
   };
 
   return (
@@ -147,7 +143,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         logout,
-        // refreshUser,
       }}
     >
       {children}
@@ -156,9 +151,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  return ctx;
 }
