@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getCookie } from "cookies-next/server";
 
 function getRolePath(role: string) {
   if (!role) {
@@ -18,10 +19,9 @@ function getRolePath(role: string) {
 }
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
-  const userCookie = cookieStore.get("user")?.value;
-  const schoolCookie = cookieStore.get("school")?.value;
+  const token = await getCookie("accessToken", { cookies });
+  const userCookie = await getCookie("user", { cookies });
+  const schoolCookie = await getCookie("school", { cookies });
 
   if (!token || !userCookie || userCookie === "undefined") {
     redirect("/login");
@@ -29,7 +29,7 @@ export default async function Home() {
 
   let user: { role?: string } | null = null;
   try {
-    user = JSON.parse(userCookie);
+    user = JSON.parse(userCookie as string);
   } catch {
     redirect("/login");
   }
@@ -41,7 +41,7 @@ export default async function Home() {
   let school: unknown = null;
   if (schoolCookie && schoolCookie !== "undefined") {
     try {
-      school = JSON.parse(schoolCookie);
+      school = JSON.parse(schoolCookie as string);
     } catch {
       school = null;
     }

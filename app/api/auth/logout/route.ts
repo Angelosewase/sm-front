@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { deleteCookie } from "cookies-next/server";
 
 export async function POST() {
   try {
-    const cookieStore = cookies();
-
-    // Clear all auth-related cookies
-    (await cookieStore).delete("accessToken");
-    (await cookieStore).delete("user");
-    (await cookieStore).delete("school");
+    // Clear all auth-related cookies using cookies-next/server
+    await deleteCookie("accessToken", { cookies });
+    await deleteCookie("user", { cookies });
+    await deleteCookie("school", { cookies });
 
     return NextResponse.json({ success: true });
   } catch (error) {

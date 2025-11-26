@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getCookie } from "cookies-next/server";
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get("accessToken")?.value;
-  const userCookie = request.cookies.get("user")?.value;
+export async function middleware(request: NextRequest) {
+  const res = NextResponse.next();
+  const token = await getCookie("accessToken", { req: request, res });
+  const userCookie = await getCookie("user", { req: request, res });
   const { pathname } = request.nextUrl;
 
   const roles = ["admin", "teacher", "head teacher", "super admin", "school owner"];
@@ -32,7 +34,7 @@ export function middleware(request: NextRequest) {
 
   if (isProtectedRoute && token && userCookie) {
     try {
-      const user = JSON.parse(userCookie);
+      const user = JSON.parse(userCookie as string);
       const userRole =
         user.role === "head teacher"
           ? "head-teacher"
@@ -76,7 +78,7 @@ export function middleware(request: NextRequest) {
 
   if (isAuthRoute && token && userCookie) {
     try {
-      const user = JSON.parse(userCookie);
+      const user = JSON.parse(userCookie as string);
       const rolePath =
         user.role === "head teacher"
           ? "head-teacher"
@@ -90,7 +92,7 @@ export function middleware(request: NextRequest) {
     } catch {}
   }
 
-  return NextResponse.next();
+  return res;
 }
 
 export const config = {

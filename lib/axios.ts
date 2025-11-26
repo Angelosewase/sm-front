@@ -1,13 +1,13 @@
 // lib/axios.ts
 import axios from "axios";
-import { getCookie, deleteCookie } from "cookies-next";
+import { getCookie, deleteCookie } from "cookies-next/client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-async function getAccessToken() {
-  const token = await getCookie("accessToken");
+function getAccessToken() {
+  const token = getCookie("accessToken");
   if (!token) return null;
-  return token.replace(/^Bearer\s+/i, "");
+  return typeof token === "string" ? token.replace(/^Bearer\s+/i, "") : token;
 }
 
 export const axiosInstance = axios.create({
@@ -19,8 +19,8 @@ export const axiosInstance = axios.create({
 });
 
 // REQUEST INTERCEPTOR
-axiosInstance.interceptors.request.use(async (config) => {
-  const token = await getAccessToken();
+axiosInstance.interceptors.request.use((config) => {
+  const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { setCookie } from "cookies-next/server";
 
 export async function POST(request: Request) {
   try {
@@ -18,18 +19,18 @@ export async function POST(request: Request) {
       throw new Error(data.message || "Login failed");
     }
 
-    // Set cookies
-    const cookieStore = cookies();
-
-    (await cookieStore).set("accessToken", data.accessToken, {
-      httpOnly: true, // secure
+    // Set cookies using cookies-next/server
+    await setCookie("accessToken", data.accessToken, {
+      cookies,
+      httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24, // 24 hours
       path: "/",
     });
 
-    (await cookieStore).set("user", JSON.stringify(data.user), {
+    await setCookie("user", JSON.stringify(data.user), {
+      cookies,
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -38,7 +39,8 @@ export async function POST(request: Request) {
     });
 
     if (data.school) {
-      (await cookieStore).set("school", JSON.stringify(data.school), {
+      await setCookie("school", JSON.stringify(data.school), {
+        cookies,
         httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",

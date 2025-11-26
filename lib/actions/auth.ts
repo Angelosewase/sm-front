@@ -2,11 +2,11 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { setCookie, getCookie, deleteCookie } from 'cookies-next/server';
 
 export async function setAuthCookie(token: string) {
-  const cookieStore = await cookies();
-  
-  cookieStore.set('accessToken', token, {
+  await setCookie('accessToken', token, {
+    cookies,
     httpOnly: false,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -16,9 +16,8 @@ export async function setAuthCookie(token: string) {
 }
 
 export async function setUserCookie(user: any) {
-  const cookieStore = await cookies();
-  
-  cookieStore.set('user', JSON.stringify(user), {
+  await setCookie('user', JSON.stringify(user), {
+    cookies,
     httpOnly: false, // Accessible on client for display
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -28,22 +27,18 @@ export async function setUserCookie(user: any) {
 }
 
 export async function getAuthToken() {
-  const cookieStore = await cookies();
-  return cookieStore.get('accessToken')?.value;
+  return await getCookie('accessToken', { cookies });
 }
 
 export async function getUser() {
-  const cookieStore = await cookies();
-  const userCookie = cookieStore.get('user')?.value;
-  return userCookie ? JSON.parse(userCookie) : null;
+  const userCookie = await getCookie('user', { cookies });
+  return userCookie ? JSON.parse(userCookie as string) : null;
 }
 
 export async function clearAuthCookies() {
-  const cookieStore = await cookies();
-  
-  cookieStore.delete('accessToken');
-  cookieStore.delete('user');
-  cookieStore.delete('school');
+  await deleteCookie('accessToken', { cookies });
+  await deleteCookie('user', { cookies });
+  await deleteCookie('school', { cookies });
 }
 
 export async function logout() {
@@ -53,9 +48,8 @@ export async function logout() {
 
 
 export async function setSchoolCookie(school: any) {
-  const cookieStore = await cookies();
-  
-  cookieStore.set('school', JSON.stringify(school), {
+  await setCookie('school', JSON.stringify(school), {
+    cookies,
     httpOnly: false, // Accessible on client for display
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -64,15 +58,7 @@ export async function setSchoolCookie(school: any) {
   });
 }
 
-
-export async function getSchoolCookie(school: any) {
-  const cookieStore = await cookies();
-  
-  cookieStore.set('school', JSON.stringify(school), {
-    httpOnly: false, // Accessible on client for display
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 24 hours
-    path: '/',
-  });
+export async function getSchoolCookie() {
+  const schoolCookie = await getCookie('school', { cookies });
+  return schoolCookie ? JSON.parse(schoolCookie as string) : null;
 }
