@@ -5,7 +5,6 @@ import { Loader2, Plus, School } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   CreateSchoolDialog,
-  SchoolFormData,
 } from "@/components/school-profile/create-school-dialog";
 import { SchoolProfile as SchoolProfileView } from "@/components/school-profile/school-profile-view";
 import {
@@ -62,41 +61,43 @@ const toSchoolProfile = (school: SchoolType): SchoolProfile => {
   };
 };
 
-const toCreatePayload = (data: SchoolFormData): CreateSchoolPayload => ({
-  name: data.name,
-  schoolType: data.type,
-  address: data.address,
-  city: data.city,
-  district: data.district,
-  phoneNumber: data.phone,
-  email: data.email,
-  website: data.website || undefined,
-  description: data.description || undefined,
-  establishedYear: data.establishedYear
-    ? Number(data.establishedYear)
+const toCreatePayload = (data: FormData): CreateSchoolPayload => ({
+  name: data.get("name")?.toString() as string,
+  schoolType: data.get("type")?.toString() as string,
+  address: data.get("address")?.toString() as string,
+  city: data.get("city")?.toString() as string,
+  district: data.get("district")?.toString() as string,
+  phoneNumber: data.get("phone")?.toString() as string,
+  email: data.get("email")?.toString() as string,
+  website: data.get("website")?.toString() || undefined,
+  description: data.get("description")?.toString() || undefined,
+  establishedYear: data.get("establishedYear")
+    ? Number(data.get("establishedYear"))
     : undefined,
-  studentCapacity: data.studentCapacity
-    ? Number(data.studentCapacity)
+  studentCapacity: data.get("studentCapacity")
+    ? Number(data.get("studentCapacity"))
     : undefined,
+  logo: data.get("logo") as File,
 });
 
-const toUpdatePayload = (data: Partial<SchoolProfile>): UpdateSchoolPayload => {
+const toUpdatePayload = (data: FormData): UpdateSchoolPayload => {
   const payload: UpdateSchoolPayload = {};
-  if (data.name !== undefined) payload.name = data.name;
-  if (data.type !== undefined) payload.schoolType = data.type;
-  if (data.description !== undefined) payload.description = data.description;
-  if (data.address !== undefined) payload.address = data.address;
-  if (data.city !== undefined) payload.city = data.city;
-  if (data.district !== undefined) payload.district = data.district;
-  if (data.phone !== undefined) payload.phoneNumber = data.phone;
-  if (data.email !== undefined) payload.email = data.email;
-  if (data.website !== undefined) payload.website = data.website;
-  if (data.establishedYear !== undefined && data.establishedYear !== "") {
-    payload.establishedYear = Number(data.establishedYear);
+  if (data.get("name") !== undefined) payload.name = data.get("name") as string;
+  if (data.get("type") !== undefined) payload.schoolType = data.get("type") as string;
+  if (data.get("description") !== undefined) payload.description = data.get("description") as string;
+  if (data.get("address") !== undefined) payload.address = data.get("address") as string;
+  if (data.get("city") !== undefined) payload.city = data.get("city") as string;
+  if (data.get("district") !== undefined) payload.district = data.get("district") as string;
+  if (data.get("phone") !== undefined) payload.phoneNumber = data.get("phone") as string;
+  if (data.get("email") !== undefined) payload.email = data.get("email") as string;
+  if (data.get("website") !== undefined) payload.website = data.get("website") as string;
+  if (data.get("establishedYear") !== undefined && data.get("establishedYear") !== "") {
+    payload.establishedYear = Number(data.get("establishedYear"));
   }
-  if (data.studentCapacity !== undefined && data.studentCapacity !== "") {
-    payload.studentCapacity = Number(data.studentCapacity);
+  if (data.get("studentCapacity") !== undefined && data.get("studentCapacity") !== "") {
+    payload.studentCapacity = Number(data.get("studentCapacity"));
   }
+  if (data.get("logo") !== undefined) payload.logo = data.get("logo") as File | undefined;
   return payload;
 };
 
@@ -198,11 +199,11 @@ export default function SetupSchoolProfilePage() {
 
   const isFetching = isSchoolLoading || isSchoolFetching;
 
-  const handleCreateSchool = async (data: SchoolFormData) => {
+  const handleCreateSchool = async (data: FormData) => {
     await createSchoolMutation.mutateAsync(toCreatePayload(data));
   };
 
-  const handleUpdateSchool = async (data: Partial<SchoolProfile>) => {
+  const handleUpdateSchool = async (data: FormData) => {
     if (!schoolProfile) return;
     await updateSchoolMutation.mutateAsync({
       id: schoolProfile.id,

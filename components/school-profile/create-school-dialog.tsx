@@ -4,25 +4,24 @@ import React, { useState } from "react";
 import {
   Building2,
   Loader2,
-  MapPin,
   Phone,
   Mail,
   Globe,
   Users,
-  ChevronRight,
-  ChevronLeft,
-  Check,
-  CircleCheckBig,
   ArrowLeft,
   ArrowRight,
+  Upload,
+  Image as ImageIcon,
+  CircleCheckBig,
 } from "lucide-react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,28 +33,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from "@/components/ui/select";
 
 interface CreateSchoolDialogProps {
   open: boolean;
   onOpenChange?: (open: boolean) => void;
-  onSubmit?: (data: SchoolFormData) => void | Promise<void>;
+  onSubmit?: (data: FormData) => void | Promise<void>;
   isLoading?: boolean;
   preventClose?: boolean;
-}
-
-export interface SchoolFormData {
-  name: string;
-  type: string;
-  address: string;
-  city: string;
-  district: string;
-  phone: string;
-  email: string;
-  website?: string;
-  description?: string;
-  establishedYear?: string;
-  studentCapacity?: string;
 }
 
 const schoolTypes = [
@@ -69,16 +54,8 @@ const schoolTypes = [
 ];
 
 const steps = [
-  {
-    id: 1,
-    title: "School Info",
-    description: "General and location details",
-  },
-  {
-    id: 2,
-    title: "Contact Information",
-    description: "How people can reach the school",
-  },
+  { id: 1, title: "Basic Information", description: "School name, type, and location" },
+  { id: 2, title: "Contact Details", description: "Phone, email, and website" },
 ];
 
 export function CreateSchoolDialog({
@@ -89,7 +66,9 @@ export function CreateSchoolDialog({
   preventClose = false,
 }: CreateSchoolDialogProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<SchoolFormData>({
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  const [formData, setFormData] = useState({
     name: "",
     type: "",
     address: "",
@@ -101,57 +80,29 @@ export function CreateSchoolDialog({
     description: "",
     establishedYear: "",
     studentCapacity: "",
+    logo: null as File | null,
   });
 
-  const handleChange = (field: keyof SchoolFormData, value: string) => {
+  const updateField = (field: keyof typeof formData, value: string | File | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      updateField("logo", file);
+      setLogoPreview(URL.createObjectURL(file));
     }
   };
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (currentStep === steps.length && onSubmit) {
-      await onSubmit(formData);
-      resetForm();
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      type: "",
-      address: "",
-      city: "",
-      district: "",
-      phone: "",
-      email: "",
-      website: "",
-      description: "",
-      establishedYear: "",
-      studentCapacity: "",
-    });
-    setCurrentStep(1);
+  const removeLogo = () => {
+    updateField("logo", null);
+    setLogoPreview(null);
   };
 
   const isStepValid = () => {
     if (currentStep === 1) {
-      return (
-        formData.name &&
-        formData.type &&
-        formData.address &&
-        formData.city &&
-        formData.district
-      );
+      return formData.name && formData.type && formData.address && formData.city && formData.district;
     }
     if (currentStep === 2) {
       return formData.phone && formData.email;
@@ -159,258 +110,267 @@ export function CreateSchoolDialog({
     return false;
   };
 
-  const handleDialogOpenChange = (nextOpen: boolean) => {
-    if (preventClose && !nextOpen) {
-      return;
+  const handleNext = () => {
+    if (currentStep < steps.length && isStepValid()) {
+      setCurrentStep((s) => s + 1);
     }
-    onOpenChange?.(nextOpen);
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep((s) => s - 1);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onSubmit || !isStepValid()) return;
+
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== "") {
+        data.append(key, value as string | Blob);
+      }
+    });
+
+    onSubmit(data);
+  };
+
+  const handleClose = (open: boolean) => {
+    if (preventClose && open === false) return;
+    if (!open) {
+      // Reset on close
+      setCurrentStep(1);
+      setLogoPreview(null);
+      setFormData({
+        name: "",
+        type: "",
+        address: "",
+        city: "",
+        district: "",
+        phone: "",
+        email: "",
+        website: "",
+        description: "",
+        establishedYear: "",
+        studentCapacity: "",
+        logo: null,
+      });
+    }
+    onOpenChange?.(open);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleDialogOpenChange} modal>
-      <DialogContent
-        className="sm:min-w-[70vw] max-h-[95vh] overflow-hidden p-0 shadow-xl flex"
-        showCloseButton={false}
-      >
-        {/* Step Indicator Sidebar */}
-        <div className="w-80 bg-sidebar border-r border-sidebar-border flex flex-col">
-          <div className="px-6 pt-8 pb-6 border-b border-sidebar-border/60 space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/70">
-              Setup required
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-4xl max-h-[95vh] p-0 overflow-hidden flex flex-col sm:flex-row" showCloseButton={!preventClose}>
+        {/* Sidebar - Step Indicator */}
+        <div className="w-full sm:w-80 bg-muted/50 border-b sm:border-b-0 sm:border-r flex flex-row sm:flex-col">
+          <div className="p-6 border-b sm:border-b-0">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Setup Required
             </p>
-            <p className="text-sm text-sidebar-foreground/80 leading-relaxed">
-              Complete your school profile to unlock the rest of the workspace.
+            <p className="text-sm text-muted-foreground mt-1">
+              Complete your school profile to get started.
             </p>
           </div>
-          <div className=" px-6 py-10">
-            <div className="h-full flex flex-col justify-center ">
-              {steps.map((step, index) => (
-                <div
-                  key={step.id}
-                  className={`relative flex items-start gap-4 transition-all ${
-                    currentStep >= step.id ? "opacity-100" : "opacity-60"
-                  }`}
-                >
-                  <div className="flex flex-col items-center flex-shrink-0">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                        currentStep > step.id
-                          ? "bg-green-500 text-white"
-                          : currentStep === step.id
-                          ? "bg-sidebar-primary text-sidebar-primary-foreground ring-2 ring-sidebar-primary/20"
-                          : "bg-sidebar-accent text-sidebar-accent-foreground"
-                      }`}
-                    >
-                      {currentStep > step.id ? <CircleCheckBig /> : step.id}
-                    </div>
-                    {index < steps.length - 1 && (
-                      <div
-                        className={`w-[2px] h-12 mt-2 rounded-full transition-all ${
-                          currentStep > step.id
-                            ? "bg-green-500/80"
-                            : currentStep === step.id
-                            ? "bg-sidebar-primary/30"
-                            : "bg-sidebar-border"
-                        }`}
-                      />
-                    )}
+
+          <div className="flex sm:flex-col p-6 gap-8 sm:gap-6">
+            {steps.map((step, idx) => (
+              <div key={step.id} className="flex items-center sm:items-start gap-4">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                      currentStep > step.id
+                        ? "bg-green-500 text-white"
+                        : currentStep === step.id
+                        ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {currentStep > step.id ? <CircleCheckBig className="h-5 w-5" /> : step.id}
                   </div>
-                  <div className="flex-1 pt-0.5">
+                  {idx < steps.length - 1 && (
                     <div
-                      className={`text-sm font-medium ${
-                        currentStep >= step.id
-                          ? "text-sidebar-foreground"
-                          : "text-sidebar-foreground/60"
+                      className={`w-px sm:w-[2px] h-16 sm:h-20 mt-2 transition-all ${
+                        currentStep > step.id + 1 ? "bg-green-500" : "bg-border"
                       }`}
-                    >
-                      {step.title}
-                    </div>
-                    <div className="text-xs text-sidebar-foreground/60 mt-1 leading-relaxed">
-                      {step.description}
-                    </div>
-                  </div>
+                    />
+                  )}
                 </div>
-              ))}
-            </div>
+                <div className={`hidden sm:block ${currentStep >= step.id ? "opacity-100" : "opacity-50"}`}>
+                  <p className="font-medium text-sm">{step.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{step.description}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col max-h-[95vh]">
-          <div className="flex-1 overflow-y-auto px-8 py-8">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="flex items-center gap-2 text-2xl">
-                Welcome! Let's Set Up Your School
+        {/* Main Form Area */}
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1 overflow-y-auto p-8">
+            <DialogHeader className="mb-8">
+              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                <Building2 className="h-7 w-7" />
+                Create Your School
               </DialogTitle>
               <DialogDescription>
-                Step {currentStep} of {steps.length} -{" "}
-                {steps[currentStep - 1].description}
+                Step {currentStep} of {steps.length} — {steps[currentStep - 1].description}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6">
-              {/* Step 1: School Information */}
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Step 1: Basic Info */}
               {currentStep === 1 && (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                  <div className="space-y-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">
-                          School Name <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="name"
-                          placeholder="Enter school name"
-                          value={formData.name}
-                          onChange={(e) => handleChange("name", e.target.value)}
-                          disabled={isLoading}
-                          className="h-11"
-                        />
+                <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+                  {/* Logo Upload */}
+                  <div className="space-y-3">
+                    <Label>School Logo</Label>
+                    <div className="flex items-center gap-6">
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-dashed border-muted-foreground/25 bg-muted flex items-center justify-center">
+                        {logoPreview ? (
+                          <Image src={logoPreview} alt="Logo" fill className="object-cover" />
+                        ) : (
+                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                        )}
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor="type">
-                          School Type <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                          value={formData.type}
-                          onValueChange={(value) =>
-                            handleChange(
-                              "type",
-                              value === "default" ? "" : value
-                            )
-                          }
+                        <input
+                          type="file"
+                          id="logo"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleLogoChange}
                           disabled={isLoading}
+                        />
+                        <Label
+                          htmlFor="logo"
+                          className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition"
                         >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select school type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">
-                              Select school type
-                            </SelectItem>
-                            {schoolTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                {type.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="establishedYear">
-                            Established Year
-                          </Label>
-                          <Input
-                            id="establishedYear"
-                            type="number"
-                            placeholder="e.g., 1990"
-                            value={formData.establishedYear}
-                            onChange={(e) =>
-                              handleChange("establishedYear", e.target.value)
-                            }
-                            disabled={isLoading}
-                            className="h-11"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="studentCapacity"
-                            className="flex items-center gap-2"
-                          >
-                            <Users className="h-4 w-4" />
-                            Student Capacity
-                          </Label>
-                          <Input
-                            id="studentCapacity"
-                            type="number"
-                            placeholder="e.g., 500"
-                            value={formData.studentCapacity}
-                            onChange={(e) =>
-                              handleChange("studentCapacity", e.target.value)
-                            }
-                            disabled={isLoading}
-                            className="h-11"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          placeholder="Brief description of the school..."
-                          value={formData.description}
-                          onChange={(e) =>
-                            handleChange("description", e.target.value)
-                          }
-                          disabled={isLoading}
-                          rows={4}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="address">
-                          Address <span className="text-red-500">*</span>
+                          <Upload className="h-4 w-4" />
+                          {logoPreview ? "Change Logo" : "Upload Logo"}
                         </Label>
-                        <Input
-                          id="address"
-                          placeholder="Enter address"
-                          value={formData.address}
-                          onChange={(e) =>
-                            handleChange("address", e.target.value)
-                          }
-                          disabled={isLoading}
-                          className="h-11"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="city">
-                            City <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="city"
-                            placeholder="Enter city"
-                            value={formData.city}
-                            onChange={(e) =>
-                              handleChange("city", e.target.value)
-                            }
-                            disabled={isLoading}
-                            className="h-11"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="district">
-                            District <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="district"
-                            placeholder="Enter district"
-                            value={formData.district}
-                            onChange={(e) =>
-                              handleChange("district", e.target.value)
-                            }
-                            disabled={isLoading}
-                            className="h-11"
-                          />
-                        </div>
+                        {logoPreview && (
+                          <Button type="button" variant="ghost" size="sm" onClick={removeLogo}>
+                            Remove
+                          </Button>
+                        )}
+                        <p className="text-xs text-muted-foreground">JPG, PNG, WebP up to 2MB</p>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">School Name <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => updateField("name", e.target.value)}
+                        placeholder="e.g. Springfield High School"
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="type">School Type <span className="text-red-500">*</span></Label>
+                      <Select
+                        value={formData.type}
+                        onValueChange={(v) => updateField("type", v)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {schoolTypes.map((t) => (
+                            <SelectItem key={t.value} value={t.value}>
+                              {t.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="establishedYear">Established Year</Label>
+                      <Input
+                        id="establishedYear"
+                        type="number"
+                        placeholder="1990"
+                        value={formData.establishedYear}
+                        onChange={(e) => updateField("establishedYear", e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="studentCapacity" className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Student Capacity
+                      </Label>
+                      <Input
+                        id="studentCapacity"
+                        type="number"
+                        placeholder="1200"
+                        value={formData.studentCapacity}
+                        onChange={(e) => updateField("studentCapacity", e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => updateField("address", e.target.value)}
+                      placeholder="123 Education Street"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="city"
+                        value={formData.city}
+                        onChange={(e) => updateField("city", e.target.value)}
+                        placeholder="Springfield"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="district">District <span className="text-red-500">*</span></Label>
+                      <Input
+                        id="district"
+                        value={formData.district}
+                        onChange={(e) => updateField("district", e.target.value)}
+                        placeholder="Central District"
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description (Optional)</Label>
+                    <Textarea
+                      id="description"
+                      rows={4}
+                      value={formData.description}
+                      onChange={(e) => updateField("description", e.target.value)}
+                      placeholder="Tell us about your school..."
+                      disabled={isLoading}
+                    />
                   </div>
                 </div>
               )}
 
-              {/* Step 2: Contact Information */}
+              {/* Step 2: Contact Info */}
               {currentStep === 2 && (
-                <div className="space-y-4 animate-in fade-in duration-300">
+                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
@@ -419,11 +379,10 @@ export function CreateSchoolDialog({
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+1 (555) 123-4567"
+                      placeholder="+1 (555) 000-1234"
                       value={formData.phone}
-                      onChange={(e) => handleChange("phone", e.target.value)}
+                      onChange={(e) => updateField("phone", e.target.value)}
                       disabled={isLoading}
-                      className="h-11"
                     />
                   </div>
 
@@ -435,67 +394,55 @@ export function CreateSchoolDialog({
                     <Input
                       id="email"
                       type="email"
-                      placeholder="contact@school.edu"
+                      placeholder="admin@school.edu"
                       value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
+                      onChange={(e) => updateField("email", e.target.value)}
                       disabled={isLoading}
-                      className="h-11"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="website"
-                      className="flex items-center gap-2"
-                    >
+                    <Label htmlFor="website" className="flex items-center gap-2">
                       <Globe className="h-4 w-4" />
-                      Website
+                      Website (Optional)
                     </Label>
                     <Input
                       id="website"
                       type="url"
                       placeholder="https://www.school.edu"
-                      value={formData.website}
-                      onChange={(e) => handleChange("website", e.target.value)}
+                      value={formData.website || ""}
+                      onChange={(e) => updateField("website", e.target.value)}
                       disabled={isLoading}
-                      className="h-11"
                     />
                   </div>
                 </div>
               )}
-            </div>
+            </form>
           </div>
 
-          <DialogFooter className="px-8 py-6 border-t">
-            <div className="flex justify-between w-full">
+          {/* Footer with Navigation */}
+          <DialogFooter className="border-t px-8 py-6 bg-muted/50">
+            <div className="flex justify-between w-full items-center">
               <Button
-                type="button"
                 variant="outline"
                 onClick={handleBack}
                 disabled={currentStep === 1 || isLoading}
-                className="h-11 px-6 rounded-lg border-none"
               >
-                <ArrowLeft className="" />
+                <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
 
+              <div className="text-sm text-muted-foreground">
+                Step {currentStep} of {steps.length}
+              </div>
+
               {currentStep < steps.length ? (
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  disabled={!isStepValid() || isLoading}
-                  className=" px-8 rounded-2xl border-none"
-                >
+                <Button onClick={handleNext} disabled={!isStepValid() || isLoading}>
                   Next
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
-                <Button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!isStepValid() || isLoading}
-                  className="h-11 px-6"
-                >
+                <Button onClick={handleSubmit} disabled={!isStepValid() || isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -503,7 +450,6 @@ export function CreateSchoolDialog({
                     </>
                   ) : (
                     <>
-                      <Check className="h-4 w-4 mr-2" />
                       Create School
                     </>
                   )}
