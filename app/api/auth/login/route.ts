@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     await setCookie("accessToken", data.accessToken, {
       cookies,
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 60 * 60 * 24, // 24 hours
       path: "/",
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     await setCookie("user", JSON.stringify(data.user), {
       cookies,
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 60 * 60 * 24,
       path: "/",
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       await setCookie("school", JSON.stringify(data.school), {
         cookies,
         httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
+        secure: false,
         sameSite: "lax",
         maxAge: 60 * 60 * 24,
         path: "/",
