@@ -1,13 +1,13 @@
 import type { SVGProps } from "react";
 
 export const Logo = (
-  props: SVGProps<SVGSVGElement> & { className?: string }
+  props: SVGProps<SVGSVGElement> & { className?: string, url: string }
 ) => {
-  const { className, ...svgProps } = props;
+  const { className,url, ...svgProps } = props;
 
   return (
     <img
-      src="/back-free.png"
+      src={url}
       alt="Logo"
       className={className}
       {...(svgProps as any)}

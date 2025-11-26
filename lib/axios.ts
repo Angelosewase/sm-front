@@ -11,7 +11,7 @@ function getAccessToken() {
 }
 
 export const axiosInstance = axios.create({
-  baseURL: "http://138.197.93.9:7000",
+  baseURL: API_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { setCookie } from "cookies-next/server";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
     // Call external auth API using native fetch
-    const response = await fetch(`http://sm-back:7000/api/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
