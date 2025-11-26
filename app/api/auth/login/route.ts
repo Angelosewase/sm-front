@@ -1,28 +1,21 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { axiosInstance } from "@/lib/axios";
-
+import axios from "axios";
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
     // Call external auth API
-    const response = await fetch(
+    const response = await axios.post(
       `http://138.197.93.9:7000/api/auth/login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      }
+      { email, password }
     );
 
-    const data = await response.json();
-    
-    if (!response.ok) {
+    const data = response.data;
+
+    if (response.status !== 200) {
       // If the response is not ok, throw an error with the message from the backend
-      throw new Error(data.message || 'Login failed');
+      throw new Error(data.message || "Login failed");
     }
 
     // Set httpOnly cookie
@@ -60,7 +53,7 @@ export async function POST(request: Request) {
     console.error("Login error:", error);
     // Return a proper error response with status code
     return NextResponse.json(
-      { error: error.message || 'Login failed' },
+      { error: error.message || "Login failed" },
       { status: error.status || 500 }
     );
   }
