@@ -72,7 +72,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
         <div className="w-full max-w-md">
           <div className="flex flex-col gap-4">
             <div className="animate-element animate-delay-50 flex justify-center mb-4">
-              <Logo className="h-32 w-32" />
+              <Logo url="./back-free.png" className="h-32 w-32" />
             </div>
             <h1 className="animate-element animate-delay-100 text-2xl md:text-3xl font-bold leading-tight">
               {title}

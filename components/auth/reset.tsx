@@ -442,7 +442,7 @@ export const ResetPasswordPageComponent: React.FC<ResetPasswordPageProps> = ({
         <div className="w-full max-w-md">
           <div className="flex flex-col gap-4">
             <div className="animate-element animate-delay-50 flex justify-center mb-4">
-              <Logo className="h-32 w-32" />
+              <Logo url="./back-free.png" className="h-32 w-32" />
             </div>
             {step !== "success" && onBack && (
               <button
