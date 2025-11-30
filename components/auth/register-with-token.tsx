@@ -210,7 +210,7 @@ export default function RegisterWithToken() {
           <div className="bg-white dark:bg-card rounded-lg  p-4 lg:p-6 lg:sticky lg:top-4">
             {/* Logo */}
             <div className="flex justify-start mb-4 lg:mb-6 max-w-32 max-h-32 mx-auto">
-              <Logo />
+              <Logo url="/images/logo.svg" />
             </div>
 
             {/* Vertical Tabs - Horizontal on mobile, vertical on desktop */}
