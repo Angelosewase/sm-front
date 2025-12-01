@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const { email, password } = await request.json();
 
     // Call external auth API using native fetch
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetch(`http://sm-back:7000/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
