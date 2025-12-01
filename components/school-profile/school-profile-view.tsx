@@ -80,7 +80,6 @@ const statusBadge: Record<string, { color: string; label: string }> = {
 };
 
 export function SchoolProfile({ school, onUpdate, isLoading = false }: SchoolProfileProps) {
-  console.log("the school is : ", school)
   const [activeTab, setActiveTab] = useState<"info" | "contact">("info");
   const [editing, setEditing] = useState<EditSection>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -154,6 +153,12 @@ export function SchoolProfile({ school, onUpdate, isLoading = false }: SchoolPro
     }
   };
 
+  const [imgSrc, setImgSrc] = useState(school.logoUrl || '/back-free.png')
+
+  const handleImageError = () => {
+    setImgSrc('/back-free.png')
+  }
+
   return (
     <>
       {/* Profile Header */}
@@ -163,9 +168,10 @@ export function SchoolProfile({ school, onUpdate, isLoading = false }: SchoolPro
             <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-border bg-muted flex-shrink-0">
               {school.logoUrl ? (
                 <Image
-                  src={school.logoUrl}
+                  src={imgSrc}
                   alt={school.name}
                   fill
+                  onError={()=> setImgSrc('/back-free.png')}
                   className="object-cover"
                 />
               ) : (

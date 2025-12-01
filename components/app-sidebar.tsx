@@ -224,7 +224,7 @@ export function DashboardSidebar() {
       >
         <a href="#" className="flex items-center justify-center gap-2">
           <Logo
-          url={schooldata?.logoUrl ? schooldata?.logoUrl : '/back-free.png'}
+          url={schooldata?.logoUrl ? schooldata?.logoUrl : './back-free.png'}
             className={cn(
               isCollapsed ? "h-8 w-8 rounded" : "h-24 w-24 ml-4 rounded"
             )}
