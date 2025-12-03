@@ -127,22 +127,6 @@ export function StudentDataTable({ students }: StudentDataTableProps) {
         ),
       },
       {
-        accessorKey: "academicScore",
-        header: "Academic Score",
-        cell: ({ row }) => {
-          const score = row.original.academicScore;
-          if (score === null || Number.isNaN(score)) {
-            return <span className="text-sm text-muted-foreground">—</span>;
-          }
-
-          return (
-            <span className="text-sm font-semibold text-foreground">
-              {score}%
-            </span>
-          );
-        },
-      },
-      {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
@@ -211,9 +195,9 @@ export function StudentDataTable({ students }: StudentDataTableProps) {
       data={rows}
       columns={columns}
       config={{
-        enableDragDrop: false,
+        enableDragDrop: true,
         enableSelection: false,
-        enableColumnVisibility: true,
+        enableColumnVisibility: false,
         enablePagination: true,
         enableSearch: false,
         pageSize: 10,

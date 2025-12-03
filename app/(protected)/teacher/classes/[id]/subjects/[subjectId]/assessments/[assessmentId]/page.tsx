@@ -2,11 +2,18 @@
 
 import React, { useMemo, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { MarksEntryView, StudentMarkChange } from "@/components/teacher/marks/marks-entry-view";
+import {
+  MarksEntryView,
+  StudentMarkChange,
+} from "@/components/teacher/marks/marks-entry-view";
 import { useAssessment } from "@/hooks/use-subjects";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AssessmentStudentSummary } from "@/types/subjects.dto";
-import { useEnterMark, useUpdateMark, useAssessmentMarks } from "@/hooks/use-marks";
+import {
+  useEnterMark,
+  useUpdateMark,
+  useAssessmentMarks,
+} from "@/hooks/use-marks";
 import type { MarkRecord } from "@/lib/api/marks";
 
 export default function AssessmentMarksPage() {
@@ -174,8 +181,7 @@ export default function AssessmentMarksPage() {
           : studentRef?._id ?? studentRef?.studentId ?? "";
       const snapshot: StudentMarkSnapshot = {
         markId: mark._id,
-        score:
-          typeof mark.score === "number" ? mark.score : mark.score ?? null,
+        score: typeof mark.score === "number" ? mark.score : mark.score ?? null,
         remarks: typeof mark.comment === "string" ? mark.comment : "",
         studentRecordId: studentId,
         studentName:
@@ -238,73 +244,70 @@ export default function AssessmentMarksPage() {
 
     const mappedStudentKeys = new Set<string>();
     mappedStudents.forEach((student) => {
-      if (student.studentRecordId) mappedStudentKeys.add(student.studentRecordId);
+      if (student.studentRecordId)
+        mappedStudentKeys.add(student.studentRecordId);
       if (student.studentId) mappedStudentKeys.add(student.studentId);
       mappedStudentKeys.add(student.id);
     });
 
-    const additionalStudents: StudentRow[] = marksArray.reduce(
-      (acc, mark) => {
-        const studentRef = mark.student;
-        const keyCandidates: (string | undefined)[] =
-          typeof studentRef === "string"
-            ? [studentRef]
-            : [studentRef?._id, studentRef?.studentId];
+    const additionalStudents: StudentRow[] = marksArray.reduce((acc, mark) => {
+      const studentRef = mark.student;
+      const keyCandidates: (string | undefined)[] =
+        typeof studentRef === "string"
+          ? [studentRef]
+          : [studentRef?._id, studentRef?.studentId];
 
-        const alreadyIncluded = keyCandidates.some(
-          (key) => key && mappedStudentKeys.has(key)
-        );
-        if (alreadyIncluded) {
-          return acc;
-        }
-
-        const snapshot = getSnapshot(...keyCandidates);
-        const markName =
-          typeof studentRef === "string" ? undefined : studentRef?.name ?? "";
-        const admissionNumber =
-          typeof studentRef === "string"
-            ? studentRef
-            : studentRef?.studentId ?? studentRef?._id;
-
-        if (typeof studentRef === "string") {
-          const fallbackId = studentRef;
-          acc.push({
-            id: fallbackId,
-            studentId: studentRef,
-            studentRecordId: studentRef,
-            name: snapshot?.studentName ?? "Unknown Student",
-            admissionNumber: admissionNumber,
-            score: snapshot?.score ?? null,
-            remarks: snapshot?.remarks ?? "",
-            markId: snapshot?.markId,
-          });
-          mappedStudentKeys.add(studentRef);
-        } else if (studentRef) {
-          const fallbackId =
-            studentRef._id ??
-            studentRef.studentId ??
-            `${assessment._id}-${studentRef.name ?? "student"}`;
-
-          acc.push({
-            id: fallbackId,
-            studentId: studentRef.studentId,
-            studentRecordId:
-              studentRef._id ?? studentRef.studentId ?? fallbackId,
-            name: markName || snapshot?.studentName || "Unknown Student",
-            admissionNumber: admissionNumber ?? fallbackId,
-            score: snapshot?.score ?? null,
-            remarks: snapshot?.remarks ?? "",
-            markId: snapshot?.markId,
-          });
-
-          if (studentRef._id) mappedStudentKeys.add(studentRef._id);
-          if (studentRef.studentId) mappedStudentKeys.add(studentRef.studentId);
-        }
-
+      const alreadyIncluded = keyCandidates.some(
+        (key) => key && mappedStudentKeys.has(key)
+      );
+      if (alreadyIncluded) {
         return acc;
-      },
-      [] as StudentRow[]
-    );
+      }
+
+      const snapshot = getSnapshot(...keyCandidates);
+      const markName =
+        typeof studentRef === "string" ? undefined : studentRef?.name ?? "";
+      const admissionNumber =
+        typeof studentRef === "string"
+          ? studentRef
+          : studentRef?.studentId ?? studentRef?._id;
+
+      if (typeof studentRef === "string") {
+        const fallbackId = studentRef;
+        acc.push({
+          id: fallbackId,
+          studentId: studentRef,
+          studentRecordId: studentRef,
+          name: snapshot?.studentName ?? "Unknown Student",
+          admissionNumber: admissionNumber,
+          score: snapshot?.score ?? null,
+          remarks: snapshot?.remarks ?? "",
+          markId: snapshot?.markId,
+        });
+        mappedStudentKeys.add(studentRef);
+      } else if (studentRef) {
+        const fallbackId =
+          studentRef._id ??
+          studentRef.studentId ??
+          `${assessment._id}-${studentRef.name ?? "student"}`;
+
+        acc.push({
+          id: fallbackId,
+          studentId: studentRef.studentId,
+          studentRecordId: studentRef._id ?? studentRef.studentId ?? fallbackId,
+          name: markName || snapshot?.studentName || "Unknown Student",
+          admissionNumber: admissionNumber ?? fallbackId,
+          score: snapshot?.score ?? null,
+          remarks: snapshot?.remarks ?? "",
+          markId: snapshot?.markId,
+        });
+
+        if (studentRef._id) mappedStudentKeys.add(studentRef._id);
+        if (studentRef.studentId) mappedStudentKeys.add(studentRef.studentId);
+      }
+
+      return acc;
+    }, [] as StudentRow[]);
 
     const combinedStudents: StudentRow[] = [
       ...mappedStudents,

@@ -21,7 +21,7 @@ export function StudentsOverview({ stats }: StudentsOverviewProps) {
   } = stats
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 px-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Students</CardTitle>
@@ -35,7 +35,7 @@ export function StudentsOverview({ stats }: StudentsOverviewProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      {/* <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Average Score</CardTitle>
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -46,9 +46,9 @@ export function StudentsOverview({ stats }: StudentsOverviewProps) {
             Overall performance
           </p>
         </CardContent>
-      </Card>
+      </Card> */}
 
-      <Card>
+      {/* <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Top Performers</CardTitle>
           <Award className="h-4 w-4 text-muted-foreground" />
@@ -59,7 +59,7 @@ export function StudentsOverview({ stats }: StudentsOverviewProps) {
             Scoring above 85%
           </p>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
