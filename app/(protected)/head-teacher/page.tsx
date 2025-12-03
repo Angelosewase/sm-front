@@ -22,6 +22,9 @@ import StatCard from "@/components/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useSchool } from "@/contexts/school-context";
+import { useStudentStats } from "@/hooks/use-students";
+import { useClassStats } from "@/hooks/use-classes";
+import { useTeacherStats, useHeadTeacherSubjectStats } from "@/hooks/use-analytics";
 
 // Mock data - Replace with actual API calls
 const mockStatsData = [
@@ -147,11 +150,30 @@ const initialsFromName = (name?: string) => {
 export default function HeadTeacherPage() {
   const { user } = useAuth();
   const { school } = useSchool();
+  const schoolId = school?.id;
   const headTeacherName = user?.name ?? "Head Teacher";
   const headTeacherEmail = user?.email ?? "";
 
-  // Replace with actual loading states from API hooks
-  const isLoading = false;
+  // Fetch actual stats
+  const { data: studentStats, isLoading: studentStatsLoading } = useStudentStats(schoolId);
+  const { data: classStats, isLoading: classStatsLoading } = useClassStats(schoolId);
+  const { data: teacherStats, isLoading: teacherStatsLoading } = useTeacherStats(schoolId);
+  const { data: subjectStats, isLoading: subjectStatsLoading } = useHeadTeacherSubjectStats(schoolId);
+
+  const isLoading = studentStatsLoading || classStatsLoading || teacherStatsLoading || subjectStatsLoading;
+
+  // Extract values from stats
+  const totalStudents = studentStats?.cards?.find((c) =>
+    c.name.toLowerCase().includes("student")
+  )?.value ?? 0;
+  const totalTeachers = teacherStats?.cards?.find((c) =>
+    c.name.toLowerCase().includes("teacher")
+  )?.value ?? subjectStats?.totalTeachers ?? 0;
+  const totalClasses = classStats?.cards?.find((c) =>
+    c.name.toLowerCase().includes("class")
+  )?.value ?? 0;
+  const averagePerformance = subjectStats?.averagePerformance ?? 0;
+  const performanceGrade = subjectStats?.performanceGrade ?? "N/A";
 
   return (
     <div className="space-y-6 p-6">
@@ -197,24 +219,34 @@ export default function HeadTeacherPage() {
         </CardHeader>
 
         <CardContent className="grid grid-cols-1 gap-4 border-t border-border/60 bg-background/40 px-6 py-4 sm:grid-cols-3">
-          <QuickStat
-            icon={<Users className="size-4 text-primary" />}
-            label="Total Students"
-            value={245}
-            helper="Enrolled this academic year"
-          />
-          <QuickStat
-            icon={<GraduationCap className="size-4 text-primary" />}
-            label="Active Teachers"
-            value={18}
-            helper="Currently teaching"
-          />
-          <QuickStat
-            icon={<School className="size-4 text-primary" />}
-            label="Active Classes"
-            value={12}
-            helper="Across all grade levels"
-          />
+          {isLoading ? (
+            <>
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </>
+          ) : (
+            <>
+              <QuickStat
+                icon={<Users className="size-4 text-primary" />}
+                label="Total Students"
+                value={typeof totalStudents === "number" ? totalStudents : Number(totalStudents) || 0}
+                helper="Enrolled this academic year"
+              />
+              <QuickStat
+                icon={<GraduationCap className="size-4 text-primary" />}
+                label="Active Teachers"
+                value={typeof totalTeachers === "number" ? totalTeachers : Number(totalTeachers) || 0}
+                helper="Currently teaching"
+              />
+              <QuickStat
+                icon={<School className="size-4 text-primary" />}
+                label="Active Classes"
+                value={typeof totalClasses === "number" ? totalClasses : Number(totalClasses) || 0}
+                helper="Across all grade levels"
+              />
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -280,43 +312,79 @@ export default function HeadTeacherPage() {
               <CardDescription>Key information at a glance</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Average performance</span>
-                  <span className="text-sm font-semibold">__._%</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-[94.5%] bg-primary" />
-                </div>
-              </div>
-
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="size-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Performance</span>
+              {subjectStatsLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Average performance</span>
+                      <span className="text-sm font-semibold">
+                        {averagePerformance > 0
+                          ? `${averagePerformance.toFixed(1)}%`
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full bg-primary transition-all"
+                        style={{
+                          width: `${averagePerformance > 0 ? averagePerformance : 0}%`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <Badge variant="outline" className="text-green-600">
-                    Excellent
-                  </Badge>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="size-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Current Term</span>
-                  </div>
-                  <span className="text-sm font-medium">Term 2</span>
-                </div>
+                  <div className="space-y-3 border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="size-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Performance Grade</span>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          performanceGrade === "Excellent" || performanceGrade === "Good"
+                            ? "text-green-600"
+                            : performanceGrade === "Average"
+                            ? "text-yellow-600"
+                            : "text-red-600"
+                        }
+                      >
+                        {performanceGrade}
+                      </Badge>
+                    </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ClipboardList className="size-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Pending Tasks</span>
+                    {subjectStats && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="size-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">Total Subjects</span>
+                          </div>
+                          <span className="text-sm font-medium">
+                            {subjectStats.totalSubjects ?? 0}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <School className="size-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              Average Class Size
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium">
+                            {subjectStats.averageClassSize
+                              ? Math.round(subjectStats.averageClassSize)
+                              : 0}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <Badge variant="secondary">5</Badge>
-                </div>
-              </div>
+                </>
+              )}
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full">

@@ -27,6 +27,7 @@ import { useCreateSubject } from "@/hooks/use-subjects";
 import { CreateSubjectDto } from "@/types/subjects.dto";
 import { useSchool } from "@/contexts/school-context";
 import { gradeLevels } from "@/lib/constants/grade-levels";
+import { PlusIcon } from "lucide-react";
 
 export function AddSubjectDialog() {
   const { school } = useSchool();
@@ -69,7 +70,8 @@ export function AddSubjectDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="mr-4">
+        <Button variant="default" className="mr-4">
+          <PlusIcon className="size-4 mr-2" />
           Add Subject
         </Button>
       </DialogTrigger>

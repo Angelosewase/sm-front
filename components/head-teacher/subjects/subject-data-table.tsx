@@ -54,6 +54,7 @@ import { Subject } from "@/types/subjects.dto";
 
 import { gradeLevels } from "@/lib/constants/grade-levels";
 import { IconSearch } from "@tabler/icons-react";
+import { cn } from "@/lib/utils";
 
 function useDebouncedValue<T>(value: T, delay = 400) {
   const [debounced, setDebounced] = React.useState(value);
@@ -376,8 +377,10 @@ export function SubjectDataTable({
   const mergedConfig: DataTableConfig<Subject> = {
     enableDragDrop: true,
     enableSelection: true,
-    enableColumnVisibility: true,
+    enableColumnVisibility: false,
     enablePagination: true,
+    enableSearch: false,
+
     pageSize: 10,
     pageSizeOptions: [10, 20, 30, 40, 50],
     ...(config || {}),
@@ -399,7 +402,7 @@ export function SubjectDataTable({
     <div className="flex w-full flex-col gap-3 px-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          {statusButtons.map((button) => (
+          {statusButtons.map((button, index) => (
             <Button
               key={button.value}
               type="button"
@@ -407,6 +410,12 @@ export function SubjectDataTable({
               size="sm"
               onClick={() => setActiveTab(button.value)}
               disabled={isTableLoading || isTrashView}
+              className={cn(
+                "rounded-none ",
+                index === 0 ? "rounded-l-md" : "",
+                index === statusButtons.length - 1 ? "rounded-r-md" : ""
+              )}
+              
             >
               {button.label}
             </Button>
@@ -473,57 +482,59 @@ export function SubjectDataTable({
       <div className="flex w-full flex-wrap items-center gap-2">
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {selectionCount > 0 && (
-            <Badge variant="secondary" className="font-normal">
-              {selectionCount} selected
-            </Badge>
-          )}
-          {isTrashView ? (
             <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleBulkRestore}
-                disabled={
-                  isTableLoading ||
-                  !hasTrashedSelection ||
-                  bulkRestoreMutation.isPending
-                }
-              >
-                {bulkRestoreMutation.isPending ? "Restoring..." : "Restore Selected"}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkPermanentDelete}
-                disabled={
-                  isTableLoading ||
-                  !hasTrashedSelection ||
-                  bulkPermanentDeleteMutation.isPending
-                }
-              >
-                {bulkPermanentDeleteMutation.isPending
-                  ? "Deleting..."
-                  : "Delete Selected"}
-              </Button>
+              <Badge variant="secondary" className="font-normal">
+                {selectionCount} selected
+              </Badge>
+              {isTrashView ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkRestore}
+                    disabled={
+                      isTableLoading ||
+                      !hasTrashedSelection ||
+                      bulkRestoreMutation.isPending
+                    }
+                  >
+                    {bulkRestoreMutation.isPending ? "Restoring..." : "Restore Selected"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkPermanentDelete}
+                    disabled={
+                      isTableLoading ||
+                      !hasTrashedSelection ||
+                      bulkPermanentDeleteMutation.isPending
+                    }
+                  >
+                    {bulkPermanentDeleteMutation.isPending
+                      ? "Deleting..."
+                      : "Delete Selected"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkTrash}
+                  disabled={
+                    isTableLoading ||
+                    !hasNonTrashedSelection ||
+                    bulkTrashMutation.isPending
+                  }
+                >
+                  {bulkTrashMutation.isPending
+                    ? "Moving..."
+                    : "Move Selected to Trash"}
+                </Button>
+              )}
             </>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleBulkTrash}
-              disabled={
-                isTableLoading ||
-                !hasNonTrashedSelection ||
-                bulkTrashMutation.isPending
-              }
-            >
-              {bulkTrashMutation.isPending
-                ? "Moving..."
-                : "Move Selected to Trash"}
-            </Button>
           )}
         </div>
       </div>
@@ -552,6 +563,7 @@ export function SubjectDataTable({
         addButtonLabel="Add Subject"
         columnVisibilityLabel="Customize Columns"
         customToolbarActions={filterControls}
+        
       />
 
       {/* View Details Modal */}
