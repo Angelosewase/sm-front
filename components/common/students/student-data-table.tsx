@@ -77,6 +77,7 @@ import {
 } from "@/hooks/use-students";
 import { useClasses } from "@/hooks/use-classes";
 import { useSchool } from "@/contexts/school-context";
+import { useAuth } from "@/contexts/auth-context";
 import {
   GuardianRelationship,
   Student,
@@ -176,6 +177,7 @@ function useDebouncedValue<T>(value: T, delay = 400) {
 
 export function StudentDataTable() {
   const { school } = useSchool();
+  const { user } = useAuth();
   const schoolId = school?.id;
   const isSchoolSelected = Boolean(schoolId);
 
@@ -192,6 +194,16 @@ export function StudentDataTable() {
   const isTrashView = activeTab === "trashed";
 
   const router = useRouter();
+
+  // Determine the base route based on user role
+  const getBaseRoute = React.useCallback(() => {
+    const role = user?.role;
+    if (role === "admin" || role === "school owner") {
+      return "/admin/students";
+    }
+    // Default to head-teacher route for head teacher and other roles
+    return "/head-teacher/students";
+  }, [user?.role]);
 
   const queryParams = React.useMemo(
     () => ({
@@ -510,6 +522,7 @@ export function StudentDataTable() {
           ];
         }
 
+        const baseRoute = getBaseRoute();
         return [
           {
             label: "Move to Trash",
@@ -521,14 +534,14 @@ export function StudentDataTable() {
             label: "View Performance",
             onClick: () =>
               router.push(
-                `/head-teacher/students/${student._id}?activeTab=performance`
+                `${baseRoute}/${student._id}?activeTab=performance`
               ),
           },
           {
             label: "View Report Card",
             onClick: () =>
               router.push(
-                `/head-teacher/students/${student._id}?activeTab=report`
+                `${baseRoute}/${student._id}?activeTab=report`
               ),
           },
         ];
@@ -539,6 +552,8 @@ export function StudentDataTable() {
     permanentlyDeleteStudentMutation.isPending,
     restoreStudentMutation.isPending,
     trashStudentMutation.isPending,
+    getBaseRoute,
+    router,
   ]);
 
   const filterControls = (

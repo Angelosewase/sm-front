@@ -79,6 +79,7 @@ type AssessmentColumn = {
   deadline: string | null;
   term: string | null;
   academicYear: string | null;
+  subjects: string[]; // Track which subjects this assessment belongs to
 };
 
 type SubjectStatsEntry = {
@@ -232,15 +233,25 @@ export default function StudentPerformanceView({
         !Number.isNaN(assessment.maxScore)
           ? assessment.maxScore
           : 100;
-      unique.set(assessment.assessmentId, {
-        id: assessment.assessmentId,
-        name: assessment.assessmentTitle,
-        type: assessment.assessmentType,
-        maxScore,
-        deadline: assessment.deadline ?? null,
-        term: assessment.term ?? null,
-        academicYear: assessment.academicYear ?? null,
-      });
+      
+      const existing = unique.get(assessment.assessmentId);
+      if (existing) {
+        // Add subject if not already present
+        if (assessment.subject && !existing.subjects.includes(assessment.subject)) {
+          existing.subjects.push(assessment.subject);
+        }
+      } else {
+        unique.set(assessment.assessmentId, {
+          id: assessment.assessmentId,
+          name: assessment.assessmentTitle,
+          type: assessment.assessmentType,
+          maxScore,
+          deadline: assessment.deadline ?? null,
+          term: assessment.term ?? null,
+          academicYear: assessment.academicYear ?? null,
+          subjects: assessment.subject ? [assessment.subject] : [],
+        });
+      }
     });
     return Array.from(unique.values());
   }, [assessmentsData]);
@@ -664,6 +675,13 @@ export default function StudentPerformanceView({
                                 >
                                   {assessment.name}
                                 </span>
+                                {assessment.subjects.length > 0 && (
+                                  <span className="text-[10px] font-semibold text-primary/80 line-clamp-1" title={assessment.subjects.join(", ")}>
+                                    {assessment.subjects.length === 1 
+                                      ? assessment.subjects[0]
+                                      : `${assessment.subjects.length} subjects`}
+                                  </span>
+                                )}
                                 <div>
 
                                 <span className="text-[10px] text-muted-foreground mr-1">
@@ -787,12 +805,9 @@ export default function StudentPerformanceView({
                                       </span>
                                     </div>
                                   ) : (
-                                    <Badge
-                                      variant="outline"
-                                      className="rounded px-3 py-0.5 text-[11px]"
-                                    >
-                                      Not taken
-                                    </Badge>
+                                    <span className="text-muted-foreground text-sm">
+                                      —
+                                    </span>
                                   )}
                                 </TableCell>
                               ))}
@@ -915,7 +930,7 @@ export default function StudentPerformanceView({
                           >
                             {stats.average !== null
                               ? `${stats.average}% avg`
-                              : "Not taken"}
+                              : "—"}
                           </Badge>
                         </div>
                         <div className="flex flex-row flex-wrap items-center gap-5">
@@ -1050,12 +1065,9 @@ export default function StudentPerformanceView({
                         </p>
                       </>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="rounded px-3 py-0.5 text-[11px]"
-                      >
-                        Not completed
-                      </Badge>
+                      <span className="text-muted-foreground text-sm">
+                        —
+                      </span>
                     )}
                   </div>
                 </div>
