@@ -96,19 +96,15 @@ export default function TeacherHomePage() {
         <TeacherSummaryCards stats={dashboardStats} />
       )}
 
-      <div className="">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="col-span-2">
-
-          <QuickActionsCard teacherName={teacherName} />
-          </div>
+      <div className="-mr-4">
+        <div className="grid  gap-6 grid-cols-[35%_60%]">
           <TeacherClassesCard
             classes={classItems}
             isLoading={classesLoading}
             error={getErrorMessage(classesError)}
           />
+          <AssessmentStatusCard stats={dashboardStats} />
         </div>
-        <AssessmentStatusCard stats={dashboardStats} />
       </div>
     </div>
   );

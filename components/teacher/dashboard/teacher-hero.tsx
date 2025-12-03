@@ -76,27 +76,6 @@ export function TeacherHero({ name, email, meta, className }: TeacherHeroProps) 
           </Button>
         </div>
       </CardHeader>
-
-      <CardContent className="grid grid-cols-1 gap-4 border-t border-border/60 bg-background/40 px-6 py-4 sm:grid-cols-3">
-        <QuickStat
-          icon={<GraduationCap className="size-4 text-primary" />}
-          label="Active Classes"
-          value={totalClasses}
-          helper={`${totalSubjects} subject${totalSubjects === 1 ? "" : "s"} assigned`}
-        />
-        <QuickStat
-          icon={<Users className="size-4 text-primary" />}
-          label="Students"
-          value={totalStudents}
-          helper="Across all homerooms"
-        />
-        <QuickStat
-          icon={<CalendarDays className="size-4 text-primary" />}
-          label="Upcoming Lessons"
-          value={Math.max(totalClasses * 2, 3)}
-          helper="Next 7 days"
-        />
-      </CardContent>
     </Card>
   )
 }
@@ -113,7 +92,7 @@ function QuickStat({
   helper: string
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-card/60 p-4">
+    <div className="flex items-start gap-3 rounded-lg border-none bg-card/60 p-4">
       <div className="rounded-md bg-primary/10 p-2">{icon}</div>
       <div>
         <p className="text-sm font-medium text-muted-foreground">{label}</p>

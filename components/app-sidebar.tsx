@@ -200,17 +200,6 @@ export function DashboardSidebar() {
 
   const { school, isLoading } = useSchool();
   const {data: schooldata, isLoading: isSchoolLoading} = getSchool(school ? school.id : '')
-  if (isSchoolLoading) {
-    return (
-      <Sidebar variant="sidebar" collapsible="icon">
-        <SidebarHeader className="flex md:pt-3.5">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-background text-foreground">
-            <Loader2 className="size-4 animate-spin" />
-          </div>
-        </SidebarHeader>
-      </Sidebar>
-    );
-  }
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
@@ -223,12 +212,21 @@ export function DashboardSidebar() {
         )}
       >
         <a href="#" className="flex items-center justify-center gap-2">
-          <Logo
-          url={schooldata?.logoUrl ? schooldata?.logoUrl : './back-free.png'}
-            className={cn(
-              isCollapsed ? "h-8 w-8 rounded" : "h-24 w-24 ml-4 rounded"
-            )}
-          />
+          {isSchoolLoading ? (
+            <div className={cn(
+              "flex items-center justify-center rounded-lg bg-background text-foreground",
+              isCollapsed ? "h-8 w-8" : "h-24 w-24 ml-4"
+            )}>
+              <Loader2 className="size-4 animate-spin" />
+            </div>
+          ) : (
+            <Logo
+              url={schooldata?.logoUrl ? schooldata?.logoUrl : './back-free.png'}
+              className={cn(
+                isCollapsed ? "h-8 w-8 rounded" : "h-24 w-24 ml-4 rounded"
+              )}
+            />
+          )}
         </a>
 
         <motion.div
@@ -259,7 +257,14 @@ export function DashboardSidebar() {
                 // Otherwise, do nothing
               }}
             >
-              <span className="truncate font-semibold">{school?.name}</span>
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="size-3 animate-spin" />
+                  <span className="truncate text-xs text-muted-foreground">Loading...</span>
+                </div>
+              ) : (
+                <span className="truncate font-semibold">{school?.name || "School"}</span>
+              )}
               <span className="truncate text-xs flex not-only-of-type:">
                 school profile{" "}
                 {user?.role === "admin" ? (

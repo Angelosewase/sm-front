@@ -6,14 +6,13 @@ import {
   Users,
   GraduationCap,
   BookOpen,
-  BarChart3,
-  Settings,
-  FileText,
   CalendarDays,
   ClipboardList,
   School,
   TrendingUp,
   Mail,
+  FileCog,
+  Key,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,33 +93,47 @@ const mockStatsData = [
 
 const quickActions = [
   {
-    title: "View Analytics",
-    description: "Access comprehensive school performance metrics and insights.",
-    href: "/head-teacher/analytics",
-    icon: BarChart3,
-    badge: "Analytics",
+    title: "Manage Teachers",
+    description: "View and manage all teachers in your school.",
+    href: "/head-teacher/teachers",
+    icon: GraduationCap,
+    badge: "Teachers",
   },
   {
-    title: "Generate Report",
-    description: "Create and export detailed school reports and summaries.",
-    href: "/head-teacher/reports",
-    icon: FileText,
-    badge: "Reports",
+    title: "View Students",
+    description: "Access student information and manage student records.",
+    href: "/head-teacher/students",
+    icon: Users,
+    badge: "Students",
   },
   {
-    title: "Academic Settings",
+    title: "Manage Classes",
+    description: "Create and manage classes across all grade levels.",
+    href: "/head-teacher/classes",
+    icon: School,
+    badge: "Classes",
+  },
+  {
+    title: "Manage Subjects",
+    description: "Configure and manage subjects offered in your school.",
+    href: "/head-teacher/subjects",
+    icon: BookOpen,
+    badge: "Subjects",
+  },
+  {
+    title: "Academic Setup",
     description: "Configure academic calendar, terms, and curriculum settings.",
     href: "/head-teacher/academic-settings",
-    icon: Settings,
+    icon: FileCog,
     badge: "Settings",
   },
-] as const;
-
-const secondaryLinks = [
-  { label: "Manage Teachers", href: "/head-teacher/teachers", icon: GraduationCap },
-  { label: "View Students", href: "/head-teacher/students", icon: Users },
-  { label: "Manage Classes", href: "/head-teacher/classes", icon: School },
-  { label: "Manage Subjects", href: "/head-teacher/subjects", icon: BookOpen },
+  {
+    title: "Registration Tokens",
+    description: "Generate and manage registration tokens for new users.",
+    href: "/head-teacher/tokens",
+    icon: Key,
+    badge: "Tokens",
+  },
 ] as const;
 
 const initialsFromName = (name?: string) => {
@@ -175,10 +188,10 @@ export default function HeadTeacherPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild size="sm" variant="outline">
-              <Link href="/head-teacher/analytics">View Analytics</Link>
+              <Link href="/head-teacher/teachers">Manage Teachers</Link>
             </Button>
             <Button asChild size="sm">
-              <Link href="/head-teacher/reports">Generate Report</Link>
+              <Link href="/head-teacher/students">View Students</Link>
             </Button>
           </div>
         </CardHeader>
@@ -205,22 +218,6 @@ export default function HeadTeacherPage() {
         </CardContent>
       </Card>
 
-      {/* Stat Cards */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <Skeleton key={idx} className="h-32 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : (
-        <div className="flex w-full items-center justify-center">
-          <dl className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {mockStatsData.map((stat) => (
-              <StatCard key={stat.name} {...stat} />
-            ))}
-          </dl>
-        </div>
-      )}
 
       {/* Quick Actions and Summary Cards */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -272,21 +269,6 @@ export default function HeadTeacherPage() {
               ))}
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-3 border-t border-border/60 bg-muted/20 px-6 py-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">
-                Shortcuts
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {secondaryLinks.map((item) => (
-                  <Button key={item.label} asChild size="sm" variant="ghost" className="gap-2">
-                    <Link href={item.href}>
-                      <item.icon className="size-3.5" />
-                      {item.label}
-                    </Link>
-                  </Button>
-                ))}
-              </div>
-            </CardFooter>
           </Card>
         </div>
 
@@ -300,8 +282,8 @@ export default function HeadTeacherPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Attendance Rate</span>
-                  <span className="text-sm font-semibold">94.5%</span>
+                  <span className="text-sm text-muted-foreground">Average performance</span>
+                  <span className="text-sm font-semibold">__._%</span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                   <div className="h-full w-[94.5%] bg-primary" />

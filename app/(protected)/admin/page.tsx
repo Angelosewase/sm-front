@@ -32,13 +32,13 @@ export default function AdminHomePage() {
       </section>
 
       {/* Performance & Recent Activity Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 h-full max-h-[500px]">
+      <section className="grid grid-cols-1 ">
+        <div className="h-full max-h-[500px]">
           <StudentPerformanceChart />
         </div>
-        <div className="lg:col-span-2 h-full max-h-[500px]">
+        {/* <div className="lg:col-span-2 h-full max-h-[500px]">
           <RecentActivity />
-        </div>
+        </div> */}
       </section>
     </div>
   );

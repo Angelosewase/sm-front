@@ -163,9 +163,9 @@ export function StudentPerformanceChart() {
             variant="outline"
             className="hidden @[767px]/card:flex"
           >
-            <ToggleGroupItem value="term">By Class / Term</ToggleGroupItem>
-            <ToggleGroupItem value="year">By Term / Year</ToggleGroupItem>
-            <ToggleGroupItem value="all">All Years</ToggleGroupItem>
+            <ToggleGroupItem value="term" ><span className="px-2">By Class / Term</span></ToggleGroupItem>
+            <ToggleGroupItem value="year" ><span className="px-2">By Term / Year</span></ToggleGroupItem>
+            <ToggleGroupItem value="all" ><span className="px-2">All Years</span></ToggleGroupItem>
           </ToggleGroup>
 
           <Select
