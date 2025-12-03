@@ -31,6 +31,10 @@ export const useCreateSubject = () => {
       // Invalidate all subjects queries
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to create subject";
+      toast.error(errorMessage);
+    },
   });
 };
 
@@ -42,6 +46,10 @@ export const useUpdateSubject = () => {
       // Invalidate the specific subject and all subjects queries
       queryClient.invalidateQueries({ queryKey: ["subject", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
+    },
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to update subject";
+      toast.error(errorMessage);
     },
   });
 };
@@ -59,8 +67,10 @@ export const useToggleSubjectStatus = () => {
               nextStatus.toLowerCase() == "active" ? "Activated" : "Deactivated"
             } successfully.`
           ),
-        onError: (err) =>
-          toast.error(err.message || "Failed to update subject status"),
+        onError: (err: any) => {
+          const errorMessage = err?.response?.data?.message || err?.message || "Failed to update subject status";
+          toast.error(errorMessage);
+        },
       }
     );
   };
@@ -265,8 +275,10 @@ export const useDeleteSubject = () => {
       queryClient.invalidateQueries({ queryKey: ["subject", id] });
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) =>
-      toast.error(err.message || "Failed to move subject to trash"),
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to move subject to trash";
+      toast.error(errorMessage);
+    },
   });
 };
 
@@ -279,7 +291,10 @@ export const useRestoreSubject = () => {
       queryClient.invalidateQueries({ queryKey: ["subject", id] });
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) => toast.error(err.message || "Failed to restore subject"),
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to restore subject";
+      toast.error(errorMessage);
+    },
   });
 };
 
@@ -292,8 +307,10 @@ export const usePermanentlyDeleteSubject = () => {
       queryClient.invalidateQueries({ queryKey: ["subject", id] });
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) =>
-      toast.error(err.message || "Failed to permanently delete subject"),
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to permanently delete subject";
+      toast.error(errorMessage);
+    },
   });
 };
 
@@ -311,8 +328,10 @@ export const useBulkTrashSubjects = () => {
       );
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) =>
-      toast.error(err.message || "Failed to move subjects to trash"),
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to move subjects to trash";
+      toast.error(errorMessage);
+    },
   });
 };
 
@@ -328,7 +347,10 @@ export const useBulkRestoreSubjects = () => {
       );
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) => toast.error(err.message || "Failed to restore subjects"),
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to restore subjects";
+      toast.error(errorMessage);
+    },
   });
 };
 
@@ -346,8 +368,10 @@ export const useBulkPermanentlyDeleteSubjects = () => {
       );
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
     },
-    onError: (err) =>
-      toast.error(err.message || "Failed to permanently delete subjects"),
+    onError: (err: any) => {
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to permanently delete subjects";
+      toast.error(errorMessage);
+    },
   });
 };
 
@@ -360,8 +384,8 @@ export const useAssignSubjectToTeacher = () => {
       toast.success("Subject assigned to teacher");
     },
     onError: (err: any) => {
-      console.log("the error is: ", err.response.data.message);
-      toast.error(err.response.data.message || "Failed to assign subject");
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to assign subject to teacher";
+      toast.error(errorMessage);
     },
   });
 };

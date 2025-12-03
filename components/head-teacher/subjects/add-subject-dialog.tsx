@@ -35,18 +35,55 @@ export function AddSubjectDialog() {
   const createSubjectMutation = useCreateSubject();
 
   const [selectedGradeLevels, setSelectedGradeLevels] = React.useState<string[]>([]);
+  const [errors, setErrors] = React.useState<{ maxScore?: string; minPassingScore?: string }>({});
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
+    const maxScoreValue = formData.get("maxScore");
+    const minPassingScoreValue = formData.get("minPassingScore");
+
+    // Reset errors
+    setErrors({});
+
+    // Validate maxScore
+    if (!maxScoreValue || maxScoreValue === "") {
+      setErrors((prev) => ({ ...prev, maxScore: "Maximum score is required" }));
+      return;
+    }
+
+    const maxScore = Number(maxScoreValue);
+    if (isNaN(maxScore) || maxScore <= 0) {
+      setErrors((prev) => ({ ...prev, maxScore: "Maximum score must be greater than 0" }));
+      return;
+    }
+
+    // Validate minPassingScore
+    if (!minPassingScoreValue || minPassingScoreValue === "") {
+      setErrors((prev) => ({ ...prev, minPassingScore: "Minimum passing score is required" }));
+      return;
+    }
+
+    const minPassingScore = Number(minPassingScoreValue);
+    if (isNaN(minPassingScore) || minPassingScore < 0) {
+      setErrors((prev) => ({ ...prev, minPassingScore: "Minimum passing score must be 0 or greater" }));
+      return;
+    }
+
+    // Validate that minPassingScore <= maxScore
+    if (minPassingScore > maxScore) {
+      setErrors((prev) => ({ ...prev, minPassingScore: "Minimum passing score cannot exceed maximum score" }));
+      return;
+    }
+
     const subjectData: CreateSubjectDto = {
       subjectName: formData.get("subjectName") as string,
       subjectCode: formData.get("subjectCode") as string | undefined,
       shortName: formData.get("shortName") as string | undefined,
-      maxScore: formData.get("maxScore") ? Number(formData.get("maxScore")) : undefined,
+      maxScore: maxScore,
       category: formData.get("category") as string | undefined,
-      minPassingScore: formData.get("minPassingScore") ? Number(formData.get("minPassingScore")) : undefined,
+      minPassingScore: minPassingScore,
       school: school?.id,
       department: formData.get("department") as string | undefined,
       creditHours: formData.get("creditHours") ? Number(formData.get("creditHours")) : undefined,
@@ -60,10 +97,9 @@ export function AddSubjectDialog() {
       onSuccess: () => {
         toast.success(`Subject ${subjectData.subjectName} added successfully!`);
         setOpen(false);
+        setErrors({});
       },
-      onError: (error) => {
-        toast.error(`Failed to add subject: ${error.message}`);
-      },
+      // Error is handled by the hook's onError callback
     });
   };
 
@@ -114,25 +150,35 @@ export function AddSubjectDialog() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="maxScore">Maximum Score (Optional)</Label>
+                <Label htmlFor="maxScore">Maximum Score *</Label>
                 <Input
                   id="maxScore"
                   name="maxScore"
                   type="number"
                   placeholder="e.g., 100"
-                  min="0"
+                  min="1"
+                  required
+                  className={errors.maxScore ? "border-destructive" : ""}
                 />
+                {errors.maxScore && (
+                  <p className="text-sm text-destructive">{errors.maxScore}</p>
+                )}
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="minPassingScore">Minimum Passing Score (Optional)</Label>
+                <Label htmlFor="minPassingScore">Minimum Passing Score *</Label>
                 <Input
                   id="minPassingScore"
                   name="minPassingScore"
                   type="number"
                   placeholder="e.g., 50"
                   min="0"
+                  required
+                  className={errors.minPassingScore ? "border-destructive" : ""}
                 />
+                {errors.minPassingScore && (
+                  <p className="text-sm text-destructive">{errors.minPassingScore}</p>
+                )}
               </div>
             </div>
 

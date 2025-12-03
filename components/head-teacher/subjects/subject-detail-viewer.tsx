@@ -61,10 +61,25 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
 
     const formRef = React.useRef<HTMLFormElement | null>(null);
     const [isEditing, setIsEditing] = React.useState(false);
+    const [errors, setErrors] = React.useState<{ maxScore?: string; minPassingScore?: string }>({});
+    const [department, setDepartment] = React.useState<string>(item.department || "");
+    const [category, setCategory] = React.useState<string>(item.subjectType || "");
+    const [level, setLevel] = React.useState<string>(item.level || "");
+    const [status, setStatus] = React.useState<string>(item.status || "Active");
 
     const gradeLevelLabels = item.gradeLevels
         .map((value) => gradeLevels.find((g) => g.value === value)?.label ?? value)
         .join(", ");
+
+    // Sync state with item when editing starts or item changes
+    React.useEffect(() => {
+        if (isEditing) {
+            setDepartment(item.department || "");
+            setCategory(item.subjectType || "");
+            setLevel(item.level || "");
+            setStatus(item.status || "Active");
+        }
+    }, [isEditing, item.department, item.subjectType, item.level, item.status]);
 
     const handleSave = () => {
         const form = formRef.current;
@@ -72,6 +87,41 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
 
         const formData = new FormData(form);
         const selectedGradeLevels = formData.getAll("gradeLevels") as string[];
+
+        // Reset errors
+        setErrors({});
+
+        // Validate maxScore
+        const maxScoreValue = (form.querySelector("#maxScore") as HTMLInputElement)?.value;
+        if (!maxScoreValue || maxScoreValue === "") {
+            setErrors((prev) => ({ ...prev, maxScore: "Maximum score is required" }));
+            return;
+        }
+
+        const maxScore = Number(maxScoreValue);
+        if (isNaN(maxScore) || maxScore <= 0) {
+            setErrors((prev) => ({ ...prev, maxScore: "Maximum score must be greater than 0" }));
+            return;
+        }
+
+        // Validate minPassingScore
+        const minPassingScoreValue = (form.querySelector("#minPassingScore") as HTMLInputElement)?.value;
+        if (!minPassingScoreValue || minPassingScoreValue === "") {
+            setErrors((prev) => ({ ...prev, minPassingScore: "Minimum passing score is required" }));
+            return;
+        }
+
+        const minPassingScore = Number(minPassingScoreValue);
+        if (isNaN(minPassingScore) || minPassingScore < 0) {
+            setErrors((prev) => ({ ...prev, minPassingScore: "Minimum passing score must be 0 or greater" }));
+            return;
+        }
+
+        // Validate that minPassingScore <= maxScore
+        if (minPassingScore > maxScore) {
+            setErrors((prev) => ({ ...prev, minPassingScore: "Minimum passing score cannot exceed maximum score" }));
+            return;
+        }
 
         const dto: any = {
             name:
@@ -84,9 +134,10 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
                 Number(
                     (form.querySelector("#creditHours") as HTMLInputElement)?.value
                 ) || undefined,
-            // For now these remain fixed unless you wire selects to state/refs
-            department: item.department,
-            category: item.category,
+            maxScore: maxScore,
+            minPassingScore: minPassingScore,
+            department: department || item.department,
+            category: category || item.subjectType,
             // primary multi-grade field
             gradeLevels: selectedGradeLevels.length
                 ? selectedGradeLevels
@@ -94,20 +145,23 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
             // keep first selected for backward compatibility if backend still uses single grade
             gradeLevel:
                 selectedGradeLevels[0] ?? item.gradeLevels[0] ?? undefined,
-            level: item.level,
-            status: item.status,
+            level: level || item.level,
+            status: status || item.status,
             prerequisites:
                 (form.querySelector("#prerequisite") as HTMLTextAreaElement)?.value ||
                 item.prerequisites,
         };
-        try {
-            updateSubject({ id: String(item._id), dto });
-            toast.success("Changes saved successfully!");
-            setIsEditing(false);
-        } catch (error:any) {
-            console.log(error)
-            toast.error(error.response?.data?.message || "Failed to save changes");
-        }
+        updateSubject(
+            { id: String(item._id), dto },
+            {
+                onSuccess: () => {
+                    toast.success("Changes saved successfully!");
+                    setIsEditing(false);
+                    setErrors({});
+                },
+                // Error is handled by the hook's onError callback
+            }
+        );
     };
 
     const handleDeleteAssignment = (assignmentId: string) => {
@@ -198,14 +252,43 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
                                     </div>
                                     <div className="flex flex-col gap-3">
                                         <Label htmlFor="creditHours">Credit Hours</Label>
-                                        <Input id="creditHours" defaultValue={item.creditHours} />
+                                        <Input id="creditHours" type="number" defaultValue={item.creditHours} />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-3">
+                                        <Label htmlFor="maxScore">Maximum Score *</Label>
+                                        <Input 
+                                            id="maxScore" 
+                                            type="number" 
+                                            min="1"
+                                            defaultValue={item.maxScore} 
+                                            className={errors.maxScore ? "border-destructive" : ""}
+                                        />
+                                        {errors.maxScore && (
+                                            <p className="text-sm text-destructive">{errors.maxScore}</p>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col gap-3">
+                                        <Label htmlFor="minPassingScore">Minimum Passing Score *</Label>
+                                        <Input 
+                                            id="minPassingScore" 
+                                            type="number" 
+                                            min="0"
+                                            defaultValue={item.minPassingScore} 
+                                            className={errors.minPassingScore ? "border-destructive" : ""}
+                                        />
+                                        {errors.minPassingScore && (
+                                            <p className="text-sm text-destructive">{errors.minPassingScore}</p>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-3">
                                         <Label htmlFor="department">Department</Label>
-                                        <Select defaultValue={item.department}>
+                                        <Select value={department} onValueChange={setDepartment}>
                                             <SelectTrigger id="department" className="w-full">
                                                 <SelectValue placeholder="Select department" />
                                             </SelectTrigger>
@@ -227,7 +310,7 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
                                     </div>
                                     <div className="flex flex-col gap-3">
                                         <Label htmlFor="category">Category</Label>
-                                        <Select defaultValue={item.subjectType}>
+                                        <Select value={category} onValueChange={setCategory}>
                                             <SelectTrigger id="category" className="w-full">
                                                 <SelectValue placeholder="Select category" />
                                             </SelectTrigger>
@@ -266,7 +349,7 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
                                     </div>
                                     <div className="flex flex-col gap-3">
                                         <Label htmlFor="level">Level</Label>
-                                        <Select defaultValue={item.level}>
+                                        <Select value={level} onValueChange={setLevel}>
                                             <SelectTrigger id="level" className="w-full">
                                                 <SelectValue placeholder="Select level" />
                                             </SelectTrigger>
@@ -281,7 +364,7 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
 
                                 <div className="flex flex-col gap-3">
                                     <Label htmlFor="status">Status</Label>
-                                    <Select defaultValue={item.status}>
+                                    <Select value={status} onValueChange={setStatus}>
                                         <SelectTrigger id="status" className="w-full">
                                             <SelectValue placeholder="Select status" />
                                         </SelectTrigger>
@@ -328,6 +411,17 @@ export default function SubjectDetailViewer({ item }: { item: Subject }) {
                                     <div className="flex flex-col gap-3">
                                         <Label>Credit Hours</Label>
                                         <p>{item.creditHours}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-3">
+                                        <Label>Maximum Score</Label>
+                                        <p>{item.maxScore}</p>
+                                    </div>
+                                    <div className="flex flex-col gap-3">
+                                        <Label>Minimum Passing Score</Label>
+                                        <p>{item.minPassingScore}</p>
                                     </div>
                                 </div>
 
