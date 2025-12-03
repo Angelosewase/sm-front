@@ -18,8 +18,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build with optimizations
+# Accept build arguments for environment variables
+ARG NEXT_PUBLIC_API_URL
+
+# Set environment variables for build time (NEXT_PUBLIC_* vars need to be available during build)
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Build with optimizations
 RUN pnpm build
 
 # Stage 3: Runner
@@ -28,6 +34,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Accept build arguments for runtime environment variables
+ARG NEXT_PUBLIC_API_URL
+
+# Set environment variables for runtime
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs && \

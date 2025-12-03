@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type LoginCredentials } from "@/lib/api/auth";
 import { useSchool } from "@/contexts/school-context";
 import { storage } from "@/lib/storage";
+import { axiosInstance } from "@/lib/axios";
 
 interface User {
   id: string;
@@ -87,19 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
 
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://138.197.93.9:7000";
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || "Login failed");
-      }
-
-      const { user, school, accessToken } = await response.json();
+      const response = await axiosInstance.post("/api/auth/login", credentials);
+      const { user, school, accessToken } = response.data;
 
       // Store user and token in localStorage (encrypted)
       if (typeof window !== "undefined") {
@@ -123,9 +113,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Use replace instead of push to avoid adding login to browser history
       router.replace(portalPath);
       router.refresh();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      throw error;
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || "Login failed";
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
