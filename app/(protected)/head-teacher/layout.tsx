@@ -1,3 +1,4 @@
+import { HeadTeacherProtector } from "@/components/auth/role-protector";
 import React from "react";
 
 export default function HeaderTeacherLayoutPage({
@@ -5,5 +6,5 @@ export default function HeaderTeacherLayoutPage({
 }: {
   children: React.ReactNode;
 }) {
-  return <div>{children}</div>;
+  return <HeadTeacherProtector>{children}</HeadTeacherProtector>;
 }

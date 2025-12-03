@@ -8,6 +8,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { storage } from '@/lib/storage';
 
 export interface School {
   id: string;
@@ -37,9 +38,9 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       if (value) {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+        storage.setItem(STORAGE_KEY, JSON.stringify(value));
       } else {
-        window.localStorage.removeItem(STORAGE_KEY);
+        storage.removeItem(STORAGE_KEY);
       }
     } catch (error) {
       console.error('Failed to persist school data to localStorage:', error);
@@ -63,7 +64,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const storedValue = window.localStorage.getItem(STORAGE_KEY);
+      const storedValue = storage.getItem(STORAGE_KEY);
       if (storedValue) {
         const parsed = JSON.parse(storedValue) as School | null;
         setSchoolState(parsed);
@@ -88,8 +89,12 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       try {
-        const parsed = JSON.parse(event.newValue) as School | null;
-        setSchoolState(parsed);
+        // Decrypt the value from storage event
+        const decrypted = storage.getItem(STORAGE_KEY);
+        if (decrypted) {
+          const parsed = JSON.parse(decrypted) as School | null;
+          setSchoolState(parsed);
+        }
       } catch (error) {
         console.error('Failed to parse school data from storage event:', error);
       }

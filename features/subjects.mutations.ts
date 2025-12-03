@@ -1,5 +1,4 @@
-
-import { getAuthToken } from "@/lib/actions/auth";
+// Note: getAuthToken removed - axiosInstance interceptor handles Authorization header automatically
 import { CreateSubjectDto, Subject, UpdateSubjectDto, ListSubjectsFilter, PaginatedSubjectsResponse, AssignTeacherDto, AssignClassDto, RemoveFromClassDto } from "@/types/subjects.dto";
 import { axiosInstance } from "@/lib/axios";
 
@@ -9,9 +8,7 @@ const API_BASE_URL = "http://localhost:3000/api/subjects"; // Adjust based on yo
 
 // Create a new subject
 export const createSubject = async (dto: CreateSubjectDto): Promise<Subject> => {
-  const response = await axiosInstance.post<Subject>(API_BASE_URL, dto, {
-    headers: { Authorization: `Bearer ${await getAuthToken()}` },
-  });
+  const response = await axiosInstance.post<Subject>(API_BASE_URL, dto);
   return response.data;
 };
 
@@ -19,9 +16,7 @@ export const updateSubject = async (
   id: string,
   dto: UpdateSubjectDto
 ): Promise<Subject> => {
-  const response = await axiosInstance.patch<Subject>(`${API_BASE_URL}/${id}`, dto, {
-    headers: { Authorization: `Bearer ${await getAuthToken()}` },
-  });
+  const response = await axiosInstance.patch<Subject>(`${API_BASE_URL}/${id}`, dto);
   return response.data;
 };
 
@@ -30,23 +25,18 @@ export const fetchSubjects = async (
 ): Promise<PaginatedSubjectsResponse> => {
     const response = await axiosInstance.get<PaginatedSubjectsResponse>(API_BASE_URL, {
     params: filter,
-    headers: { Authorization: `Bearer ${await getAuthToken()}` },
   });
   return response.data;
 };
 
 export const fetchSubjectById = async (id: string): Promise<Subject> => {
-const response = await axiosInstance.get<Subject>(`${API_BASE_URL}/${id}`, {
-    headers: { Authorization: `Bearer ${await getAuthToken()}` },
-  });
+const response = await axiosInstance.get<Subject>(`${API_BASE_URL}/${id}`);
   return response.data;
 };
 
 // Delete a subject
 export const deleteSubject = async (id: string): Promise<void> => {
-  await axiosInstance.delete(`${API_BASE_URL}/${id}`, {
-    headers: { Authorization: `Bearer ${await getAuthToken()}` },
-  });
+  await axiosInstance.delete(`${API_BASE_URL}/${id}`);
 };
 
 // Assign subject to teacher
@@ -76,7 +66,6 @@ export const fetchTeacherWorkload = async (teacherId: string, academicYear?: str
     `${API_BASE_URL}/analytics/teacher/${teacherId}/workload`,
     {
       params: academicYear ? { academicYear } : undefined,
-      headers: { Authorization: `Bearer ${await getAuthToken()}` },
     }
   );
   return response.data;
@@ -88,7 +77,6 @@ export const fetchClassesOfSubject = async (subjectId: string, params = {}) => {
     `${API_BASE_URL}/${subjectId}/classes`,
     {
       params,
-      headers: { Authorization: `Bearer ${await getAuthToken()}` },
     }
   );
   return response.data;
@@ -100,7 +88,6 @@ export const fetchSubjectsOfClass = async (classId: string, params = {}) => {
     `${API_BASE_URL}/class/${classId}/subjects`,
     {
       params,
-      headers: { Authorization: `Bearer ${await getAuthToken()}` },
     }
   );
   return response.data;
@@ -112,7 +99,6 @@ export const fetchClassesOfTeacher = async (teacherId: string, params = {}) => {
     `${API_BASE_URL}/teacher/${teacherId}/classes`,
     {
       params,
-      headers: { Authorization: `Bearer ${await getAuthToken()}` },
     }
   );
   return response.data;
@@ -124,7 +110,6 @@ export const fetchSubjectsOfTeacher = async (teacherId: string, params = {}) => 
     `${API_BASE_URL}/teacher/${teacherId}/subjects`,
     {
       params,
-      headers: { Authorization: `Bearer ${await getAuthToken()}` },
     }
   );
   return response.data;
@@ -136,7 +121,6 @@ export const fetchTeacherSchedule = async (teacherId: string, academicYear: stri
     `${API_BASE_URL}/teacher/${teacherId}/schedule`,
     {
       params: { academicYear, ...(term ? { term } : {}) },
-      headers: { Authorization: `Bearer ${await getAuthToken()}` },
     }
   );
   return response.data;
@@ -145,11 +129,9 @@ export const fetchTeacherSchedule = async (teacherId: string, academicYear: stri
 
 
 export const assignSubjectBulk = async (subjectId: string, assignments: any) => {
-  const token = await getAuthToken();
   await axiosInstance.post(
     `${API_BASE_URL}/${subjectId}/assign-multiple`,
-    { assignments },
-    { headers: { Authorization: `Bearer ${token}` } }
+    { assignments }
   );
 };
 
@@ -159,8 +141,7 @@ export const assignSubjectBulk = async (subjectId: string, assignments: any) => 
 /* -------------------------------------------------------------------------- */
 export const deleteAssignment = async (assignmentId: string) => {
   const response = await axiosInstance.delete(
-    `${API_BASE_URL}/assignments/${assignmentId}`,
-    { headers: { Authorization: `Bearer ${await getAuthToken()}` } }
+    `${API_BASE_URL}/assignments/${assignmentId}`
   );
   return response.data;
 };
@@ -171,7 +152,6 @@ export const deleteAssignment = async (assignmentId: string) => {
 export const removeSubjectFromClass = async (body: RemoveFromClassDto) => {
   const response = await axiosInstance.delete(`${API_BASE_URL}/remove-from-class`, {
     data: body,
-    headers: { Authorization: `Bearer ${await getAuthToken()}` },
   });
   return response.data;
 };

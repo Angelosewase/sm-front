@@ -81,7 +81,7 @@ export default function SuperAdminSchoolsPage() {
 
   return (
     <div className="py-4">
-      <div className="flex flex-col gap-1 px-4 mb-4">
+      <div className="flex flex-col gap-1 px-8 mb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-semibold text-primary">
             Manage Schools
@@ -94,7 +94,7 @@ export default function SuperAdminSchoolsPage() {
       </div>
 
       {/* Filters */}
-      <div className="px-4 mb-4 space-y-4">
+      <div className="px-8 mb-4 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
@@ -202,7 +202,7 @@ export default function SuperAdminSchoolsPage() {
 
       {/* Results Info */}
       {!isLoading && data && (
-        <div className="px-4 mb-2 text-sm text-muted-foreground">
+        <div className="px-8 mb-2 text-sm text-muted-foreground">
           Showing {data.items.length} of {data.total} schools
         </div>
       )}

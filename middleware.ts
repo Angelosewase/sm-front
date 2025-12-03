@@ -1,84 +1,34 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getCookie } from "cookies-next/server";
 
 export async function middleware(request: NextRequest) {
-  const res = NextResponse.next();
-  const token = await getCookie("accessToken", { req: request, res });
-  const userCookie = await getCookie("user", { req: request, res });
   const { pathname } = request.nextUrl;
-
-  const roles = ["admin", "teacher", "head teacher", "super admin", "school owner"];
-
-  const isProtectedRoute =
-    roles.some((role) => {
-      const rolePath =
-        role === "head teacher"
-          ? "head-teacher"
-          : role === "super admin"
-          ? "super-admin"
-          : role === "school owner"
-          ? "admin"
-          : role;
-      return pathname.startsWith(`/${rolePath}`);
-    }) ||
-    pathname.startsWith("/setup-school-profile");
-
+  
+  // Simplified middleware - only redirect authenticated users away from auth routes
+  // Role-based protection is handled client-side by RoleProtector components
+  
   const authRoutes = ["/login", "/reset-password", "/register"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  if (isProtectedRoute && !token) {
-    const url = new URL("/login", request.url);
-    return NextResponse.redirect(url);
-  }
-
-  if (isProtectedRoute && token && userCookie) {
+  // Get token from Authorization header (if available)
+  const authHeader = request.headers.get("authorization");
+  const token = authHeader?.replace(/^Bearer\s+/i, "") || null;
+  
+  // Try to get user info from header
+  const userHeader = request.headers.get("x-user-info");
+  let user = null;
+  if (userHeader) {
     try {
-      const user = JSON.parse(userCookie as string);
-      const userRole =
-        user.role === "head teacher"
-          ? "head-teacher"
-          : user.role === "super admin"
-          ? "super-admin"
-          : user.role === "school owner"
-          ? "admin"
-          : user.role;
-      const accessingRole = roles.find((role) => {
-        const rolePath =
-          role === "head teacher"
-            ? "head-teacher"
-            : role === "super admin"
-            ? "super-admin"
-            : role === "school owner"
-            ? "admin"
-            : role;
-        return pathname.startsWith(`/${rolePath}`);
-      });
-
-      if (accessingRole) {
-        const normalizedAccessingRole =
-          accessingRole === "head teacher"
-            ? "head-teacher"
-            : accessingRole === "super admin"
-            ? "super-admin"
-            : accessingRole === "school owner"
-            ? "admin"
-            : accessingRole;
-
-        if (normalizedAccessingRole !== userRole) {
-          const url = new URL(`/${userRole}`, request.url);
-          return NextResponse.redirect(url);
-        }
-      }
+      user = JSON.parse(userHeader);
     } catch {
-      const url = new URL("/login", request.url);
-      return NextResponse.redirect(url);
+      // Invalid user header, ignore
     }
   }
 
-  if (isAuthRoute && token && userCookie) {
+  // Only redirect authenticated users away from auth routes
+  // All other route protection is handled client-side
+  if (isAuthRoute && token && user) {
     try {
-      const user = JSON.parse(userCookie as string);
       const rolePath =
         user.role === "head teacher"
           ? "head-teacher"
@@ -89,10 +39,12 @@ export async function middleware(request: NextRequest) {
           : user.role;
       const url = new URL(`/${rolePath}`, request.url);
       return NextResponse.redirect(url);
-    } catch {}
+    } catch {
+      // If parsing fails, allow access to auth route
+    }
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {

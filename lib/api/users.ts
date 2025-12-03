@@ -8,7 +8,6 @@ import {
   ListSubjectsFilter,
   PaginatedSubjectsResponse,
 } from "@/types/subjects.dto";
-import { getAuthToken } from "@/lib/actions/auth";
 import { ListUsersFilter, PaginatedUsersResponse } from "@/types/users.dto";
 import { toast } from "react-toastify";
 import { axiosInstance } from "../axios";

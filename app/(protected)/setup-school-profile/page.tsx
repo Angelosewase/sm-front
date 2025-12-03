@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useSchool as useSchoolContext} from "@/contexts/school-context";
+import { RoleProtector } from "@/components/auth/role-protector";
 import {
   CreateSchoolPayload,
   School as SchoolType,
@@ -213,64 +214,66 @@ export default function SetupSchoolProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className=" mx-auto p-4">
-        <div className=" mx-auto space-y-4">
-          {/* Page Header */}
-          <div className="flex items-center justify-between">
-            {/* {!schoolProfile && !isFetching && (
-              <Button onClick={() => setCreateDialogOpen(true)} size="lg">
-                <Plus className="h-5 w-5" />
-                Create School Profile
-              </Button>
-            )} */}
-          </div>
-
-          {/* Content Area */}
-          {isFetching ? (
-            <Card className="border-none shadow-none">
-              <CardContent className="flex items-center justify-center py-16">
-                <div className="flex items-center gap-3 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading school profile...
-                </div>
-              </CardContent>
-            </Card>
-          ) : schoolProfile ? (
-            <SchoolProfileView
-              school={schoolProfile}
-              onUpdate={handleUpdateSchool}
-              isLoading={updateSchoolMutation.isPending}
-            />
-          ) : (
-            <Card className="border-none shadow-none bg-transparent">
-              <CardHeader className="text-center pb-4">
-                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <School className="h-8 w-8 text-primary" />
-                </div>
-                <CardTitle className="text-2xl">
-                  No School Profile Found
-                </CardTitle>
-              </CardHeader>
-              {/* <CardContent className="text-center pb-8">
+    <RoleProtector allowedRoles={["admin"]}>
+      <div className="min-h-screen bg-background">
+        <div className=" mx-auto p-4">
+          <div className=" mx-auto space-y-4">
+            {/* Page Header */}
+            <div className="flex items-center justify-between">
+              {/* {!schoolProfile && !isFetching && (
                 <Button onClick={() => setCreateDialogOpen(true)} size="lg">
                   <Plus className="h-5 w-5" />
                   Create School Profile
                 </Button>
-              </CardContent> */}
-            </Card>
-          )}
-        </div>
-      </div>
+              )} */}
+            </div>
 
-      {/* Create School Dialog */}
-      <CreateSchoolDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onSubmit={handleCreateSchool}
-        isLoading={createSchoolMutation.isPending}
-        preventClose={!school}
-      />
-    </div>
+            {/* Content Area */}
+            {isFetching ? (
+              <Card className="border-none shadow-none">
+                <CardContent className="flex items-center justify-center py-16">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Loading school profile...
+                  </div>
+                </CardContent>
+              </Card>
+            ) : schoolProfile ? (
+              <SchoolProfileView
+                school={schoolProfile}
+                onUpdate={handleUpdateSchool}
+                isLoading={updateSchoolMutation.isPending}
+              />
+            ) : (
+              <Card className="border-none shadow-none bg-transparent">
+                <CardHeader className="text-center pb-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <School className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl">
+                    No School Profile Found
+                  </CardTitle>
+                </CardHeader>
+                {/* <CardContent className="text-center pb-8">
+                  <Button onClick={() => setCreateDialogOpen(true)} size="lg">
+                    <Plus className="h-5 w-5" />
+                    Create School Profile
+                  </Button>
+                </CardContent> */}
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Create School Dialog */}
+        <CreateSchoolDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onSubmit={handleCreateSchool}
+          isLoading={createSchoolMutation.isPending}
+          preventClose={!school}
+        />
+      </div>
+    </RoleProtector>
   );
 }

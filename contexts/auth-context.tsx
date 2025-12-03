@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type LoginCredentials } from "@/lib/api/auth";
 import { useSchool } from "@/contexts/school-context";
-import { getCookie, setCookie, deleteCookie } from "cookies-next";
+import { storage } from "@/lib/storage";
 
 interface User {
   id: string;
@@ -23,6 +23,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const USER_STORAGE_KEY = "sm-user";
+const TOKEN_STORAGE_KEY = "sm-accessToken";
+const SCHOOL_STORAGE_KEY = "sm-school";
+
+// Helper function to get the appropriate portal route based on user role
+function getRolePortalPath(role: string, hasSchool: boolean): string {
+  if (role === "super admin") {
+    return "/super-admin";
+  }
+  
+  if (role === "school owner") {
+    return "/admin";
+  }
+  
+  if (role === "admin") {
+    // Admin needs school profile setup if no school
+    return hasSchool ? "/admin" : "/setup-school-profile";
+  }
+  
+  if (role === "head teacher") {
+    return "/head-teacher";
+  }
+  
+  // For other roles (teacher, student, etc.), normalize the role name
+  const normalizedRole = role.toLowerCase().replace(/\s+/g, "-");
+  return `/${normalizedRole}`;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,34 +59,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Load user on first render
   useEffect(() => {
-    const userCookie = getCookie("user");
-
-    if (userCookie && typeof userCookie === "string") {
-      try {
-        setUser(JSON.parse(userCookie));
-      } catch (err) {
-        console.error("Failed to parse user cookie:", err);
-      }
+    if (typeof window === "undefined") {
+      setIsLoading(false);
+      return;
     }
 
-    const schoolCookie = getCookie("school");
-    if (schoolCookie && typeof schoolCookie === "string") {
-      try {
-        const parsedSchool = JSON.parse(schoolCookie);
+    try {
+      const storedUser = storage.getItem(USER_STORAGE_KEY);
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+      }
+
+      const storedSchool = storage.getItem(SCHOOL_STORAGE_KEY);
+      if (storedSchool) {
+        const parsedSchool = JSON.parse(storedSchool);
         setSchool({ id: parsedSchool.id, name: parsedSchool.name });
-      } catch (err) {
-        console.error("Failed to parse school cookie:", err);
       }
+    } catch (err) {
+      console.error("Failed to parse stored data:", err);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
-  }, []);
+  }, [setSchool]);
 
   const login = async (credentials: LoginCredentials) => {
     try {
       setIsLoading(true);
 
-      const response = await fetch("/api/auth/login", {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://138.197.93.9:7000";
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -66,42 +96,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Login failed");
+        throw new Error(errorData.message || errorData.error || "Login failed");
       }
 
-      const { user, school } = await response.json();
+      const { user, school, accessToken } = await response.json();
 
-      // Store user cookie
-      setCookie("user", JSON.stringify(user), {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
+      // Store user and token in localStorage (encrypted)
+      if (typeof window !== "undefined") {
+        storage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+        if (accessToken) {
+          storage.setItem(TOKEN_STORAGE_KEY, accessToken);
+        }
+      }
 
-      // Store school cookie if exists
+      // Store school if exists
       if (school) {
-        setCookie("school", JSON.stringify(school), {
-          maxAge: 60 * 60 * 24 * 7,
-        });
         setSchool({ id: school.id, name: school.name });
       }
 
       // Update UI state
       setUser(user);
 
-      // Redirect by role
-      if (user.role === "super admin") {
-        router.push("/super-admin");
-      } else if (["school owner", "admin"].includes(user.role)) {
-        if (!school && user.role === "admin") {
-          router.push("/setup-school-profile");
-        } else {
-          router.push("/admin");
-        }
-      } else if (user.role === "head teacher") {
-        router.push("/head-teacher");
-      } else {
-        router.push(`/${user.role}`);
-      }
-
+      // Determine the appropriate portal path based on role and school status
+      const portalPath = getRolePortalPath(user.role, !!school);
+      
+      // Use replace instead of push to avoid adding login to browser history
+      router.replace(portalPath);
       router.refresh();
     } catch (error) {
       console.error("Login error:", error);
@@ -118,10 +138,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
 
-      await fetch("/api/auth/logout", { method: "POST" });
-
-      deleteCookie("user");
-      deleteCookie("school");
+      // Clear localStorage (no server-side logout needed)
+      if (typeof window !== "undefined") {
+        storage.removeItem(USER_STORAGE_KEY);
+        storage.removeItem(TOKEN_STORAGE_KEY);
+        storage.removeItem(SCHOOL_STORAGE_KEY);
+      }
 
       setUser(null);
       clearSchool();

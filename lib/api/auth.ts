@@ -53,10 +53,9 @@ export interface ApiResponse {
 
 const baseAuthPath='/api/auth';
 
-// Auth API client - now using Next.js API routes for authentication
+// Auth API client - calls backend API directly
 export const authApi = {
-  // Note: Login is now handled by the Next.js API route at /api/auth/login
-  // and logout is handled by /api/auth/logout
+  // Note: Login is handled client-side in AuthContext, calling backend API directly
   
   getProfile: async (): Promise<ProfileResponse> => {
     const { data } = await axiosInstance.get<ProfileResponse>(`${baseAuthPath}/profile`);

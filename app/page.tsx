@@ -1,6 +1,9 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { getCookie } from "cookies-next/server";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { useSchool } from "@/contexts/school-context";
 
 function getRolePath(role: string) {
   if (!role) {
@@ -18,43 +21,32 @@ function getRolePath(role: string) {
   return `/${normalizedRole}`;
 }
 
-export default async function Home() {
-  const token = await getCookie("accessToken", { cookies });
-  const userCookie = await getCookie("user", { cookies });
-  const schoolCookie = await getCookie("school", { cookies });
+export default function Home() {
+  const router = useRouter();
+  const { user, isLoading, isAuthenticated } = useAuth();
+  const { school } = useSchool();
 
-  if (!token || !userCookie || userCookie === "undefined") {
-    redirect("/login");
-  }
+  useEffect(() => {
+    if (isLoading) return;
 
-  let user: { role?: string } | null = null;
-  try {
-    user = JSON.parse(userCookie as string);
-  } catch {
-    redirect("/login");
-  }
-
-  if (!user?.role) {
-    redirect("/login");
-  }
-
-  let school: unknown = null;
-  if (schoolCookie && schoolCookie !== "undefined") {
-    try {
-      school = JSON.parse(schoolCookie as string);
-    } catch {
-      school = null;
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
     }
-  }
 
-  if (user.role === "admin" && !school) {
-    redirect("/setup-school-profile");
-  }
+    if (user.role === "admin" && !school) {
+      router.push("/setup-school-profile");
+      return;
+    }
 
-  // Super admin doesn't need school association
-  if (user.role === "super admin") {
-    redirect("/super-admin");
-  }
+    // Super admin doesn't need school association
+    if (user.role === "super admin") {
+      router.push("/super-admin");
+      return;
+    }
 
-  redirect(getRolePath(user.role));
+    router.push(getRolePath(user.role));
+  }, [user, isLoading, isAuthenticated, school, router]);
+
+  return null;
 }

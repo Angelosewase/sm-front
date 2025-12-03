@@ -101,7 +101,7 @@ export default function SuperAdminUsersPage() {
 
   return (
     <div className="py-4">
-      <div className="flex flex-col gap-1 px-4 mb-4">
+      <div className="flex flex-col gap-1 px-8 mb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-3xl font-semibold text-primary">Manage Users</h2>
         </div>
@@ -112,7 +112,7 @@ export default function SuperAdminUsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="px-4 mb-4 space-y-4">
+      <div className="px-8 mb-4 space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="relative flex-1">
@@ -223,24 +223,24 @@ export default function SuperAdminUsersPage() {
 
       {/* Results Info */}
       {!isLoading && data && (
-        <div className="px-4 mb-2 text-sm text-muted-foreground">
+        <div className="px-8 mb-2 text-sm text-muted-foreground">
           Showing {data.items.length} of {data.total} users
         </div>
       )}
 
       {/* Data Table */}
       {isLoading ? (
-        <div className="px-4">
+        <div className="px-8">
           <Skeleton className="h-96 w-full" />
         </div>
       ) : isError ? (
-        <div className="px-4 py-8 text-destructive">Failed to load users</div>
+        <div className="px-8 py-8 text-destructive">Failed to load users</div>
       ) : data ? (
         <>
           <UserDataTable data={data.items || []} />
           {/* Pagination */}
           {data.totalPages > 1 && (
-            <div className="px-4 mt-4 flex items-center justify-between">
+            <div className="px-8 mt-4 flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 Page {data.page} of {data.totalPages}
               </div>

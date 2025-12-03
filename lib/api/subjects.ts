@@ -1,4 +1,4 @@
-import { getAuthToken } from "@/lib/actions/auth";
+// Note: getAuthToken removed - axiosInstance interceptor handles Authorization header automatically
 import {
   CreateSubjectDto,
   Subject,
@@ -19,7 +19,8 @@ import {
   UpdateAssessmentDto,
 } from "@/types/subjects.dto";
 
-const API_BASE_URL = "/api/subjects"; // Adjust based on your API base URL
+const API_BASE_URL = "/api/subjects";
+const ASSESSMENTS_BASE_URL = "/api/assessments";
 
 export interface SubjectStats {
   totalAssessments: number;
@@ -195,7 +196,6 @@ export const subjectsApi = {
       `${API_BASE_URL}/${subjectId}/classes`,
       {
         params,
-        headers: { Authorization: `Bearer ${await getAuthToken()}` },
       }
     );
     return response.data;
@@ -292,7 +292,7 @@ export const subjectsApi = {
     payload: CreateAssessmentDto
   ): Promise<AssessmentDetail> => {
     const { data } = await axiosInstance.post<AssessmentDetail>(
-      `/api/assessments`,
+      ASSESSMENTS_BASE_URL,
       payload
     );
     return data;
@@ -303,7 +303,7 @@ export const subjectsApi = {
     payload: UpdateAssessmentDto
   ): Promise<AssessmentDetail> => {
     const { data } = await axiosInstance.put<AssessmentDetail>(
-      `/api/assessments/${id}`,
+      `${ASSESSMENTS_BASE_URL}/${id}`,
       payload
     );
     return data;
@@ -314,7 +314,7 @@ export const subjectsApi = {
     params?: AssessmentFilterDto
   ): Promise<AssessmentListResponse> => {
     const { data } = await axiosInstance.get<AssessmentListResponse>(
-      `/api/assessments`,
+      ASSESSMENTS_BASE_URL,
       { params }
     );
     return data;
@@ -322,27 +322,27 @@ export const subjectsApi = {
 
   getAssessmentById: async (id: string): Promise<AssessmentDetail> => {
     const { data } = await axiosInstance.get<AssessmentDetail>(
-      `/api/assessments/${id}`
+      `${ASSESSMENTS_BASE_URL}/${id}`
     );
     return data;
   },
 
   softDeleteAssessment: async (id: string): Promise<AssessmentDetail> => {
     const { data } = await axiosInstance.put<AssessmentDetail>(
-      `/api/assessments/${id}/soft-delete`
+      `${ASSESSMENTS_BASE_URL}/${id}/soft-delete`
     );
     return data;
   },
 
   permanentlyDeleteAssessment: async (id: string): Promise<void> => {
-    await axiosInstance.delete(`/api/assessments/${id}`);
+    await axiosInstance.delete(`${ASSESSMENTS_BASE_URL}/${id}`);
   },
 
   getAssessmentPerformance: async (
     id: string
   ): Promise<AssessmentPerformance> => {
     const { data } = await axiosInstance.get<AssessmentPerformance>(
-      `/api/assessments/${id}/performance`
+      `${ASSESSMENTS_BASE_URL}/${id}/performance`
     );
     return data;
   },
@@ -352,7 +352,7 @@ export const subjectsApi = {
     params?: { academicYear?: string; term?: string; classId?: string }
   ): Promise<AssessmentPerformance> => {
     const { data } = await axiosInstance.get<AssessmentPerformance>(
-      `/api/assessments/subject/${subjectId}/performance`,
+      `${ASSESSMENTS_BASE_URL}/subject/${subjectId}/performance`,
       { params }
     );
     return data;
@@ -363,7 +363,7 @@ export const subjectsApi = {
     params?: { academicYear?: string; term?: string }
   ): Promise<AssessmentPerformance> => {
     const { data } = await axiosInstance.get<AssessmentPerformance>(
-      `/api/assessments/class/${classId}/performance`,
+      `${ASSESSMENTS_BASE_URL}/class/${classId}/performance`,
       { params }
     );
     return data;

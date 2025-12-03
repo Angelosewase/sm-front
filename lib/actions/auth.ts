@@ -1,64 +1,51 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { setCookie, getCookie, deleteCookie } from 'cookies-next/server';
+
+// Note: These functions are deprecated as we've moved to localStorage-based auth.
+// Server actions cannot access localStorage, so these return null.
+// The axiosInstance interceptor handles adding Authorization headers automatically.
 
 export async function setAuthCookie(token: string) {
-  await setCookie('accessToken', token, {
-    cookies,
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 24 hours
-    path: '/',
-  });
+  // Deprecated: Token is now stored in localStorage on the client
+  console.warn('setAuthCookie is deprecated. Token storage is handled client-side.');
 }
 
 export async function setUserCookie(user: any) {
-  await setCookie('user', JSON.stringify(user), {
-    cookies,
-    httpOnly: false, // Accessible on client for display
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 24 hours
-    path: '/',
-  });
+  // Deprecated: User is now stored in localStorage on the client
+  console.warn('setUserCookie is deprecated. User storage is handled client-side.');
 }
 
 export async function getAuthToken() {
-  return await getCookie('accessToken', { cookies });
+  // Deprecated: Server actions cannot access localStorage.
+  // The axiosInstance interceptor automatically adds the Authorization header
+  // from localStorage, so manual token retrieval is not needed.
+  return null;
 }
 
 export async function getUser() {
-  const userCookie = await getCookie('user', { cookies });
-  return userCookie ? JSON.parse(userCookie as string) : null;
+  // Deprecated: Server actions cannot access localStorage.
+  // Use the useAuth hook in client components instead.
+  return null;
 }
 
 export async function clearAuthCookies() {
-  await deleteCookie('accessToken', { cookies });
-  await deleteCookie('user', { cookies });
-  await deleteCookie('school', { cookies });
+  // Deprecated: Cookies are cleared client-side via localStorage
+  console.warn('clearAuthCookies is deprecated. Auth clearing is handled client-side.');
 }
 
 export async function logout() {
-  await clearAuthCookies();
+  // Deprecated: Logout is handled client-side via AuthContext
   redirect('/login');
 }
 
-
 export async function setSchoolCookie(school: any) {
-  await setCookie('school', JSON.stringify(school), {
-    cookies,
-    httpOnly: false, // Accessible on client for display
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24, // 24 hours
-    path: '/',
-  });
+  // Deprecated: School is now stored in localStorage on the client
+  console.warn('setSchoolCookie is deprecated. School storage is handled client-side.');
 }
 
 export async function getSchoolCookie() {
-  const schoolCookie = await getCookie('school', { cookies });
-  return schoolCookie ? JSON.parse(schoolCookie as string) : null;
+  // Deprecated: Server actions cannot access localStorage.
+  // Use the useSchool hook in client components instead.
+  return null;
 }
