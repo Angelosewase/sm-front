@@ -199,7 +199,9 @@ export function DashboardSidebar() {
   const dashboardRoutes = getDashboardRoutes(normalizedRole);
 
   const { school, isLoading } = useSchool();
-  const {data: schooldata, isLoading: isSchoolLoading} = getSchool(school ? school.id : '')
+  const { data: schooldata, isLoading: isSchoolLoading } = getSchool(
+    school ? school.id : ""
+  );
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
@@ -213,15 +215,19 @@ export function DashboardSidebar() {
       >
         <a href="#" className="flex items-center justify-center gap-2">
           {isSchoolLoading ? (
-            <div className={cn(
-              "flex items-center justify-center rounded-lg bg-background text-foreground",
-              isCollapsed ? "h-8 w-8" : "h-24 w-24 ml-4"
-            )}>
+            <div
+              className={cn(
+                "flex items-center justify-center rounded-lg bg-background text-foreground",
+                isCollapsed ? "h-8 w-8" : "h-24 w-24 ml-4"
+              )}
+            >
               <Loader2 className="size-4 animate-spin" />
             </div>
           ) : (
             <Logo
-              url={schooldata?.logoUrl ? schooldata?.logoUrl : './back-free.png'}
+              url={
+                schooldata?.logoUrl ? schooldata?.logoUrl : "./back-free.png"
+              }
               className={cn(
                 isCollapsed ? "h-8 w-8 rounded" : "h-24 w-24 ml-4 rounded"
               )}
@@ -251,7 +257,7 @@ export function DashboardSidebar() {
             <div
               className="grid flex-1 text-left  bg-gray-100 dark:bg-card  px-4  py-2 rounded  mb-2 hover:scale-101 transition-all duration-300 hover:cursor-pointer"
               onClick={() => {
-                if (user?.role === "admin" || user?.role === " school owner") {
+                if (user?.role === "admin" || user?.role === "school owner") {
                   router.push("/setup-school-profile");
                 }
                 // Otherwise, do nothing
@@ -260,17 +266,21 @@ export function DashboardSidebar() {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="size-3 animate-spin" />
-                  <span className="truncate text-xs text-muted-foreground">Loading...</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Loading...
+                  </span>
                 </div>
               ) : (
-                <span className="truncate font-semibold">{school?.name || "School"}</span>
+                <span className="truncate font-semibold">
+                  {school?.name || "School"}
+                </span>
               )}
               <span className="truncate text-xs flex not-only-of-type:">
                 school profile{" "}
-                {user?.role === "admin" ? (
+                {user?.role === "admin" || user?.role === "school owner" ? (
                   <ArrowRight className="size-4" />
                 ) : (
-                  <ArrowRight className="size-4" />
+                  <></>
                 )}
               </span>
             </div>

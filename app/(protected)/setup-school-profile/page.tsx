@@ -214,7 +214,7 @@ export default function SetupSchoolProfilePage() {
   };
 
   return (
-    <RoleProtector allowedRoles={["admin"]}>
+    <RoleProtector allowedRoles={["admin", "school owner"]}>
       <div className="min-h-screen bg-background">
         <div className=" mx-auto p-4">
           <div className=" mx-auto space-y-4">

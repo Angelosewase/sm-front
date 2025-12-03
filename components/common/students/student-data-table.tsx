@@ -86,20 +86,7 @@ import {
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { gradeLevels } from "@/lib/constants/grade-levels";
-const GRADE_LEVELS = [
-  "Grade 1",
-  "Grade 2",
-  "Grade 3",
-  "Grade 4",
-  "Grade 5",
-  "Grade 6",
-  "Grade 7",
-  "Grade 8",
-  "Grade 9",
-  "Grade 10",
-  "Grade 11",
-  "Grade 12",
-] as const;
+
 
 const STATUS_OPTIONS: { label: string; value: "all" | StudentStatus }[] = [
   { label: "All Statuses", value: "all" },
@@ -589,20 +576,25 @@ export function StudentDataTable() {
             className="w-[200px] sm:w-[240px]"
           />
           <Select
-            value={selectedGrade}
+            value={selectedGrade || "all"}
             onValueChange={(value) => {
-              setSelectedGrade(value);
-              setSelectedClassId("");
+              if (value === "all") {
+                setSelectedGrade("");
+                setSelectedClassId("");
+              } else {
+                setSelectedGrade(value);
+                setSelectedClassId("");
+              }
             }}
           >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Grade" />
             </SelectTrigger>
             <SelectContent>
-              {/* <SelectItem value="_">All Grades</SelectItem> */}
-              {GRADE_LEVELS.map((grade) => (
-                <SelectItem key={grade} value={grade}>
-                  {grade}
+              <SelectItem value="all">All Grades</SelectItem>
+              {gradeLevels.map((grade) => (
+                <SelectItem key={grade.value} value={grade.value}>
+                  {grade.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -634,9 +626,9 @@ export function StudentDataTable() {
             </SelectContent>
           </Select>
           <Select
-            value={selectedStatus}
+            value={selectedStatus || "all"}
             onValueChange={(value) =>
-              setSelectedStatus(value as "" | StudentStatus)
+              setSelectedStatus(value === "all" ? "" : (value as StudentStatus))
             }
           >
             <SelectTrigger className="w-[160px]">
@@ -1151,9 +1143,9 @@ function StudentDetailViewer({ student }: { student: Student }) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="_">Unassigned</SelectItem>
-                          {GRADE_LEVELS.map((grade) => (
-                            <SelectItem key={grade} value={grade}>
-                              {grade}
+                          {gradeLevels.map((grade) => (
+                            <SelectItem key={grade.value} value={grade.value}>
+                              {grade.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
