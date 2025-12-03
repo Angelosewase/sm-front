@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { RegistrationTokenRole } from "@/lib/api/registration-tokens";
+import { useAuth } from "@/contexts/auth-context";
 
 export function TokenManagement() {
   const [roleFilter, setRoleFilter] = useState<RegistrationTokenRole | "all">("all");
@@ -33,6 +34,8 @@ export function TokenManagement() {
   );
   const { data: stats, isLoading: statsLoading } = useTokenStats();
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const { user } = useAuth();
+  const isHeadTeacher = user?.role === "head teacher";
 
   const copyToClipboard = async (token: string) => {
     await navigator.clipboard.writeText(token);
@@ -133,7 +136,9 @@ export function TokenManagement() {
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="teacher">Teacher</SelectItem>
-                <SelectItem value="head teacher">Head Teacher</SelectItem>
+                {!isHeadTeacher && (
+                  <SelectItem value="head teacher">Head Teacher</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>

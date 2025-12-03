@@ -73,12 +73,12 @@ const getAdminRoutes = (): Route[] => [
     icon: <Users className="size-5" />,
     link: `/admin/students`,
   },
-  {
-    id: "staff",
-    title: "Staff",
-    icon: <UserCog className="size-5" />,
-    link: `/admin/staff`,
-  },
+  // {
+  //   id: "staff",
+  //   title: "Staff",
+  //   icon: <UserCog className="size-5" />,
+  //   link: `/admin/staff`,
+  // },
   {
     id: "tokens",
     title: "Registration Tokens",

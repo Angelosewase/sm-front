@@ -323,15 +323,6 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
       ),
     },
     {
-      accessorKey: "academicYear",
-      header: "Academic Year",
-      cell: ({ row }) => (
-        <div className="text-sm text-muted-foreground">
-          {row.original.academicYear || "—"}
-        </div>
-      ),
-    },
-    {
       accessorKey: "classTeacher",
       header: "Teacher",
       cell: ({ row }) => {
@@ -575,80 +566,82 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
         </div>
       </div>
 
-      <div className="flex w-full flex-wrap items-center gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSearchTerm("");
-              setGradeLevel(undefined);
-              setAcademicYear(activeAcademicYear?.label || undefined);
-              setActiveTab("all-classes");
-            }}
-            disabled={isTableLoading}
-          >
-            Reset
-          </Button>
-        </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          {selectionCount > 0 && (
-            <Badge variant="secondary" className="font-normal">
-              {selectionCount} selected
-            </Badge>
-          )}
-          {isTrashView ? (
-            <>
+      {selectionCount > 0 && (
+        <div className="flex w-full flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchTerm("");
+                setGradeLevel(undefined);
+                setAcademicYear(activeAcademicYear?.label || undefined);
+                setActiveTab("all-classes");
+              }}
+              disabled={isTableLoading}
+            >
+              Reset
+            </Button>
+          </div>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {selectionCount > 0 && (
+              <Badge variant="secondary" className="font-normal">
+                {selectionCount} selected
+              </Badge>
+            )}
+            {isTrashView ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkRestore}
+                  disabled={
+                    isTableLoading ||
+                    !hasTrashedSelection ||
+                    bulkRestoreMutation.isPending
+                  }
+                >
+                  {bulkRestoreMutation.isPending
+                    ? "Restoring..."
+                    : "Restore Selected"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkPermanentDelete}
+                  disabled={
+                    isTableLoading ||
+                    !hasTrashedSelection ||
+                    bulkPermanentDeleteMutation.isPending
+                  }
+                >
+                  {bulkPermanentDeleteMutation.isPending
+                    ? "Deleting..."
+                    : "Delete Selected"}
+                </Button>
+              </>
+            ) : (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleBulkRestore}
+                onClick={handleBulkTrash}
                 disabled={
                   isTableLoading ||
-                  !hasTrashedSelection ||
-                  bulkRestoreMutation.isPending
+                  !hasNonTrashedSelection ||
+                  bulkTrashMutation.isPending
                 }
               >
-                {bulkRestoreMutation.isPending
-                  ? "Restoring..."
-                  : "Restore Selected"}
+                {bulkTrashMutation.isPending
+                  ? "Moving..."
+                  : "Move Selected to Trash"}
               </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkPermanentDelete}
-                disabled={
-                  isTableLoading ||
-                  !hasTrashedSelection ||
-                  bulkPermanentDeleteMutation.isPending
-                }
-              >
-                {bulkPermanentDeleteMutation.isPending
-                  ? "Deleting..."
-                  : "Delete Selected"}
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleBulkTrash}
-              disabled={
-                isTableLoading ||
-                !hasNonTrashedSelection ||
-                bulkTrashMutation.isPending
-              }
-            >
-              {bulkTrashMutation.isPending
-                ? "Moving..."
-                : "Move Selected to Trash"}
-            </Button>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -726,7 +719,7 @@ export function ClassDataTable({ data, isLoading }: ClassDataTableProps) {
         config={{
           enableDragDrop: true,
           enableSelection: true,
-          enableColumnVisibility: true,
+          enableColumnVisibility: false,
           enablePagination: true,
           pageSize: 10,
           pageSizeOptions: [10, 20, 30, 40, 50],

@@ -58,6 +58,7 @@ import { Button } from "@/components/ui/button";
 import { IconTrendingUp } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { CartesianGrid, XAxis, YAxis, Area, AreaChart } from "recharts";
+import { gradeLevels } from "@/lib/constants/grade-levels";
 
 export default function ClassDetailViewer({ item }: { item: ClassData }) {
     const isMobile = useIsMobile();
@@ -369,18 +370,11 @@ export default function ClassDetailViewer({ item }: { item: ClassData }) {
                                         <SelectValue placeholder="Select grade level" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Grade 1">Grade 1</SelectItem>
-                                        <SelectItem value="Grade 2">Grade 2</SelectItem>
-                                        <SelectItem value="Grade 3">Grade 3</SelectItem>
-                                        <SelectItem value="Grade 4">Grade 4</SelectItem>
-                                        <SelectItem value="Grade 5">Grade 5</SelectItem>
-                                        <SelectItem value="Grade 6">Grade 6</SelectItem>
-                                        <SelectItem value="Grade 7">Grade 7</SelectItem>
-                                        <SelectItem value="Grade 8">Grade 8</SelectItem>
-                                        <SelectItem value="Grade 9">Grade 9</SelectItem>
-                                        <SelectItem value="Grade 10">Grade 10</SelectItem>
-                                        <SelectItem value="Grade 11">Grade 11</SelectItem>
-                                        <SelectItem value="Grade 12">Grade 12</SelectItem>
+                                        {gradeLevels.map((grade) => (
+                                            <SelectItem key={grade.value} value={grade.value}>
+                                                {grade.label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

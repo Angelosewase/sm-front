@@ -26,6 +26,7 @@ import {
 import { PlusIcon, Copy, Check } from "lucide-react";
 import { useGenerateToken } from "@/hooks/use-registration-tokens";
 import { useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 const schema = z.object({
   role: z.enum(["teacher", "head teacher"]),
@@ -43,6 +44,8 @@ export function GenerateTokenDialog() {
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { mutateAsync, isPending } = useGenerateToken();
+  const { user } = useAuth();
+  const isHeadTeacher = user?.role === "head teacher";
 
   const {
     handleSubmit,
@@ -101,7 +104,9 @@ export function GenerateTokenDialog() {
         <DialogHeader>
           <DialogTitle>Generate Registration Token</DialogTitle>
           <DialogDescription>
-            Generate a registration token for teachers or head teachers to join your school.
+            {isHeadTeacher
+              ? "Generate a registration token for teachers to join your school."
+              : "Generate a registration token for teachers or head teachers to join your school."}
           </DialogDescription>
         </DialogHeader>
         {!generatedToken ? (
@@ -122,7 +127,9 @@ export function GenerateTokenDialog() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="teacher">Teacher</SelectItem>
-                    <SelectItem value="head teacher">Head Teacher</SelectItem>
+                    {!isHeadTeacher && (
+                      <SelectItem value="head teacher">Head Teacher</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.role && (
