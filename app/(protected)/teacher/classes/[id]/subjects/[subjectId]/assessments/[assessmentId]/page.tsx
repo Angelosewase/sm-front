@@ -12,6 +12,7 @@ import { AssessmentStudentSummary } from "@/types/subjects.dto";
 import {
   useEnterMark,
   useUpdateMark,
+  useDeleteMark,
   useAssessmentMarks,
 } from "@/hooks/use-marks";
 import type { MarkRecord } from "@/lib/api/marks";
@@ -33,6 +34,7 @@ export default function AssessmentMarksPage() {
   } = useAssessmentMarks(assessmentId);
   const enterMarkMutation = useEnterMark();
   const updateMarkMutation = useUpdateMark();
+  const deleteMarkMutation = useDeleteMark();
 
   const handleBackClick = () => {
     router.push(`/teacher/classes/${classId}/subjects/${subjectId}`);
@@ -123,6 +125,14 @@ export default function AssessmentMarksPage() {
       return markUpdates;
     },
     [assessment, enterMarkMutation, updateMarkMutation, refetch, refetchMarks]
+  );
+
+  const handleDeleteMark = useCallback(
+    async (markId: string) => {
+      await deleteMarkMutation.mutateAsync(markId);
+      await Promise.all([refetch(), refetchMarks()]);
+    },
+    [deleteMarkMutation, refetch, refetchMarks]
   );
 
   // ✅ Move useMemo BEFORE any conditional returns
@@ -392,6 +402,7 @@ export default function AssessmentMarksPage() {
         assessmentData={assessmentData}
         onBackClick={handleBackClick}
         onSaveChanges={handleSaveChanges}
+        onDeleteMark={handleDeleteMark}
       />
     </div>
   );
