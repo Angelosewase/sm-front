@@ -24,46 +24,62 @@ export function ClassesOverview({ stats }: ClassesOverviewProps) {
   } = stats
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
-          <BookOpen className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalClasses}</div>
-          <p className="text-xs text-muted-foreground">
-            {totalSubjects} subject{totalSubjects !== 1 ? 's' : ''} total
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-6 mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+          <div className="flex items-center gap-2 mb-2">
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Classes</span>
+          </div>
+          <div className="text-xl font-semibold">{totalClasses}</div>
+          <div className="text-sm text-muted-foreground">
+            {totalSubjects} subject{totalSubjects !== 1 ? 's' : ''}
+          </div>
+        </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-          <Users className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{totalStudents}</div>
-          <p className="text-xs text-muted-foreground">
-            Across all classes
-          </p>
-        </CardContent>
-      </Card>
+        <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Students</span>
+          </div>
+          <div className="text-xl font-semibold">{totalStudents}</div>
+          <div className="text-sm text-muted-foreground">Total enrolled</div>
+        </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Assessments</CardTitle>
-          <CheckCircle className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{completedAssessments}</div>
-          <p className="text-xs text-muted-foreground">
-            {pendingAssessments} pending
-          </p>
-        </CardContent>
-      </Card>
+        <div className="bg-muted/50 rounded-lg p-4 border border-border/50">
+          <div className="flex items-center gap-2 mb-2">
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Completed</span>
+          </div>
+          <div className="text-xl font-semibold">{completedAssessments}</div>
+          <div className="text-sm text-muted-foreground">Assessments</div>
+        </div>
 
+        <div className={`rounded-lg p-4 border ${
+          pendingAssessments > 0 
+            ? 'bg-amber-50/80 border-amber-300/50' 
+            : 'bg-muted/50 border-border/50'
+        }`}>
+          <div className="flex items-center gap-2 mb-2">
+            {pendingAssessments > 0 ? (
+              <Clock className="h-4 w-4 text-amber-600" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+            <span className={`text-sm font-medium ${
+              pendingAssessments > 0 ? 'text-amber-700' : 'text-muted-foreground'
+            }`}>
+              {pendingAssessments > 0 ? 'Pending' : 'All Done'}
+            </span>
+          </div>
+          <div className="text-xl font-semibold">{pendingAssessments}</div>
+          <div className={`text-sm ${
+            pendingAssessments > 0 ? 'text-amber-600' : 'text-muted-foreground'
+          }`}>
+            {pendingAssessments > 0 ? 'Need attention' : 'No pending'}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
