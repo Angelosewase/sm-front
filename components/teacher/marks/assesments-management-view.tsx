@@ -12,6 +12,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { 
   Plus, 
@@ -23,10 +24,15 @@ import {
   AlertCircle,
   Info,
   Calendar,
-  Lock
+  Lock,
+  Edit,
+  Trash2,
+  Eye
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CreateAssessmentDialog } from "./create-assessment-dialog"
+import { EditAssessmentDialog } from "./edit-assessment-dialog"
+import { useUpdateAssessment, useDeleteAssessment } from "@/hooks/use-assessments"
 
 interface Assessment {
   id: string
@@ -79,8 +85,14 @@ export function AssessementManagementView({
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
   const [disabledTermDialog, setDisabledTermDialog] = useState<{ isOpen: boolean; termName: string }>({ isOpen: false, termName: "" })
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; assessment: Assessment | null }>({ isOpen: false, assessment: null })
+  const [editDialog, setEditDialog] = useState<{ isOpen: boolean; assessment: Assessment | null }>({ isOpen: false, assessment: null })
 
   const { name, className, studentCount, terms, assessments } = subjectData
+
+  // Mutations
+  const updateAssessmentMutation = useUpdateAssessment()
+  const deleteAssessmentMutation = useDeleteAssessment()
 
   const filteredAssessments = useMemo(() => {
     return assessments.filter(assessment =>
@@ -139,6 +151,28 @@ export function AssessementManagementView({
     setDisabledTermDialog({ isOpen: true, termName })
   }
 
+  const handleDeleteClick = (assessment: Assessment, event: React.MouseEvent) => {
+    event.stopPropagation()
+    setDeleteDialog({ isOpen: true, assessment })
+  }
+
+  const handleEditClick = (assessment: Assessment, event: React.MouseEvent) => {
+    event.stopPropagation()
+    setEditDialog({ isOpen: true, assessment })
+  }
+
+  const handleConfirmDelete = () => {
+    if (deleteDialog.assessment) {
+      deleteAssessmentMutation.mutate(deleteDialog.assessment.id)
+      setDeleteDialog({ isOpen: false, assessment: null })
+    }
+  }
+
+  const handleViewClick = (assessment: Assessment, event: React.MouseEvent) => {
+    event.stopPropagation()
+    onAssessmentClick(assessment.id)
+  }
+
   const renderGridView = () => (
     <div className="bg-card rounded-lg border">
       {paginatedAssessments.map((assessment, index) => {
@@ -179,14 +213,41 @@ export function AssessementManagementView({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className={categoryColor}>
+              {/* <Badge className={categoryColor}>
                 {assessment.category}
               </Badge>
               <Badge className={statusBadge.color}>
                 {statusBadge.text}
-              </Badge>
-              <span className="text-sm text-muted-foreground">View details</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Badge> */}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => handleViewClick(assessment, e)}
+                  title="View details"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => handleEditClick(assessment, e)}
+                  title="Edit assessment"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => handleDeleteClick(assessment, e)}
+                  title="Delete assessment"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )
@@ -258,9 +319,38 @@ export function AssessementManagementView({
                 </Badge>
               </TableCell>
               <TableCell>
-                <Button variant="ghost" size="sm" className="h-8 px-3">
-                  View
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-3"
+                    onClick={(e) => handleViewClick(assessment, e)}
+                    title="View details"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-3"
+                    onClick={(e) => handleEditClick(assessment, e)}
+                    title="Edit assessment"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => handleDeleteClick(assessment, e)}
+                    title="Delete assessment"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           )
@@ -269,17 +359,24 @@ export function AssessementManagementView({
     </Table>
   );
 
-  const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0)
-  const remainingWeight = Math.max(0, 100 - totalWeight)
-  const completedAssessments = assessments.filter(a => a.status === 'completed').length
-  const averageScore = assessments.length > 0
-    ? assessments.reduce((sum, a) => sum + (a.averageScore / a.maxScore) * 100, 0) / assessments.length
-    : 0
+  const weightCalculations = useMemo(() => {
+    const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0)
+    const remainingWeight = Math.max(0, 100 - totalWeight)
+    const completedAssessments = assessments.filter(a => a.status === 'completed').length
+    const averageScore = assessments.length > 0
+      ? assessments.reduce((sum, a) => sum + (a.averageScore / a.maxScore) * 100, 0) / assessments.length
+      : 0
+    
+    return { totalWeight, remainingWeight, completedAssessments, averageScore }
+  }, [assessments])
+
+  const { totalWeight, remainingWeight, completedAssessments, averageScore } = weightCalculations
 
   // Only allow creating assessments in an open term
   const selectedTermObj = terms.find(t => t.id === selectedTerm)
-  const canCreateAssessment =
-    selectedTerm !== "all" && !!selectedTermObj?.isActive && remainingWeight > 0
+  const canCreateAssessment = useMemo(() => {
+    return selectedTerm !== "all" && !!selectedTermObj?.isActive && remainingWeight > 0
+  }, [selectedTerm, selectedTermObj, remainingWeight])
 
   if (assessments.length === 0) {
     return (
@@ -546,6 +643,70 @@ export function AssessementManagementView({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.isOpen} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, isOpen: open })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Delete Assessment
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this assessment? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteDialog.assessment && (
+            <div className="space-y-4">
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-foreground">Assessment to be deleted:</h4>
+                  <div className="text-sm space-y-1">
+                    <p><strong>Title:</strong> {deleteDialog.assessment.title}</p>
+                    <p><strong>Category:</strong> {deleteDialog.assessment.category}</p>
+                    <p><strong>Weight:</strong> {deleteDialog.assessment.weight}%</p>
+                    <p><strong>Max Score:</strong> {deleteDialog.assessment.maxScore}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                  <div className="text-sm text-amber-800">
+                    <strong>Warning:</strong> Deleting this assessment will permanently remove all associated data including student marks and performance records.
+                  </div>
+                </div>
+              </div>
+              <DialogFooter className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteDialog({ isOpen: false, assessment: null })}
+                  disabled={deleteAssessmentMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleConfirmDelete}
+                  disabled={deleteAssessmentMutation.isPending}
+                >
+                  {deleteAssessmentMutation.isPending ? "Deleting..." : "Delete Permanently"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Assessment Dialog */}
+      <EditAssessmentDialog
+        open={editDialog.isOpen}
+        onOpenChange={(open) => setEditDialog({ ...editDialog, isOpen: open })}
+        assessment={editDialog.assessment}
+        onAssessmentUpdated={() => {
+          setEditDialog({ isOpen: false, assessment: null })
+        }}
+      />
     </div>
   )
 }
