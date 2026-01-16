@@ -8,7 +8,7 @@ export { StudentDataTable } from './students/student-data-table'
 export { StudentsOverview } from './students/students-overview'
 
 // Marks components
-export { MarksManagementView } from './marks/marks-management-view'
+export { MarksManagementView } from './marks/assesments-management-view'
 export { MarksEntryView } from './marks/marks-entry-view'
 export { CreateAssessmentDialog } from './marks/create-assessment-dialog'
 

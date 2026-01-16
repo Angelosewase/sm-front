@@ -15,7 +15,6 @@ import {
   useAssessmentMarks,
 } from "@/hooks/use-marks";
 import type { MarkRecord } from "@/lib/api/marks";
-import { ClassesOverview } from "@/components/teacher/classes/classes-overview";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 

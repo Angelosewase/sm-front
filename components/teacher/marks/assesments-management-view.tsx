@@ -56,7 +56,7 @@ interface SubjectData {
   assessments: Assessment[]
 }
 
-interface MarksManagementViewProps {
+interface AssessementManagementViewProps {
   subjectData: SubjectData
   onAssessmentClick: (assessmentId: string) => void
   onBackClick: () => void
@@ -66,13 +66,13 @@ interface MarksManagementViewProps {
 
 const ITEMS_PER_PAGE = 10
 
-export function MarksManagementView({
+export function AssessementManagementView({
   subjectData,
   onAssessmentClick,
   onBackClick,
   onTermChange,
   context,
-}: MarksManagementViewProps) {
+}: AssessementManagementViewProps) {
   const [selectedTerm, setSelectedTerm] = useState(subjectData.currentTerm ?? "all")
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
