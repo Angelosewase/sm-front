@@ -1,44 +1,44 @@
 "use client"
 
 import Link from "next/link"
-import { AlertCircle, ArrowRight, BookOpen, Users } from "lucide-react"
+import { ArrowRight, Users } from "lucide-react"
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
-export interface TeacherClassListItem {
+export interface TeacherStudentListItem {
   id: string
   name: string
-  studentCount: number
-  subjectCount: number
-  pendingAssessments?: number
+  email: string
+  class?: {
+    name: string | null
+  }
 }
 
-interface TeacherClassesCardProps {
-  classes?: TeacherClassListItem[]
+interface TeacherStudentsCardProps {
+  students?: TeacherStudentListItem[]
   isLoading?: boolean
   error?: string | null
 }
 
-export function TeacherClassesCard({ classes, isLoading, error }: TeacherClassesCardProps) {
-  const topClasses = (classes ?? [])
+export function TeacherStudentsCard({ students, isLoading, error }: TeacherStudentsCardProps) {
+  const topStudents = (students ?? [])
     .slice()
-    .sort((a, b) => b.studentCount - a.studentCount)
     .slice(0, 4)
 
   return (
     <Card className="border-border/60 bg-card/80 h-full flex flex-col pb-0">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
-          <CardTitle className="text-lg font-semibold">My Classes</CardTitle>
+          <CardTitle className="text-lg font-semibold">My Students</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Quick view of the classes you&apos;re managing
+            Quick view of your recent students
           </p>
         </div>
         <Badge variant="secondary" className="gap-1">
-          <BookOpen className="size-3.5" />
-          {classes?.length ?? 0}
+          <Users className="size-3.5" />
+          {students?.length ?? 0}
         </Badge>
       </CardHeader>
 
@@ -54,44 +54,40 @@ export function TeacherClassesCard({ classes, isLoading, error }: TeacherClasses
           </div>
         ) : error ? (
           <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-            <AlertCircle className="size-4" />
             <span>{error}</span>
           </div>
-        ) : topClasses.length === 0 ? (
+        ) : topStudents.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border/60 bg-muted/40 p-6 text-sm text-muted-foreground">
-            No classes assigned yet. Reach out to your administrator to get started.
+            No students found. Students will appear here once they are enrolled in your classes.
           </div>
         ) : (
           <ul className="space-y-2">
-            {topClasses.map((classItem) => (
-              <li key={classItem.id}>
+            {topStudents.map((student) => (
+              <li key={student.id}>
                 <Link
-                  href={`/teacher/classes/${classItem.id}`}
+                  href={`/teacher/students/${student.id}`}
                   className="group flex items-center justify-between rounded-lg border border-transparent bg-muted/30 px-4 py-3 transition hover:border-primary/40 hover:bg-primary/5"
                 >
                   <div className="space-y-1">
                     <p className="font-medium text-foreground group-hover:text-primary">
-                      {classItem.name}
+                      {student.name}
                     </p>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Users className="size-3" />
-                        {classItem.studentCount} students
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="size-3" />
-                        {classItem.subjectCount} subject{classItem.subjectCount === 1 ? "" : "s"}
-                      </span>
-                      {classItem.pendingAssessments ? (
-                        <span className="flex items-center gap-1 text-amber-600">
-                          <AlertCircle className="size-3" />
-                          {classItem.pendingAssessments} pending assessments
+                      {student.class?.name ? (
+                        <span className="flex items-center gap-1">
+                          <Users className="size-3" />
+                          Class: {student.class.name}
                         </span>
-                      ) : null}
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <Users className="size-3" />
+                          No class assigned
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1 text-muted-foreground transition group-hover:text-primary">
-                    <span className="text-xs">View Class</span>
+                    <span className="text-xs">View Student</span>
                     <ArrowRight className="size-4" />
                   </div>
                 </Link>
@@ -103,8 +99,8 @@ export function TeacherClassesCard({ classes, isLoading, error }: TeacherClasses
 
       <CardFooter className="flex justify-end border-t border-border/60 bg-muted/20 pb-4">
         <Button asChild variant="ghost" size="sm" className="gap-1 text-sm">
-          <Link href="/teacher/classes">
-            View all classes
+          <Link href="/teacher/students">
+            View all students
             <ArrowRight className="size-3.5" />
           </Link>
         </Button>
@@ -112,5 +108,3 @@ export function TeacherClassesCard({ classes, isLoading, error }: TeacherClasses
     </Card>
   )
 }
-
-
