@@ -1,13 +1,30 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Plus, Calendar, Users, Target, TrendingUp, ChevronRight, Search } from "lucide-react"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { 
+  Plus, 
+  Target, 
+  ChevronRight, 
+  Search, 
+  LayoutGrid, 
+  TableIcon,
+  AlertCircle,
+  Info,
+  Calendar,
+  Lock
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CreateAssessmentDialog } from "./create-assessment-dialog"
 
@@ -47,7 +64,7 @@ interface MarksManagementViewProps {
   context?: { subjectId: string; classId: string; termId?: string; academicYearId?: string }
 }
 
-const ITEMS_PER_PAGE = 8
+const ITEMS_PER_PAGE = 10
 
 export function MarksManagementView({
   subjectData,
@@ -60,6 +77,8 @@ export function MarksManagementView({
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
+  const [disabledTermDialog, setDisabledTermDialog] = useState<{ isOpen: boolean; termName: string }>({ isOpen: false, termName: "" })
 
   const { name, className, studentCount, terms, assessments } = subjectData
 
@@ -116,6 +135,140 @@ export function MarksManagementView({
     setCurrentPage(1) // Reset pagination
   }
 
+  const handleDisabledTermClick = (termName: string) => {
+    setDisabledTermDialog({ isOpen: true, termName })
+  }
+
+  const renderGridView = () => (
+    <div className="bg-card rounded-lg border">
+      {paginatedAssessments.map((assessment, index) => {
+        const statusBadge = getStatusBadge(assessment.status)
+        const categoryColor = getCategoryColor(assessment.category)
+
+        return (
+          <div
+            key={assessment.id}
+            className={`flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors ${
+              index !== paginatedAssessments.length - 1 ? 'border-b' : ''
+            }`}
+            onClick={() => onAssessmentClick(assessment.id)}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Target className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-medium text-foreground">{assessment.title}</div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                  <span className="flex items-center gap-1">
+                    <Target className="h-3 w-3" />
+                    {assessment.weight}% weight
+                  </span>
+                  <span className="flex items-center gap-1">
+                    Max: {assessment.maxScore}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {assessment.studentsCompleted}/{studentCount} completed
+                  </span>
+                  {assessment.averageScore > 0 && (
+                    <span className="flex items-center gap-1">
+                      Avg: {assessment.averageScore}/{assessment.maxScore}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className={categoryColor}>
+                {assessment.category}
+              </Badge>
+              <Badge className={statusBadge.color}>
+                {statusBadge.text}
+              </Badge>
+              <span className="text-sm text-muted-foreground">View details</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  );
+
+  const renderTableView = () => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Assessment Name</TableHead>
+          <TableHead>Category</TableHead>
+          <TableHead>Weight</TableHead>
+          <TableHead>Max Score</TableHead>
+          <TableHead>Completion</TableHead>
+          <TableHead>Average Score</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {paginatedAssessments.map((assessment) => {
+          const statusBadge = getStatusBadge(assessment.status)
+          const categoryColor = getCategoryColor(assessment.category)
+
+          return (
+            <TableRow
+              key={assessment.id}
+              className="cursor-pointer"
+              onClick={() => onAssessmentClick(assessment.id)}
+            >
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Target className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">{assessment.title}</span>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDate(assessment.date)}
+                    </div>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Badge className={categoryColor}>
+                  {assessment.category}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {assessment.weight}%
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {assessment.maxScore}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {assessment.studentsCompleted}/{studentCount}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {assessment.averageScore > 0 
+                  ? `${assessment.averageScore}/${assessment.maxScore}`
+                  : 'N/A'
+                }
+              </TableCell>
+              <TableCell>
+                <Badge className={statusBadge.color}>
+                  {statusBadge.text}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Button variant="ghost" size="sm" className="h-8 px-3">
+                  View
+                </Button>
+              </TableCell>
+            </TableRow>
+          )
+        })}
+      </TableBody>
+    </Table>
+  );
+
   const totalWeight = assessments.reduce((sum, assessment) => sum + assessment.weight, 0)
   const remainingWeight = Math.max(0, 100 - totalWeight)
   const completedAssessments = assessments.filter(a => a.status === 'completed').length
@@ -128,111 +281,94 @@ export function MarksManagementView({
   const canCreateAssessment =
     selectedTerm !== "all" && !!selectedTermObj?.isActive && remainingWeight > 0
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={onBackClick}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to {className}
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">{name}</h1>
-        <p className="text-muted-foreground">
-          {className} • {studentCount} students
+  if (assessments.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <Target className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-medium text-foreground mb-2">No assessments yet</h3>
+        <p className="text-sm text-muted-foreground max-w-md mb-6">
+          Create your first assessment to start recording marks and tracking student progress.
         </p>
-      </div>
-
-      {/* Term Selector */}
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium">Term:</label>
-        <Select value={selectedTerm} onValueChange={handleTermSelect}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem key="all" value="all">
-              All Terms
-            </SelectItem>
-            {terms.map((term) => (
-              <SelectItem key={term.id} value={term.id}>
-                {term.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Assessments</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{assessments.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {completedAssessments} completed
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Weight</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalWeight}%</div>
-            <p className="text-xs text-muted-foreground">
-              Assessment weights
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{averageScore.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Class performance
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completion</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round((completedAssessments / assessments.length) * 100)}%
+        <Button
+          onClick={() => setIsCreateDialogOpen(true)}
+          disabled={!canCreateAssessment}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Assessment
+        </Button>
+        {!canCreateAssessment && (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg max-w-md">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                {selectedTerm === "all" || !selectedTermObj?.isActive
+                  ? "Select an open term to create assessments."
+                  : "Total assessment weight has reached 100%. You cannot add more assessments."}
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Assessments done
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+        )}
       </div>
+    );
+  }
 
-      {/* Assessments Section */}
+  return (
+    <div className="space-y-4 mx-auto">
+      {/* Term Selector and Controls */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Assessments</h2>
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Select Term
+            </label>
+            <ToggleGroup
+              type="single"
+              value={selectedTerm}
+              onValueChange={handleTermSelect}
+              variant="outline"
+              className="flex-wrap"
+            >
+              <ToggleGroupItem value="all" aria-label="All terms" className="px-4 py-2">
+                All Terms
+              </ToggleGroupItem>
+              {terms.map((term) => (
+                <ToggleGroupItem 
+                  key={term.id} 
+                  value={term.id}
+                  disabled={!term.isActive}
+                  aria-label={`${term.name} ${term.isActive ? '(active)' : '(closed)'}`}
+                  title={term.isActive ? term.name : `${term.name} - This term is closed and cannot be selected`}
+                  className={cn(
+                    "relative px-4 py-2",
+                    !term.isActive && "opacity-50 cursor-not-allowed"
+                  )}
+                  onClick={() => !term.isActive && handleDisabledTermClick(term.name)}
+                >
+                  <div className="flex items-center gap-2">
+                    {term.name}
+                    {term.isActive && (
+                      <Badge variant="default" className="text-xs px-1 py-0 bg-green-500">
+                        Active
+                      </Badge>
+                    )}
+                    {!term.isActive && (
+                      <Lock className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </div>
+          
           <Button
             onClick={() => setIsCreateDialogOpen(true)}
             disabled={!canCreateAssessment}
+            size="sm"
             title={
               !canCreateAssessment
                 ? selectedTerm === "all" || !selectedTermObj?.isActive
-                  ? "Select an open term to create assessments"
+                  ? "Select an active term to create assessments"
                   : "Total assessment weight has reached 100%"
                 : undefined
             }
@@ -241,105 +377,119 @@ export function MarksManagementView({
             New Assessment
           </Button>
         </div>
-        {!canCreateAssessment && (
-          <div className="text-xs text-muted-foreground">
-            {selectedTerm === "all" || !selectedTermObj?.isActive
-              ? "You can only create assessments in an open term. Select an open term above."
-              : "Total assessment weight has reached 100%. You cannot add more weight."}
-          </div>
-        )}
 
-        {/* Search */}
+        {/* Term Selection Info */}
+        <div className="text-sm text-muted-foreground">
+          {selectedTerm === "all" 
+            ? "Showing assessments from all terms. Select a specific term to filter by term."
+            : selectedTermObj?.isActive
+              ? `Showing assessments for ${selectedTermObj.name}. This term is active for creating assessments.`
+              : `Showing assessments for ${selectedTermObj?.name || 'selected term'}. This term is closed.`
+          }
+        </div>
+      </div>
+
+      {/* Create Assessment Restrictions Info */}
+      {!canCreateAssessment && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <Info className="h-4 w-4 text-amber-600 mt-0.5" />
+            <div className="text-sm text-amber-800">
+              {selectedTerm === "all" || !selectedTermObj?.isActive
+                ? "You can only create assessments in an active term. Please select an active term (highlighted with 'Active' badge) from the term selector above."
+                : `Total assessment weight has reached 100% (${totalWeight}%). You cannot add more assessments until you reduce the weight of existing assessments.`}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Section */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label htmlFor="assessment-search" className="text-sm font-medium text-foreground">
+            Search assessments
+          </label>
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(value: "grid" | "table") => value && setViewMode(value)}
+            variant="outline"
+          >
+            <ToggleGroupItem value="grid" aria-label="Grid view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="table" aria-label="Table view">
+              <TableIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search assessments..."
+            id="assessment-search"
+            type="search"
+            placeholder="Type assessment name or category to search..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-10"
           />
         </div>
-
-        {/* Results Info */}
         {searchQuery && (
           <div className="text-sm text-muted-foreground">
-            {filteredAssessments.length} assessment{filteredAssessments.length !== 1 ? 's' : ''} found
-          </div>
-        )}
-
-        {/* Assessments List */}
-        {filteredAssessments.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <div className="text-muted-foreground text-lg mb-2">No assessments yet</div>
-              <div className="text-muted-foreground text-sm mb-4">
-                Create your first assessment to start recording marks.
-              </div>
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                disabled={!canCreateAssessment}
-                title={
-                  !canCreateAssessment
-                    ? selectedTerm === "all" || !selectedTermObj?.isActive
-                      ? "Select an open term to create assessments"
-                      : "Total assessment weight has reached 100%"
-                    : undefined
-                }
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Assessment
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="bg-card rounded-lg border">
-            {assessments.map((assessment, index) => {
-              const statusBadge = getStatusBadge(assessment.status)
-              const categoryColor = getCategoryColor(assessment.category)
-
-              return (
-                <div
-                  key={assessment.id}
-                  className={`flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors ${index !== assessments.length - 1 ? 'border-b' : ''
-                    }`}
-                  onClick={() => onAssessmentClick(assessment.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                      <Target className="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-foreground">{assessment.title}</div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{formatDate(assessment.date)}</span>
-                        <span>{assessment.weight}% weight</span>
-                        <span>Max: {assessment.maxScore}</span>
-                        <span>
-                          {assessment.studentsCompleted}/{studentCount} completed
-                        </span>
-                        {assessment.averageScore > 0 && (
-                          <span>
-                            Avg: {assessment.averageScore}/{assessment.maxScore}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={categoryColor}>
-                      {assessment.category}
-                    </Badge>
-                    <Badge className={statusBadge.color}>
-                      {statusBadge.text}
-                    </Badge>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              )
-            })}
+            Found {filteredAssessments.length} assessment{filteredAssessments.length !== 1 ? 's' : ''} matching "{searchQuery}"
           </div>
         )}
       </div>
+
+      {/* Assessments List Section */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-foreground">
+          {searchQuery ? 'Search Results' : 'All Assessments'}
+        </h3>
+        {filteredAssessments.length === 0 ? (
+          <div className="text-center py-8">
+            <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">
+              {searchQuery 
+                ? `No assessments found matching "${searchQuery}". Try a different search term.`
+                : 'No assessments available.'
+              }
+            </p>
+          </div>
+        ) : (
+          viewMode === "grid" ? renderGridView() : renderTableView()
+        )}
+      </div>
+
+      {/* Pagination Section */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <div className="text-sm text-muted-foreground">
+            Showing {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, filteredAssessments.length)} of {filteredAssessments.length} assessments
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              ← Previous
+            </Button>
+            <span className="text-sm px-3 py-1 bg-muted rounded">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next →
+            </Button>
+          </div>
+        </div>
+      )}
 
       <CreateAssessmentDialog
         open={isCreateDialogOpen}
@@ -350,10 +500,52 @@ export function MarksManagementView({
         academicYearId={context?.academicYearId}
         remainingWeight={remainingWeight}
         onAssessmentCreated={() => {
-          // dialog will close itself on success; list will refetch via invalidation
           setIsCreateDialogOpen(false)
         }}
       />
+
+      {/* Disabled Term Dialog */}
+      <Dialog open={disabledTermDialog.isOpen} onOpenChange={(open) => setDisabledTermDialog({ ...disabledTermDialog, isOpen: open })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-amber-600" />
+              Term Not Available
+            </DialogTitle>
+            <DialogDescription>
+              The term <span className="font-semibold">{disabledTermDialog.termName}</span> is currently closed and not available for new assessments.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                <div className="space-y-2">
+                  <h4 className="font-medium text-amber-800">Why can't I select this term?</h4>
+                  <ul className="text-sm text-amber-700 space-y-1">
+                    <li>• This term is no longer active for assessment creation</li>
+                    <li>• Only active terms (marked with "Active" badge) can be selected</li>
+                    <li>• You can still view assessments from this term in "All Terms" view</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h4 className="font-medium text-foreground">What can I do?</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Select an active term from the toggle group above</li>
+                <li>• Choose "All Terms" to view assessments from all terms</li>
+                <li>• Contact your administrator if you believe this term should be active</li>
+              </ul>
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => setDisabledTermDialog({ isOpen: false, termName: "" })}>
+                I Understand
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

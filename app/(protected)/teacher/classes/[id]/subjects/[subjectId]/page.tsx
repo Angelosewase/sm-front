@@ -3,10 +3,13 @@
 import React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { MarksManagementView } from '@/components/teacher/marks/marks-management-view'
-import { useSubjectAssessments, useSubjectStats } from '@/hooks/use-subjects'
+import { useSubjectAssessments, useSubjectStats, useSubjectById } from '@/hooks/use-subjects'
 import { useClass } from '@/hooks/use-classes'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOpenAcademicYear, useTermsByAcademicYear } from '@/hooks/use-academic-terms'
+import { ClassesOverview } from '@/components/teacher/classes/classes-overview'
+import { Button } from '@/components/ui/button'
+import { ArrowLeft } from 'lucide-react'
 
 export default function SubjectMarksPage() {
   const router = useRouter()
@@ -17,6 +20,7 @@ export default function SubjectMarksPage() {
   const [term, setTerm] = React.useState<string | undefined>(undefined)
 
   const { data: classInfo } = useClass(classId)
+  const { data: subjectInfo } = useSubjectById(subjectId)
   const { data: openAcademicYear } = useOpenAcademicYear()
   const { data: terms = [] } = useTermsByAcademicYear(openAcademicYear?._id)
   const { data: stats, isLoading: statsLoading } = useSubjectStats(subjectId, { classId, term })
@@ -86,15 +90,50 @@ export default function SubjectMarksPage() {
     })),
   }
 
+  // Create overview stats similar to classes page
+  const overviewStats = {
+    totalClasses: 1,
+    totalSubjects: 1,
+    totalStudents: classInfo?.studentCount ?? 0,
+    completedAssessments: (assessments ?? []).filter(a => a.status === 'completed').length,
+    pendingAssessments: (assessments ?? []).filter(a => a.status !== 'completed').length,
+  }
+
   return (
-    <div className="container mx-auto p-6">
-      <MarksManagementView
-        subjectData={subjectData as any}
-        onAssessmentClick={handleAssessmentClick}
-        onBackClick={handleBackClick}
-        onTermChange={(t) => setTerm(t)}
-        context={{ subjectId, classId, termId: term, academicYearId: openAcademicYear?._id }}
-      />
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-2 max-w-6xl mx-auto">
+        {/* Back Button */}
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={handleBackClick}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to {classInfo?.name || 'Class'}
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">
+            {subjectInfo?.name || 'Subject'} - {classInfo?.name || 'Class'}
+          </h2>
+          <span className="text-sm text-muted-foreground">
+            {(assessments ?? []).length} assessment{(assessments ?? []).length !== 1 ? "s" : ""} • {classInfo?.studentCount ?? 0} student{classInfo?.studentCount !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-8">
+          Manage assessments, track student progress, and record marks.
+        </p>
+
+        {/* Overview Stats Section */}
+        <ClassesOverview stats={overviewStats} />
+
+        {/* Subject Marks View */}
+        <MarksManagementView
+          subjectData={subjectData as any}
+          onAssessmentClick={handleAssessmentClick}
+          onBackClick={handleBackClick}
+          onTermChange={(t) => setTerm(t)}
+          context={{ subjectId, classId, termId: term, academicYearId: openAcademicYear?._id }}
+        />
+      </div>
     </div>
   )
 }

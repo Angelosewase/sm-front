@@ -76,7 +76,7 @@ export function ClassesOverview({ stats }: ClassesOverviewProps) {
           <div className={`text-sm ${
             pendingAssessments > 0 ? 'text-amber-600' : 'text-muted-foreground'
           }`}>
-            {pendingAssessments > 0 ? 'Need attention' : 'No pending'}
+            {pendingAssessments > 0 ? 'Assesments need attention' : ' No pending'}
           </div>
         </div>
       </div>
