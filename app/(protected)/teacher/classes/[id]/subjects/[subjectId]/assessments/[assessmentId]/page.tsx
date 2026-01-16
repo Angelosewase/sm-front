@@ -15,6 +15,9 @@ import {
   useAssessmentMarks,
 } from "@/hooks/use-marks";
 import type { MarkRecord } from "@/lib/api/marks";
+import { ClassesOverview } from "@/components/teacher/classes/classes-overview";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export default function AssessmentMarksPage() {
   const router = useRouter();
@@ -337,13 +340,17 @@ export default function AssessmentMarksPage() {
   if (isLoading || marksLoading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-8 w-48" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((k) => (
             <Skeleton key={k} className="h-24 w-full" />
           ))}
         </div>
-        <Skeleton className="h-64 w-full" />
+        <div className="space-y-2">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -370,7 +377,18 @@ export default function AssessmentMarksPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="space-y-6 max-w-6xl mx-auto pt-4">
+      {/* Header with Back Button */}
+      <div className="flex items-center justify-between gap-4 pb-4 ">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={handleBackClick}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to {assessmentData.subjectName || "Subject"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Assessment Marks View */}
       <MarksEntryView
         assessmentData={assessmentData}
         onBackClick={handleBackClick}
