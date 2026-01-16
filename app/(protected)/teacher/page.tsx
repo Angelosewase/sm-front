@@ -70,11 +70,7 @@ export default function TeacherHomePage() {
 
   return (
     <div className="space-y-6 p-6">
-      {dashboardLoading ? (
-        <Skeleton className="h-64 w-full rounded-2xl" />
-      ) : (
-        <TeacherHero name={teacherName} email={teacherEmail} meta={heroMeta} />
-      )}
+
 
       {dashboardError ? (
         <Alert variant="destructive">
