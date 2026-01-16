@@ -160,6 +160,13 @@ export function useCreateAssessment() {
       toast.success("Assessment created.");
       // Invalidate relevant lists
       qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+      
+      // Invalidate subject-assessments queries for reactive UI updates
+      qc.invalidateQueries({ queryKey: ["subject-assessments"] });
+      
+      // Also invalidate subject stats since new assessment affects totals
+      qc.invalidateQueries({ queryKey: ["subject-stats"] });
+      
       if (variables?.subject && variables?.class) {
         qc.invalidateQueries({
           queryKey: [
@@ -168,6 +175,9 @@ export function useCreateAssessment() {
             variables.class,
             variables.term as any,
           ],
+        });
+        qc.invalidateQueries({
+          queryKey: ["subject-stats", variables.subject, variables.class, variables.term],
         });
       }
     },
@@ -184,10 +194,31 @@ export function useUpdateAssessment() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateAssessmentDto }) =>
       subjectsApi.updateAssessment(id, data),
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       toast.success("Assessment updated.");
       qc.invalidateQueries({ queryKey: assessmentsKeys.detail(res._id) });
       qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+      
+      // Invalidate subject-assessments queries for reactive UI updates
+      qc.invalidateQueries({ queryKey: ["subject-assessments"] });
+      
+      // Also invalidate subject stats since weight changes affect totals
+      qc.invalidateQueries({ queryKey: ["subject-stats"] });
+      
+      // If we have subject and class info, invalidate more specific queries
+      if (variables.data?.subject && variables.data?.class) {
+        qc.invalidateQueries({
+          queryKey: [
+            "subject-assessments",
+            variables.data.subject,
+            variables.data.class,
+            variables.data.term as any,
+          ],
+        });
+        qc.invalidateQueries({
+          queryKey: ["subject-stats", variables.data.subject, variables.data.class, variables.data.term],
+        });
+      }
     },
     onError: (error: any) => {
       toast.error(
@@ -205,6 +236,12 @@ export function useSoftDeleteAssessment() {
       toast.success("Assessment moved to trash.");
       qc.invalidateQueries({ queryKey: assessmentsKeys.detail(res._id) });
       qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+      
+      // Invalidate subject-assessments queries for reactive UI updates
+      qc.invalidateQueries({ queryKey: ["subject-assessments"] });
+      
+      // Also invalidate subject stats since deletion affects totals
+      qc.invalidateQueries({ queryKey: ["subject-stats"] });
     },
     onError: (error: any) => {
       toast.error(
@@ -221,6 +258,12 @@ export function useDeleteAssessment() {
     onSuccess: () => {
       toast.success("Assessment permanently deleted.");
       qc.invalidateQueries({ queryKey: assessmentsKeys.all });
+      
+      // Invalidate subject-assessments queries for reactive UI updates
+      qc.invalidateQueries({ queryKey: ["subject-assessments"] });
+      
+      // Also invalidate subject stats since deletion affects totals
+      qc.invalidateQueries({ queryKey: ["subject-stats"] });
     },
     onError: (error: any) => {
       toast.error(
