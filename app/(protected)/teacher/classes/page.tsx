@@ -63,7 +63,7 @@ export default function ClassesPage() {
         </p>
       </div> */}
 
-      <div className="space-y-2  mx-auto">
+      <div className="space-y-2 max-w-6xl  mx-auto">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Your Classes</h2>
           {!isLoading && !isError && classItems.length > 0 && (
