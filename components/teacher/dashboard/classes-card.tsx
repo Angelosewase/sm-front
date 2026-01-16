@@ -25,10 +25,10 @@ export function TeacherClassesCard({ classes, isLoading, error }: TeacherClasses
   const topClasses = (classes ?? [])
     .slice()
     .sort((a, b) => b.studentCount - a.studentCount)
-    .slice(0, 5)
+    .slice(0, 4)
 
   return (
-    <Card className="border-border/60 bg-card/80">
+    <Card className="border-border/60 bg-card/80 h-full flex flex-col pb-0">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
           <CardTitle className="text-lg font-semibold">My Classes</CardTitle>
@@ -42,7 +42,7 @@ export function TeacherClassesCard({ classes, isLoading, error }: TeacherClasses
         </Badge>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 flex-1">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 4 }).map((_, idx) => (
@@ -90,7 +90,10 @@ export function TeacherClassesCard({ classes, isLoading, error }: TeacherClasses
                       ) : null}
                     </div>
                   </div>
-                  <ArrowRight className="size-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
+                  <div className="flex items-center gap-1 text-muted-foreground transition group-hover:text-primary">
+                    <span className="text-xs">View Class</span>
+                    <ArrowRight className="size-4" />
+                  </div>
                 </Link>
               </li>
             ))}
@@ -98,7 +101,7 @@ export function TeacherClassesCard({ classes, isLoading, error }: TeacherClasses
         )}
       </CardContent>
 
-      <CardFooter className="flex justify-end border-t border-border/60 bg-muted/20">
+      <CardFooter className="flex justify-end border-t border-border/60 bg-muted/20 pb-4">
         <Button asChild variant="ghost" size="sm" className="gap-1 text-sm">
           <Link href="/teacher/classes">
             View all classes
