@@ -93,3 +93,17 @@ export const useUpdateMark = () => {
   });
 };
 
+export const useDeleteMark = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, any, string>({
+    mutationFn: (id: string) => marksApi.deleteMark(id),
+    onSuccess: () => {
+      invalidateMarksList(queryClient);
+    },
+    onError: (error: any) => {
+      showError(error, "Failed to delete mark. Please try again.");
+    },
+  });
+};
+

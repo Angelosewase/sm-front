@@ -93,5 +93,9 @@ export const marksApi = {
     );
     return data;
   },
+
+  deleteMark: async (id: string): Promise<void> => {
+    await axiosInstance.delete(`${baseMarksPath}/${id}`);
+  },
 };
 
